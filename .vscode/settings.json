@@ -1,0 +1,10 @@
+{
+  "python.defaultInterpreterPath": ".venv/bin/python",
+  "editor.formatOnSave": true,
+  "[python]": {
+    "editor.defaultFormatter": "charliermarsh.ruff"
+  },
+  "python.terminal.activateEnvInCurrentTerminal": true,
+  "editor.defaultFormatter": "esbenp.prettier-vscode",
+  "python.analysis.inlayHints.functionReturnTypes": true
+}
