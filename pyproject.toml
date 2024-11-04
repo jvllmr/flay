@@ -41,4 +41,3 @@ distribution = true
 
 [tool.pdm.version]
 source = "scm"
-

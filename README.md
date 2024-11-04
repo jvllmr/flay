@@ -1,6 +1,6 @@
 # flay
 
-> [!IMPORTANT]  
+> [!IMPORTANT]
 > This project is in a very experimental/alpha stage and can definitely not be used in a productive way so far
 
 A utility for bundling, treeshaking and minifying your python modules and scripts and building OCI container images out of them.

@@ -1,31 +1,18 @@
 from __future__ import annotations
-from importlib.machinery import ModuleSpec
 from libcst import (
-    CSTVisitor,
-    CSTNode,
     Import,
     BatchableCSTVisitor,
     ImportFrom,
-    ImportStar,
     visit_batched,
-    parse_module,
-    ImportAlias,
-    Attribute,
-    Name,
     Module,
 )
-from libcst.helpers import get_full_name_for_node_or_raise
-import sys
-import os.path
 from pathlib import Path
 import typing as t
 
 from flay.common.libcst import file_to_node, get_import_from_absolute_module_spec
-from ..common.exc import ParsingError, FlayFileNotFoundError
 from ..common.module_spec import find_module_path, get_parent_package
 from stdlib_list import in_stdlib
 import logging
-from importlib.util import resolve_name
 
 log = logging.getLogger(__name__)
 

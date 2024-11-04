@@ -4,10 +4,9 @@ from libcst import visit_batched
 import typing as t
 
 from flay.bundle.package import bundle_package
-from ...common.module_spec import find_all_files_in_module_spec, find_module_path
+from ...common.module_spec import find_all_files_in_module_spec
 from ...common.libcst import file_to_node
 import logging
-from importlib.util import find_spec
 from pathlib import Path
 import shutil
 

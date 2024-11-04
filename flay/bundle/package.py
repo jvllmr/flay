@@ -1,12 +1,12 @@
 from __future__ import annotations
-from libcst import ImportAlias, Module, visit_batched
+from libcst import visit_batched
 from stdlib_list import in_stdlib
 from flay.bundle.collector import FileCollector
 from flay.common.libcst import file_to_node
 from flay.common.logging import log_cst_code
 from flay.common.module_spec import find_all_files_in_module_spec, get_top_level_package
 from libcst import CSTTransformer, Import, ImportFrom
-from libcst import Attribute, Name, CSTNode
+from libcst import Attribute, Name
 from pathlib import Path
 import typing as t
 from libcst.helpers import get_absolute_module_for_import_or_raise
