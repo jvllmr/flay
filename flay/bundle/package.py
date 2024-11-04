@@ -12,8 +12,7 @@ import typing as t
 from libcst.helpers import get_absolute_module_for_import_or_raise
 import logging
 import os.path
-from libcst.metadata import ScopeProvider, Scope
-from collections import defaultdict
+from libcst.metadata import ScopeProvider
 from libcst import MetadataWrapper
 import shutil
 
@@ -28,10 +27,8 @@ class ImportsTransformer(CSTTransformer):
     ) -> None:
         self.top_level_package = top_level_package
         self.vendor_module_name = vendor_module_name
-        self._affected_attributes: dict[Scope | None, list[Attribute]] = defaultdict(
-            lambda: []
-        )
-        self._affected_names: dict[Scope | None, list[Name]] = defaultdict(lambda: [])
+        self._affected_attributes: list[Attribute] = []
+        self._affected_names: list[Name] = []
         super().__init__()
 
     def _prepend_vendor(self, node: Attribute | Name) -> Attribute:
@@ -70,11 +67,10 @@ class ImportsTransformer(CSTTransformer):
         if module_spec.startswith(self.top_level_package) or in_stdlib(module_spec):
             return node
         if references_need_update:
-            scope = self.get_metadata(ScopeProvider, node, default=None)
             if isinstance(node, Name):
-                self._affected_names[scope].append(node)
+                self._affected_names.append(node)
             else:
-                self._affected_attributes[scope].append(node)
+                self._affected_attributes.append(node)
         return self._prepend_vendor(node)
 
     def leave_Import(self, original_node: Import, updated_node: Import) -> Import:
@@ -115,10 +111,8 @@ class ImportsTransformer(CSTTransformer):
         return updated_node
 
     def leave_Name(self, original_node: Name, updated_node: Name) -> Name | Attribute:
-        scope = self.get_metadata(ScopeProvider, original_node, default=None)
-        for maybe_name in self._affected_names[scope] + (
-            self._affected_names[t.cast(Scope, scope.globals)] if scope else []
-        ):
+        # TODO: we need to make that we are inside the scope of the original import
+        for maybe_name in self._affected_names:
             if maybe_name.deep_equals(updated_node):
                 new_node = self._prepend_vendor(updated_node)
                 log.debug(
@@ -132,10 +126,8 @@ class ImportsTransformer(CSTTransformer):
     def leave_Attribute(
         self, original_node: Attribute, updated_node: Attribute
     ) -> Attribute:
-        scope = self.get_metadata(ScopeProvider, original_node, default=None)
-        for maybe_attribute in self._affected_attributes[scope] + (
-            self._affected_attributes[t.cast(Scope, scope.globals)] if scope else []
-        ):
+        # TODO: we need to make that we are inside the scope of the original import
+        for maybe_attribute in self._affected_attributes:
             if maybe_attribute.deep_equals(updated_node):
                 new_node = self._prepend_vendor(updated_node)
                 log.debug(

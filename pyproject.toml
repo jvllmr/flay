@@ -41,3 +41,6 @@ distribution = true
 
 [tool.pdm.version]
 source = "scm"
+
+[tool.pdm.scripts]
+post_install = "pre-commit install"
