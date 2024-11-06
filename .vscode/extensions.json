@@ -6,6 +6,7 @@
     "ms-python.python",
     "ms-python.vscode-pylance",
     "esbenp.prettier-vscode",
-    "gruntfuggly.todo-tree"
+    "gruntfuggly.todo-tree",
+    "streetsidesoftware.code-spell-checker"
   ]
 }

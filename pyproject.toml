@@ -9,12 +9,14 @@ dependencies = [
     "rich>=13.8.1",
     "typing-extensions>=4.12.2",
     "platformdirs>=4.3.6",
-    "colorama>=0.4.6",
 ]
 requires-python = ">=3.9"
 readme = "README.md"
 license = { text = "MIT" }
 dynamic = ["version"]
+
+[project.urls]
+Source = "https://github.com/jvllmr/flay"
 
 [project.scripts]
 flay = "flay.cli:cli"
@@ -32,8 +34,8 @@ dev = ["nox>=2024.10.9"]
 
 
 [tool.mypy]
-python_version = "3.9"
-files = "src/flay"
+python_version = "3.10"
+files = "flay"
 strict = true
 
 [tool.pdm]

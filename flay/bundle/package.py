@@ -111,7 +111,7 @@ class ImportsTransformer(CSTTransformer):
         return updated_node
 
     def leave_Name(self, original_node: Name, updated_node: Name) -> Name | Attribute:
-        # TODO: we need to make that we are inside the scope of the original import
+        # TODO: we need to make sure that we are inside the scope of the original import
         for maybe_name in self._affected_names:
             if maybe_name.deep_equals(updated_node):
                 new_node = self._prepend_vendor(updated_node)
@@ -126,7 +126,7 @@ class ImportsTransformer(CSTTransformer):
     def leave_Attribute(
         self, original_node: Attribute, updated_node: Attribute
     ) -> Attribute:
-        # TODO: we need to make that we are inside the scope of the original import
+        # TODO: we need to make sure that we are inside the scope of the original import
         for maybe_attribute in self._affected_attributes:
             if maybe_attribute.deep_equals(updated_node):
                 new_node = self._prepend_vendor(updated_node)

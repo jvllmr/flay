@@ -17,6 +17,13 @@
       "request": "launch",
       "module": "flay",
       "args": ["debug", "bundle", "bundle_package", "flay"]
+    },
+    {
+      "name": "Debug bundle+treeshake",
+      "type": "debugpy",
+      "request": "launch",
+      "module": "flay",
+      "args": ["debug", "treeshake", "bundle_then_treeshake_package", "flay"]
     }
   ]
 }

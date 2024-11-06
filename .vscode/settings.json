@@ -6,5 +6,7 @@
   },
   "python.terminal.activateEnvInCurrentTerminal": true,
   "editor.defaultFormatter": "esbenp.prettier-vscode",
-  "python.analysis.inlayHints.functionReturnTypes": true
+  "python.analysis.inlayHints.functionReturnTypes": true,
+  "cSpell.words": ["treeshake"],
+  "cSpell.enabled": true
 }
