@@ -1,12 +1,14 @@
 from __future__ import annotations
 import logging
+import logging.handlers
 from libcst import CSTNode, Module
 import platformdirs
 import tempfile
 import contextvars
 import typing as t
-
+from contextlib import contextmanager
 import typer
+from queue import Queue
 
 logfile_path_context: contextvars.ContextVar[str] = contextvars.ContextVar(
     "_flay_logfile"
@@ -56,20 +58,35 @@ def get_flay_logger() -> logging.Logger:
     return logging.getLogger("flay")
 
 
-def setup_logger(command: str) -> None:
-    flay_logger = get_flay_logger()
+class FlayQueueHandler(logging.handlers.QueueHandler):
+    def prepare(self, record: logging.LogRecord) -> logging.LogRecord:
+        # never pre-format unlike the default QueueHandler
+        return record
 
+
+@contextmanager
+def setup_logger(command: str) -> t.Generator[None, t.Any, None]:
+    queue: Queue[logging.LogRecord] = Queue()
+    queue_handler = FlayQueueHandler(queue)
+
+    flay_logger = get_flay_logger()
     stream_handler = logging.StreamHandler()
     stream_handler.setFormatter(COLORED_FORMATTER)
 
     logging_root_dir = platformdirs.user_log_dir("flay", ensure_exists=True)
-    logging_file_path = tempfile.mktemp(".log", f"flay-{command}", logging_root_dir)
+    logging_file_path = tempfile.mktemp(".log", f"flay-{command}-", logging_root_dir)
     logfile_path_context.set(logging_file_path)
     file_handler = logging.FileHandler(logging_file_path)
     file_handler.setFormatter(FORMATTER)
 
-    flay_logger.addHandler(stream_handler)
-    flay_logger.addHandler(file_handler)
+    flay_logger.addHandler(queue_handler)
+    handlers: tuple[logging.Handler, ...] = (stream_handler, file_handler)
+    queue_listener = logging.handlers.QueueListener(
+        queue, *handlers, respect_handler_level=False
+    )
+    queue_listener.start()
+    yield
+    queue_listener.stop()
 
 
 def enable_debug_logging() -> None:

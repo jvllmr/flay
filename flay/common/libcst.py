@@ -12,7 +12,7 @@ def file_to_node(file: Path | str) -> Module | None:
     if file.match("*.so"):
         return None
     try:
-        file_content = file.read_text()
+        file_content = file.read_bytes()
         return parse_module(file_content)
     except UnicodeDecodeError as e:
         raise ParsingError(

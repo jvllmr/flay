@@ -1,7 +1,7 @@
 from __future__ import annotations
 from libcst import visit_batched
 from stdlib_list import in_stdlib
-from flay.bundle.collector import FileCollector
+from flay.bundle.collector import FileCollector, ModuleCollection
 from flay.common.libcst import file_to_node
 from flay.common.logging import log_cst_code
 from flay.common.module_spec import find_all_files_in_module_spec, get_top_level_package
@@ -67,47 +67,55 @@ class ImportsTransformer(CSTTransformer):
         if module_spec.startswith(self.top_level_package) or in_stdlib(module_spec):
             return node
         if references_need_update:
-            if isinstance(node, Name):
+            if isinstance(node, Name) and node not in self._affected_names:
                 self._affected_names.append(node)
-            else:
+            elif isinstance(node, Attribute) and node not in self._affected_attributes:
                 self._affected_attributes.append(node)
         return self._prepend_vendor(node)
 
     def leave_Import(self, original_node: Import, updated_node: Import) -> Import:
-        new_node = updated_node.with_changes(
-            names=[
-                name.with_changes(
-                    name=self._prepend_vendor_for_import(
-                        name.name,
-                        name.evaluated_name,
-                        references_need_update=name.asname is None,
-                    )
+        old_names = updated_node.names
+        new_names = [
+            name_val.with_changes(name=new_name_val)
+            if (
+                new_name_val := self._prepend_vendor_for_import(
+                    name_val.name,
+                    name_val.evaluated_name,
+                    references_need_update=name_val.asname is None,
                 )
-                for name in updated_node.names
-            ]
-        )
-        log.debug(
-            "Transformed '%s' to '%s'",
-            log_cst_code(original_node),
-            log_cst_code(new_node),
-        )
-        return new_node
+            )
+            is not name_val.name
+            else name_val
+            for name_val in updated_node.names
+        ]
+        for old_name, new_name in zip(old_names, new_names):
+            if new_name is not old_name:
+                new_node = updated_node.with_changes(names=new_names)
+                log.debug(
+                    "Transformed Import: '%s' => '%s'",
+                    log_cst_code(original_node),
+                    log_cst_code(new_node),
+                )
+                return new_node
+        return updated_node
 
     def leave_ImportFrom(
         self, original_node: ImportFrom, updated_node: ImportFrom
     ) -> ImportFrom:
         if updated_node.module and not updated_node.relative:
             module_spec = get_absolute_module_for_import_or_raise(None, updated_node)
-            new_node = updated_node.with_changes(
-                module=self._prepend_vendor_for_import(updated_node.module, module_spec)
+            old_module = updated_node.module
+            new_module = self._prepend_vendor_for_import(
+                updated_node.module, module_spec
             )
-
-            log.debug(
-                "Transformed '%s' to '%s'",
-                log_cst_code(original_node),
-                log_cst_code(new_node),
-            )
-            return new_node
+            if new_module is not old_module:
+                new_node = updated_node.with_changes(module=new_module)
+                log.debug(
+                    "Transformed ImportFrom: '%s' => '%s'",
+                    log_cst_code(original_node),
+                    log_cst_code(new_node),
+                )
+                return new_node
         return updated_node
 
     def leave_Name(self, original_node: Name, updated_node: Name) -> Name | Attribute:
@@ -116,7 +124,7 @@ class ImportsTransformer(CSTTransformer):
             if maybe_name.deep_equals(updated_node):
                 new_node = self._prepend_vendor(updated_node)
                 log.debug(
-                    "Transformed Name '%s' to '%s'",
+                    "Transformed Name: '%s' => '%s'",
                     log_cst_code(updated_node),
                     log_cst_code(new_node),
                 )
@@ -143,12 +151,20 @@ def bundle_package(
     module_spec: str, destination_path: Path, vendor_module_name: str = "_vendor"
 ) -> None:
     collector = FileCollector(package=module_spec)
+    files: ModuleCollection = {}
     for path in find_all_files_in_module_spec(module_spec):
         module = file_to_node(path)
+
         if module is not None:
+            found_module_spec = (
+                module_spec
+                if path.match("*/__init__.py")
+                else f"{module_spec}.{path.stem}"
+            )
+            files[(found_module_spec, path)] = module
             visit_batched(module, [collector])
 
-    files = collector.collected_files
+    files |= collector.collected_files
     top_level_package = get_top_level_package(module_spec)
     imports_transformer = ImportsTransformer(
         top_level_package=top_level_package,

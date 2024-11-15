@@ -20,44 +20,59 @@ from collections import defaultdict
 import typing as t
 import logging
 
+from flay.common.util import safe_remove_dir
+
 log = logging.getLogger(__name__)
 
 
 def is_if_name_main(node: cst.CSTNode) -> bool:
     match node:
-        case cst.If(
-            test=cst.Comparison(
-                left=cst.Name(
-                    value="__name__",
-                ),
-                comparisons=[
-                    cst.ComparisonTarget(
-                        operator=cst.Equal(),
-                        comparator=cst.SimpleString(
-                            value='"__main__"',
-                        ),
+        case (
+            cst.If(
+                test=cst.Comparison(
+                    left=cst.Name(
+                        value="__name__",
                     ),
-                ],
+                    comparisons=[
+                        cst.ComparisonTarget(
+                            operator=cst.Equal(),
+                            comparator=cst.SimpleString(
+                                value='"__main__"',
+                            ),
+                        ),
+                    ],
+                )
+            )
+            | cst.If(
+                test=cst.Comparison(
+                    left=cst.SimpleString(
+                        value='"__main__"',
+                    ),
+                    comparisons=[
+                        cst.ComparisonTarget(
+                            operator=cst.Equal(),
+                            comparator=cst.Name(
+                                value="__name__",
+                            ),
+                        ),
+                    ],
+                )
             )
         ):
             return True
-        case cst.If(
-            test=cst.Comparison(
-                left=cst.SimpleString(
-                    value='"__main__"',
-                ),
-                comparisons=[
-                    cst.ComparisonTarget(
-                        operator=cst.Equal(),
-                        comparator=cst.Name(
-                            value="__name__",
-                        ),
-                    ),
-                ],
-            )
-        ):
-            return True
+
     return False
+
+
+class ReferenceBumper(CSTVisitor):
+    METADATA_DEPENENCIES = (FullyQualifiedNameProvider,)
+
+    def __init__(self, references_counter: ReferencesCounter):
+        self.references_counter = references_counter
+
+    def on_visit(self, node: cst.CSTNode) -> bool:
+        self.references_counter.maybe_increase(node)
+        return True
 
 
 class ReferencesCounter(CSTVisitor):
@@ -66,7 +81,7 @@ class ReferencesCounter(CSTVisitor):
     def __init__(self, references_counts: dict[str, int]) -> None:
         self.references_counts: dict[str, int] = references_counts
         self.new_references_count = 0
-
+        self.bumper = ReferenceBumper(self)
         super().__init__()
 
     def reset(self) -> None:
@@ -79,18 +94,65 @@ class ReferencesCounter(CSTVisitor):
         if old_reference_counts == 0:
             self.new_references_count += 1
 
+    def maybe_increase(self, node: cst.CSTNode) -> None:
+        fq_names = self.get_metadata(FullyQualifiedNameProvider, node, default=None)
+        if not fq_names:
+            return
+
+        for fqn in fq_names:
+            self.increase(fqn)
+
+    def has_references_for(self, node: cst.CSTNode) -> bool:
+        fq_names = self.get_metadata(FullyQualifiedNameProvider, node, default=None)
+        if not fq_names:
+            return False
+
+        for fqn in fq_names:
+            if self.references_counts[fqn.name] > 0:
+                return True
+
+        return False
+
+    def on_visit(self, node: cst.CSTNode) -> bool:
+        match node:
+            case (
+                cst.ClassDef(body=body, decorators=decorators)
+                | cst.FunctionDef(body=body, decorators=decorators)
+            ):
+                if decorators or self.has_references_for(node):
+                    # TODO: accessing children this way with libcst is heavy
+                    # stdlib ast solves this in less costly way, but then receiving FQNs is not simple
+                    # -> only implement relevant visitors to bump references?
+                    self.maybe_increase(node)
+                    # NOTE: maybe discard unused ClassVars/instance attributes in the future
+                    body.visit(self.bumper)
+                return False
+            case cst.Assign(targets=targets) | cst.AnnAssign(target=targets):
+                if isinstance(targets, cst.BaseAssignTargetExpression):
+                    targets = [targets]
+                for target in targets:  # type: ignore[attr-defined]
+                    if self.has_references_for(target):
+                        self.maybe_increase(node)
+                        node.visit(self.bumper)
+                        break
+                return True
+            case cst.Call():
+                scope = self.get_metadata(ScopeProvider, node, default=None)
+                if not scope:
+                    return True
+                if scope is scope.globals:
+                    self.maybe_increase(node)
+                    node.visit(self.bumper)
+                return False
+
+        return True
+
     def visit_Module(self, node: Module) -> t.Literal[True]:
         for body_node in node.body:
             if isinstance(body_node, cst.If) and is_if_name_main(body_node):
-                for accepted_node in body_node.body.body:
-                    fq_names = self.get_metadata(
-                        FullyQualifiedNameProvider, accepted_node, default=None
-                    )
-                    if not fq_names:
-                        continue
-
-                    for fqn in fq_names:
-                        self.increase(fqn)
+                self.maybe_increase(node)
+                for accepted_node in body_node.body.children:
+                    self.maybe_increase(accepted_node)
 
         return True
 
@@ -107,7 +169,15 @@ class NodeRemover(CSTTransformer):
     ) -> RemovalSentinel | CSTNodeT:
         if isinstance(
             updated_node,
-            (cst.Name, cst.Attribute, cst.Subscript, cst.Call, cst.SimpleString),
+            (
+                cst.Name,
+                cst.Attribute,
+                cst.Subscript,
+                cst.Call,
+                cst.SimpleString,
+                cst.Module,
+                cst.Decorator,
+            ),
         ):
             return updated_node  # type: ignore
         fq_names = self.get_metadata(FullyQualifiedNameProvider, original_node, None)
@@ -115,7 +185,9 @@ class NodeRemover(CSTTransformer):
             return updated_node
 
         for fqn in fq_names:
-            if self.references_counts[fqn.name] > 0:
+            references_count = self.references_counts[fqn.name]
+
+            if references_count > 0:
                 return updated_node
         log.debug(f"Removed {set(fqn.name for fqn in fq_names)}")
         return RemoveFromParent()
@@ -142,6 +214,7 @@ def treeshake_package(
 
         # __main__.py should be preserved
         if file_path.endswith("__main__.py"):
+            log.debug(f"File {file_path} will be preserved")
             fqnames = file_module.resolve(FullyQualifiedNameProvider)
             for fqns in fqnames.values():
                 for fqn in fqns:
@@ -149,37 +222,41 @@ def treeshake_package(
                     new_references_count += 1
 
     references_counter = ReferencesCounter(references_counts)
-
+    treeshake_iteration = 1
     # count references until no new references get added
     # NOTE: maybe follow imports instead? should be taken into consideration for future improvements
     while new_references_count:
+        log.debug(f"Treeshake reference counter iteration {treeshake_iteration}")
+        treeshake_iteration += 1
         references_counter.reset()
         for file_path, file_module in file_modules.items():
             file_module.visit(references_counter)
             # TODO: find out if this step is necessary; it could be that both dicts share the same identity
             references_counts |= references_counter.references_counts
             new_references_count = references_counter.new_references_count
-    print(references_counts)
 
     # remove nodes without references
     nodes_remover = NodeRemover(references_counts)
     for file_path, file_module in file_modules.items():
         new_module = file_module.visit(nodes_remover)
-        if not new_module.body:
+
+        if not new_module.body and not file_path.endswith("__init__.py"):
             os.remove(file_path)
             log.debug(f"Removed file {file_path}")
-
-            directory_path = os.path.dirname(file_path)
-            while directory_path:
-                if not os.listdir(directory_path):
-                    os.rmdir(directory_path)
-                    log.debug(f"Removed directory {directory_path}")
-                    if directory_path != "/":
-                        directory_path = os.path.dirname(directory_path)
-                        continue
-                break
+            safe_remove_dir(file_path)
 
         else:
             with open(file_path, "w") as f:
                 f.write(new_module.code)
-            log.debug(f"Cleared code from {file_path}")
+            log.debug(f"Processed code of {file_path}")
+
+    # clean-up empty modules
+    for file_path, file_module in sorted(file_modules.items(), key=lambda x: len(x[0])):
+        if (
+            not file_module.module.body
+            and file_path.endswith("__init__.py")
+            and len(os.listdir(os.path.dirname(file_path))) == 1
+        ):
+            os.remove(file_path)
+            log.debug(f"Removed file {file_path}")
+            safe_remove_dir(file_path)

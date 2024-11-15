@@ -86,6 +86,6 @@ def find_all_files_in_module_spec(module_spec: str) -> t.Generator[Path, t.Any, 
     module_init_file_path = Path(found_path.origin)
 
     module_folder_path = module_init_file_path.parent
-    for file in os.listdir(str(module_folder_path)):
-        if file.endswith(".py"):
+    for file in module_folder_path.iterdir():
+        if file.match("*.py"):
             yield module_folder_path / file

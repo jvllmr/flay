@@ -34,11 +34,12 @@ class FileCollector(BatchableCSTVisitor):
     def _process_module(self, module_spec: str) -> None:
         if in_stdlib(module_spec):
             return
-        file_path = find_module_path(module_spec)
 
+        file_path = find_module_path(module_spec)
         if file_path is None or file_path.origin is None:
             log.warning(f"Don't know how to import {module_spec}. Skipping...")
             return
+
         file_path_origin = Path(file_path.origin)
         if (file_path.name, file_path_origin) in self.collected_files:
             return
