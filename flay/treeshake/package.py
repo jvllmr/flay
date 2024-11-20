@@ -162,6 +162,7 @@ class NodeRemover(CSTTransformer):
 
     def __init__(self, references_counts: dict[str, int]):
         self.references_counts = references_counts
+        self.stats: dict[str, int] = defaultdict(int)
         super().__init__()
 
     def on_leave(
@@ -190,12 +191,14 @@ class NodeRemover(CSTTransformer):
             if references_count > 0:
                 return updated_node
         log.debug(f"Removed {set(fqn.name for fqn in fq_names)}")
+        self.stats[updated_node.__class__.__name__] += 1
         return RemoveFromParent()
 
 
 def treeshake_package(
     source_dir: str, preserve_packages: t.Collection[str] | None = None
-) -> None:
+) -> dict[str, int]:
+    stats: dict[str, int] = defaultdict(int)
     source_files: set[str] = set()
     for path, dirs, files in os.walk(source_dir):
         for file in files:
@@ -243,12 +246,14 @@ def treeshake_package(
         if not new_module.body and not file_path.endswith("__init__.py"):
             os.remove(file_path)
             log.debug(f"Removed file {file_path}")
+            stats["Module"] += 1
             safe_remove_dir(file_path)
 
         else:
             with open(file_path, "w") as f:
                 f.write(new_module.code)
             log.debug(f"Processed code of {file_path}")
+    stats |= nodes_remover.stats
 
     # clean-up empty modules
     for file_path, file_module in sorted(file_modules.items(), key=lambda x: len(x[0])):
@@ -259,4 +264,7 @@ def treeshake_package(
         ):
             os.remove(file_path)
             log.debug(f"Removed file {file_path}")
+            stats["Module"] += 1
             safe_remove_dir(file_path)
+
+    return stats

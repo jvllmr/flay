@@ -23,4 +23,5 @@ def debug_bundle_then_treeshake_package(
     ],
 ) -> None:
     debug_bundle_package(module_spec, dest_path)
-    treeshake_package(str(dest_path))
+    stats = treeshake_package(str(dest_path))
+    typer.echo(dict(stats))
