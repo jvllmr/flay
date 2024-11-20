@@ -21,6 +21,10 @@ Source = "https://github.com/jvllmr/flay"
 [project.scripts]
 flay = "flay.cli:cli"
 
+[project.optional-dependencies]
+debug = [
+    "tuna>=0.5.11",
+]
 [build-system]
 requires = ["pdm-backend"]
 build-backend = "pdm.backend"

@@ -2,10 +2,10 @@
 # It is not intended for manual editing.
 
 [metadata]
-groups = ["default", "dev", "lint", "test"]
+groups = ["default", "debug", "dev", "lint", "test"]
 strategy = ["inherit_metadata"]
 lock_version = "4.5.0"
-content_hash = "sha256:b0fdf3a1e010dc1c9ff4822b2a8a056c6b779765c39a9471c921577dfecd9aaa"
+content_hash = "sha256:642f96091fad5f7dbd19c0ee6d03c1ad38c44c6c4204d06f8e478d5d40e0aee2"
 
 [[metadata.targets]]
 requires_python = ">=3.9"
@@ -488,6 +488,20 @@ marker = "python_version < \"3.11\""
 files = [
     {file = "tomli-2.0.2-py3-none-any.whl", hash = "sha256:2ebe24485c53d303f690b0ec092806a085f07af5a5aa1464f3931eec36caaa38"},
     {file = "tomli-2.0.2.tar.gz", hash = "sha256:d46d457a85337051c36524bc5349dd91b1877838e2979ac5ced3e710ed8a60ed"},
+]
+
+[[package]]
+name = "tuna"
+version = "0.5.11"
+requires_python = ">=3.6"
+summary = "Visualize Python performance profiles"
+groups = ["debug"]
+dependencies = [
+    "importlib-metadata; python_version < \"3.8\"",
+]
+files = [
+    {file = "tuna-0.5.11-py3-none-any.whl", hash = "sha256:ab352a6d836014ace585ecd882148f1f7c68be9ea4bf9e9298b7127594dab2ef"},
+    {file = "tuna-0.5.11.tar.gz", hash = "sha256:d47f3e39e80af961c8df016ac97d1643c3c60b5eb451299da0ab5fe411d8866c"},
 ]
 
 [[package]]
