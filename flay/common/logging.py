@@ -8,7 +8,6 @@ import contextvars
 import typing as t
 from contextlib import contextmanager
 import typer
-from queue import Queue
 
 logfile_path_context: contextvars.ContextVar[str] = contextvars.ContextVar(
     "_flay_logfile"
@@ -58,17 +57,8 @@ def get_flay_logger() -> logging.Logger:
     return logging.getLogger("flay")
 
 
-class FlayQueueHandler(logging.handlers.QueueHandler):
-    def prepare(self, record: logging.LogRecord) -> logging.LogRecord:
-        # never pre-format unlike the default QueueHandler
-        return record
-
-
 @contextmanager
 def setup_logger(command: str) -> t.Generator[None, t.Any, None]:
-    queue: Queue[logging.LogRecord] = Queue()
-    queue_handler = FlayQueueHandler(queue)
-
     flay_logger = get_flay_logger()
     stream_handler = logging.StreamHandler()
     stream_handler.setFormatter(COLORED_FORMATTER)
@@ -79,14 +69,11 @@ def setup_logger(command: str) -> t.Generator[None, t.Any, None]:
     file_handler = logging.FileHandler(logging_file_path)
     file_handler.setFormatter(FORMATTER)
 
-    flay_logger.addHandler(queue_handler)
     handlers: tuple[logging.Handler, ...] = (stream_handler, file_handler)
-    queue_listener = logging.handlers.QueueListener(
-        queue, *handlers, respect_handler_level=False
-    )
-    queue_listener.start()
+    for handler in handlers:
+        flay_logger.addHandler(handler)
+
     yield
-    queue_listener.stop()
 
 
 def enable_debug_logging() -> None:
@@ -101,12 +88,15 @@ class _Serializable(t.Protocol):
 class LazyStr:
     def __init__(self, factory: t.Callable[[], str | _Serializable]):
         self.factory = factory
+        self._cached_string: str | None = None
 
     def get_string(self) -> str:
+        if self._cached_string is not None:
+            return self._cached_string
         resolved = self.factory()
-        if isinstance(resolved, str):
-            return resolved
-        return str(resolved)
+        str_value = resolved if isinstance(resolved, str) else str(resolved)
+        self._cached_string = str_value
+        return str_value
 
     def __repr__(self) -> str:
         return f"<LazyStr resolved_value='{self.get_string()}' >"

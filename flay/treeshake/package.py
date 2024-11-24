@@ -2,12 +2,10 @@ from __future__ import annotations
 from libcst import (
     CSTVisitor,
     MetadataWrapper,
-    CSTTransformer,
-    CSTNodeT,
-    RemovalSentinel,
-    RemoveFromParent,
-    Module,
 )
+
+from flay.common.module_spec import get_parent_package
+from .node_remover import NodeRemover
 from libcst.metadata import (
     FullyQualifiedNameProvider,
     FullRepoManager,
@@ -19,7 +17,6 @@ import os
 from collections import defaultdict
 import typing as t
 import logging
-
 from flay.common.util import safe_remove_dir
 
 log = logging.getLogger(__name__)
@@ -101,6 +98,7 @@ class ReferencesCounter(CSTVisitor):
 
         for fqn in fq_names:
             self.increase(fqn)
+            log.debug(f"Increased references count for {fqn.name}")
 
     def has_references_for(self, node: cst.CSTNode) -> bool:
         fq_names = self.get_metadata(FullyQualifiedNameProvider, node, default=None)
@@ -144,55 +142,17 @@ class ReferencesCounter(CSTVisitor):
                     self.maybe_increase(node)
                     node.visit(self.bumper)
                 return False
+            case cst.Module(body=body):
+                for body_node in body:
+                    if isinstance(body_node, cst.If) and is_if_name_main(body_node):
+                        self.maybe_increase(node)
+
+                        for accepted_node in body_node.body.body:
+                            self.maybe_increase(accepted_node)
+                            accepted_node.visit(self.bumper)
+                return True
 
         return True
-
-    def visit_Module(self, node: Module) -> t.Literal[True]:
-        for body_node in node.body:
-            if isinstance(body_node, cst.If) and is_if_name_main(body_node):
-                self.maybe_increase(node)
-                for accepted_node in body_node.body.children:
-                    self.maybe_increase(accepted_node)
-
-        return True
-
-
-class NodeRemover(CSTTransformer):
-    METADATA_DEPENDENCIES = (FullyQualifiedNameProvider,)
-
-    def __init__(self, references_counts: dict[str, int]):
-        self.references_counts = references_counts
-        self.stats: dict[str, int] = defaultdict(int)
-        super().__init__()
-
-    def on_leave(
-        self, original_node: CSTNodeT, updated_node: CSTNodeT
-    ) -> RemovalSentinel | CSTNodeT:
-        if isinstance(
-            updated_node,
-            (
-                cst.Name,
-                cst.Attribute,
-                cst.Subscript,
-                cst.Call,
-                cst.SimpleString,
-                cst.Module,
-                cst.Decorator,
-            ),
-        ):
-            return updated_node  # type: ignore
-        fq_names = self.get_metadata(FullyQualifiedNameProvider, original_node, None)
-        if not fq_names:
-            return updated_node
-
-        for fqn in fq_names:
-            references_count = self.references_counts[fqn.name]
-
-            if references_count > 0:
-                return updated_node
-        log.debug(f"Removed {set(fqn.name for fqn in fq_names)}")
-        self.stats[updated_node.__class__.__name__] += 1
-        return RemoveFromParent()
 
 
 def treeshake_package(
@@ -200,16 +160,27 @@ def treeshake_package(
 ) -> dict[str, int]:
     stats: dict[str, int] = defaultdict(int)
     source_files: set[str] = set()
+    known_module_specs: dict[str, str] = {}
     for path, dirs, files in os.walk(source_dir):
         for file in files:
             if file.endswith(".py") or file.endswith(".pyi"):
-                source_files.add(f"{path}/{file}")
+                file_path = f"{path}/{file}"
+                source_files.add(file_path)
+                known_module_specs[file_path] = ".".join(
+                    file_path[len(source_dir) :].strip("/").split("/")[:-1]
+                )
+
+                if file.endswith("__init__.py"):
+                    known_module_specs[path] = (
+                        path[len(source_dir) :].strip("/").replace("/", ".")
+                    )
+
     repo_manager = FullRepoManager(
         source_dir, paths=source_files, providers={FullyQualifiedNameProvider}
     )
     file_modules: dict[str, MetadataWrapper] = {}
     references_counts: dict[str, int] = defaultdict(int)
-    new_references_count = 0
+    new_references_count = 1
     for file_path in source_files:
         file_modules[file_path] = file_module = (
             repo_manager.get_metadata_wrapper_for_path(file_path)
@@ -239,8 +210,11 @@ def treeshake_package(
             new_references_count = references_counter.new_references_count
 
     # remove nodes without references
-    nodes_remover = NodeRemover(references_counts)
+    nodes_remover = NodeRemover(references_counts, set(known_module_specs.values()))
     for file_path, file_module in file_modules.items():
+        module_spec = known_module_specs[file_path]
+        parent_package = get_parent_package(module_spec)
+        nodes_remover.parent_package = parent_package
         new_module = file_module.visit(nodes_remover)
 
         if not new_module.body and not file_path.endswith("__init__.py"):

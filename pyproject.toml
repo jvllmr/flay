@@ -21,10 +21,8 @@ Source = "https://github.com/jvllmr/flay"
 [project.scripts]
 flay = "flay.cli:cli"
 
-[project.optional-dependencies]
-debug = [
-    "tuna>=0.5.11",
-]
+
+
 [build-system]
 requires = ["pdm-backend"]
 build-backend = "pdm.backend"
@@ -34,6 +32,9 @@ build-backend = "pdm.backend"
 test = ["pytest>=8.3.3"]
 lint = ["mypy>=1.11.2","ruff>=0.6.8", "pre-commit>=4.0"]
 dev = ["nox>=2024.10.9"]
+debug = [
+    "tuna>=0.5.11",
+]
 
 
 

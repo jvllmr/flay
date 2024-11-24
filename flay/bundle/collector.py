@@ -9,7 +9,10 @@ from libcst import (
 from pathlib import Path
 import typing as t
 
-from flay.common.libcst import file_to_node, get_import_from_absolute_module_spec
+from flay.common.libcst import (
+    file_to_node,
+    get_import_from_absolute_module_spec,
+)
 from ..common.module_spec import find_module_path, get_parent_package
 from stdlib_list import in_stdlib
 import logging

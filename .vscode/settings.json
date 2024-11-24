@@ -8,6 +8,9 @@
   "editor.defaultFormatter": "esbenp.prettier-vscode",
   "python.analysis.inlayHints.functionReturnTypes": true,
   "python.analysis.inlayHints.variableTypes": true,
-  "cSpell.words": ["treeshake"],
-  "cSpell.enabled": true
+  "cSpell.words": ["fqns", "treeshake"],
+  "cSpell.enabled": true,
+  "python.testing.pytestArgs": ["tests"],
+  "python.testing.unittestEnabled": false,
+  "python.testing.pytestEnabled": true
 }
