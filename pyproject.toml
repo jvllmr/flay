@@ -9,8 +9,9 @@ dependencies = [
     "rich>=13.8.1",
     "typing-extensions>=4.12.2",
     "platformdirs>=4.3.6",
+
 ]
-requires-python = ">=3.9"
+requires-python = ">=3.10"
 readme = "README.md"
 license = { text = "MIT" }
 dynamic = ["version"]
@@ -29,7 +30,7 @@ build-backend = "pdm.backend"
 
 
 [dependency-groups]
-test = ["pytest>=8.3.3"]
+test = ["pytest>=8.3.3","pytest-cov>=6.0.0",]
 lint = ["mypy>=1.11.2","ruff>=0.6.8", "pre-commit>=4.0"]
 dev = ["nox>=2024.10.9"]
 debug = [
