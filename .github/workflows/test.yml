@@ -24,42 +24,7 @@ jobs:
       - name: Install dependencies
         run: pdm install --frozen-lock
       - name: Run pytest
-        run: pdm run pytest --cov=flay
-      - run: mkdir coverage
-      - run: cp .coverage coverage/.coverage.${{runner.os}}-${{ matrix.python-version }}
-      - name: Store coverage files
-        uses: actions/upload-artifact@v4
-        with:
-          name: coverage-${{runner.os}}-${{ matrix.python-version }}
-          path: coverage
-          include-hidden-files: true
-
-  coverage-combine:
-    runs-on: ubuntu-latest
-    name: Combine coverage
-    needs: [test]
-    steps:
-      - uses: actions/checkout@v4
-      - name: Setup PDM
-        uses: pdm-project/setup-pdm@v4
-        with:
-          cache: true
-      - name: Download coverage files
-        uses: actions/download-artifact@v4
-        with:
-          pattern: coverage-*
-          path: coverage
-          merge-multiple: true
-      - run: ls -lah coverage
-      - run: pdm run coverage combine coverage
-      - run: pdm run coverage html --title "Coverage for ${{ github.sha }}"
-      - name: Store coverage HTML
-        uses: actions/upload-artifact@v4
-        with:
-          name: coverage-html
-          path: htmlcov
-          include-hidden-files: true
-      - run: pdm run coverage xml
+        run: pdm run pytest --cov --cov-report=xml
       - name: Upload coverage report to Codecov
         uses: codecov/codecov-action@v5
         with:
