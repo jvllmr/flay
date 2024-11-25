@@ -61,3 +61,10 @@ source = [
     "/home/runner/work/",
     "D:\\a\\"
     ]
+
+[tool.coverage.report]
+exclude_also = [
+    "if __name__ == .__main__.:",
+    "if TYPE_CHECKING:",
+    "if t.TYPE_CHECKING:"
+    ]
