@@ -55,3 +55,9 @@ post_install = "pre-commit install"
 test = "pytest"
 test_matrix = "nox"
 cov = "pytest --cov=flay --cov-report=html"
+
+[tool.coverage.paths]
+source = [
+    "/home/runner/work/",
+    "D:\\a\\"
+    ]
