@@ -52,3 +52,5 @@ source = "scm"
 
 [tool.pdm.scripts]
 post_install = "pre-commit install"
+test = "pytest"
+test_matrix = "nox"

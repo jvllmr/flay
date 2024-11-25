@@ -5,10 +5,10 @@
 groups = ["default", "debug", "dev", "lint", "test"]
 strategy = ["inherit_metadata"]
 lock_version = "4.5.0"
-content_hash = "sha256:296878a45af5df40391abd388b5bd874c2cfc8b2ce1297f5da06465635b74236"
+content_hash = "sha256:58958a54f92d011e8d98dcdca9b91c48a8cb579257fd05754bd0360e73caab40"
 
 [[metadata.targets]]
-requires_python = ">=3.9"
+requires_python = ">=3.10"
 
 [[package]]
 name = "argcomplete"
