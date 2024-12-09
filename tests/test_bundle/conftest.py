@@ -12,7 +12,7 @@ PACKAGES_PATH = Path() / "tests" / "test_bundle" / "packages"
 
 
 def dos2unix(str_: str) -> str:
-    return str_.replace("\n\r", "\n")
+    return str_.replace("\r\n", "\n")
 
 
 @pytest.fixture
