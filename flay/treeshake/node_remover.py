@@ -4,7 +4,6 @@ import libcst as cst
 from libcst.metadata import FullyQualifiedNameProvider
 import logging
 import typing as t
-import functools
 from flay.common.logging import LazyStr, log_cst_code
 from flay.common.libcst import get_import_from_absolute_module_spec
 
@@ -109,7 +108,6 @@ class NodeRemover(cst.CSTTransformer):
         self.known_modules = known_modules
         super().__init__()
 
-    @functools.cache
     def _is_referenced_str(self, str_: str) -> bool:
         is_str_referenced = self.references_counts[str_] > 0
         if not is_str_referenced and str_ in self.known_modules:
