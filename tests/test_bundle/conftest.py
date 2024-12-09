@@ -11,10 +11,6 @@ RunBundlePackageT = t.Callable[[str, str], tuple[Path, Path]]
 PACKAGES_PATH = Path() / "tests" / "test_bundle" / "packages"
 
 
-def dos2unix(str_: str) -> str:
-    return str_.replace("\r\n", "\n")
-
-
 @pytest.fixture
 def run_bundle_package(tmp_path: Path) -> RunBundlePackageT:
     def _run_bundle_package(
