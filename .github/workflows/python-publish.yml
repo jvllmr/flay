@@ -26,4 +26,4 @@ jobs:
       - name: Build
         run: pdm build
       - name: Publish
-        run: pdm publish
+        run: pdm publish --no-build
