@@ -1,6 +1,7 @@
 from __future__ import annotations
 import typing as t
 import os
+from .conftest import dos2unix
 
 if t.TYPE_CHECKING:
     from .conftest import RunBundlePackageT
@@ -17,9 +18,9 @@ def test_simple_bundle_hello_world(run_bundle_package: RunBundlePackageT) -> Non
         for file1, file2 in zip(files1, files2):
             assert file2 == file1
             with open(sub_path1 + "/" + file1) as f:
-                content1 = f.read()
+                content1 = dos2unix(f.read())
 
             with open(sub_path2 + "/" + file2) as f:
-                content2 = f.read()
+                content2 = dos2unix(f.read())
 
             assert content2 == content1
