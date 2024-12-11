@@ -3,11 +3,13 @@ import logging
 import logging.handlers
 from libcst import CSTNode, Module
 import platformdirs
-import tempfile
 import contextvars
 import typing as t
 from contextlib import contextmanager
 import typer
+import uuid
+from pathlib import Path
+import hashlib
 
 logfile_path_context: contextvars.ContextVar[str] = contextvars.ContextVar(
     "_flay_logfile"
@@ -64,7 +66,8 @@ def setup_logger(command: str) -> t.Generator[None, t.Any, None]:
     stream_handler.setFormatter(COLORED_FORMATTER)
 
     logging_root_dir = platformdirs.user_log_dir("flay", ensure_exists=True)
-    logging_file_path = tempfile.mktemp(".log", f"flay-{command}-", logging_root_dir)
+    unique_id = hashlib.sha256(uuid.uuid4().bytes).hexdigest()[:8]
+    logging_file_path = str(Path(logging_root_dir) / f"flay-{command}-{unique_id}.log")
     logfile_path_context.set(logging_file_path)
     file_handler = logging.FileHandler(logging_file_path)
     file_handler.setFormatter(FORMATTER)

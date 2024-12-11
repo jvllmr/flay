@@ -10,7 +10,7 @@ __all__ = ("cli",)
 log = logging.getLogger(__name__)
 
 
-def cli() -> t.Any:
+def cli() -> t.Any:  # pragma: no cover
     try:
         with setup_logger("_".join(sys.argv[1:])):
             return app()

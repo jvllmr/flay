@@ -57,8 +57,8 @@ def is_if_name_main(node: cst.CSTNode) -> bool:
             )
         ):
             return True
-
-    return False
+        case _:
+            return False
 
 
 class ReferenceBumper(CSTVisitor):
@@ -151,8 +151,8 @@ class ReferencesCounter(CSTVisitor):
                             self.maybe_increase(accepted_node)
                             accepted_node.visit(self.bumper)
                 return True
-
-        return True
+            case _:
+                return True
 
 
 def treeshake_package(
