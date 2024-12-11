@@ -27,16 +27,18 @@ def run_bundle_package(tmp_path: Path) -> RunBundlePackageT:
             str(pre_bundle_path / package_name)
         )
         if build_before:
-            subprocess.run(
-                [
-                    "pdm",
-                    "run",
-                    "pip",
-                    "install",
-                    "-e",
-                    str(pre_bundle_path / package_name),
-                ]
+            install_cmd = [
+                "pdm",
+                "run",
+                "pip",
+                "install",
+                str(pre_bundle_path / package_name),
+            ]
+            print(
+                f"Running to install {package_name}:",
+                " ".join(install_cmd),
             )
+            subprocess.run(install_cmd)
 
         else:
             sys.path = [str(pre_bundle_path), *sys.path]
