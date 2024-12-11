@@ -67,7 +67,7 @@ def import_from_handler(
     if isinstance(updated_node.names, cst.ImportStar):
         return updated_node, None
 
-    if node_remover.parent_package is None:
+    if node_remover.parent_package is None:  # pragma: no cover
         log.warning(
             "Trying process an ImportFrom node removal without specified parent package"
         )

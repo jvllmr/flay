@@ -1,11 +1,24 @@
 from __future__ import annotations
+from pathlib import Path
 import typing as t
 import os
 import pytest
 import sys
+from flay.common.exc import FlayFileNotFoundError
+from flay.bundle.package import bundle_package
 
 if t.TYPE_CHECKING:
     from .conftest import RunBundlePackageT
+
+
+def test_bundle_non_existing() -> None:
+    with pytest.raises(FlayFileNotFoundError):
+        bundle_package("non_existing_module", Path("sub_dir"))
+
+
+def test_invalid_package(run_bundle_package: RunBundlePackageT) -> None:
+    with pytest.raises(FlayFileNotFoundError):
+        run_bundle_package("invalid_module", "invalid_module")
 
 
 @pytest.mark.skipif(sys.platform.startswith("win"), reason="Not working on windows...")

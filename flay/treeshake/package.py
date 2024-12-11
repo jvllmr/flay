@@ -136,7 +136,7 @@ class ReferencesCounter(CSTVisitor):
                 return True
             case cst.Call():
                 scope = self.get_metadata(ScopeProvider, node, default=None)
-                if not scope:
+                if not scope:  # pragma: no cover
                     return True
                 if scope is scope.globals:
                     self.maybe_increase(node)
