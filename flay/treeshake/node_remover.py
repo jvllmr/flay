@@ -111,8 +111,8 @@ class NodeRemover(cst.CSTTransformer):
     def _is_referenced_str(self, str_: str) -> bool:
         is_str_referenced = self.references_counts[str_] > 0
         if not is_str_referenced and str_ in self.known_modules:
-            for key in self.references_counts.keys():
-                if key.startswith(str_):
+            for key, value in self.references_counts.items():
+                if key.startswith(str_) and value > 0:
                     self.references_counts[str_] += 1
                     return True
         return is_str_referenced
