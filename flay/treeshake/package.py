@@ -4,6 +4,7 @@ from libcst import (
     MetadataWrapper,
 )
 
+from flay.common.libcst import get_import_from_absolute_module_spec
 from flay.common.module_spec import get_parent_package
 from .node_remover import NodeRemover
 from libcst.metadata import (
@@ -78,6 +79,8 @@ class ReferencesCounter(CSTVisitor):
     def __init__(self, references_counts: dict[str, int]) -> None:
         self.references_counts: dict[str, int] = references_counts
         self.new_references_count = 0
+        self.module_spec = ""
+        self.entire_module = False
         self.bumper = ReferenceBumper(self)
         super().__init__()
 
@@ -145,12 +148,21 @@ class ReferencesCounter(CSTVisitor):
             case cst.Module(body=body):
                 for body_node in body:
                     if isinstance(body_node, cst.If) and is_if_name_main(body_node):
-                        self.maybe_increase(node)
-
                         for accepted_node in body_node.body.body:
                             self.maybe_increase(accepted_node)
                             accepted_node.visit(self.bumper)
+                if self.entire_module:
+                    node.visit(self.bumper)
+                    return False
+
                 return True
+            case cst.ImportFrom(names=cst.ImportStar()):
+                module_specs = get_import_from_absolute_module_spec(
+                    node, get_parent_package(self.module_spec)
+                )
+                for module_spec in module_specs:
+                    self.increase(module_spec)
+                return False
             case _:
                 return True
 
@@ -204,6 +216,9 @@ def treeshake_package(
         treeshake_iteration += 1
         references_counter.reset()
         for file_path, file_module in file_modules.items():
+            module_spec = known_module_specs[file_path]
+            references_counter.module_spec = module_spec
+            references_counter.entire_module = references_counts[module_spec] > 0
             file_module.visit(references_counter)
             # TODO: find out if this step is necessary; it could be that both dicts share the same identity
             references_counts |= references_counter.references_counts
