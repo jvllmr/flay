@@ -9,7 +9,7 @@ from flay.common.exc import ParsingError
 def file_to_node(file: Path | str) -> Module | None:
     if isinstance(file, str):
         file = Path(file)
-    if file.match("*.so"):
+    if file.match("*.so") or file.match("*.pyd"):
         return None
     try:
         file_content = file.read_bytes()
