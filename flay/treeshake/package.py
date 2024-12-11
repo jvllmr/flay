@@ -19,6 +19,7 @@ from collections import defaultdict
 import typing as t
 import logging
 from flay.common.util import safe_remove_dir
+from libcst.helpers import get_full_name_for_node
 
 log = logging.getLogger(__name__)
 
@@ -73,16 +74,35 @@ class ReferenceBumper(CSTVisitor):
         return True
 
 
+class CustomReferenceBumper(CSTVisitor):
+    METADATA_DEPENENCIES = (FullyQualifiedNameProvider,)
+
+    def __init__(self, custom_handler: t.Callable[[cst.CSTNode], None]):
+        self.custom_handler = custom_handler
+
+    def on_visit(self, node: cst.CSTNode) -> bool:
+        self.custom_handler(node)
+        return True
+
+
 class ReferencesCounter(CSTVisitor):
     METADATA_DEPENDENCIES = (FullyQualifiedNameProvider, ScopeProvider)
+    module: cst.Module
 
     def __init__(self, references_counts: dict[str, int]) -> None:
         self.references_counts: dict[str, int] = references_counts
         self.new_references_count = 0
         self.module_spec = ""
-        self.entire_module = False
+
         self.bumper = ReferenceBumper(self)
         super().__init__()
+
+    @property
+    def module_spec_has_references(self) -> bool:
+        for key in self.references_counts.keys():
+            if key.startswith(self.module_spec) and self.references_counts[key] > 0:
+                return True
+        return False
 
     def reset(self) -> None:
         self.new_references_count = 0
@@ -146,22 +166,28 @@ class ReferencesCounter(CSTVisitor):
                     node.visit(self.bumper)
                 return False
             case cst.Module(body=body):
+                self.module = node
                 for body_node in body:
                     if isinstance(body_node, cst.If) and is_if_name_main(body_node):
+                        self.maybe_increase(node)
+
                         for accepted_node in body_node.body.body:
                             self.maybe_increase(accepted_node)
                             accepted_node.visit(self.bumper)
-                if self.entire_module:
-                    node.visit(self.bumper)
-                    return False
 
                 return True
             case cst.ImportFrom(names=cst.ImportStar()):
-                module_specs = get_import_from_absolute_module_spec(
-                    node, get_parent_package(self.module_spec)
-                )
-                for module_spec in module_specs:
-                    self.increase(module_spec)
+                if self.module_spec_has_references:
+                    module_specs = get_import_from_absolute_module_spec(
+                        node, get_parent_package(self.module_spec)
+                    )
+                    for module_spec in module_specs:
+                        custom_bumper = CustomReferenceBumper(
+                            lambda node: self.increase(
+                                f"{module_spec}.{get_full_name_for_node(node)}"
+                            )
+                        )
+                        self.module.visit(custom_bumper)
                 return False
             case _:
                 return True
@@ -178,14 +204,15 @@ def treeshake_package(
             if file.endswith(".py") or file.endswith(".pyi"):
                 file_path = f"{path}/{file}"
                 source_files.add(file_path)
-                known_module_specs[file_path] = ".".join(
-                    file_path[len(source_dir) :].strip("/").split("/")[:-1]
+                module_spec = ".".join(
+                    file_path[len(source_dir) :].strip("/").split(".")[0].split("/")
                 )
-
-                if file.endswith("__init__.py"):
-                    known_module_specs[path] = (
-                        path[len(source_dir) :].strip("/").replace("/", ".")
-                    )
+                if module_spec.endswith(".__init__") or module_spec.endswith(
+                    ".__main__"
+                ):
+                    known_module_specs[file_path] = module_spec.rsplit(".", 1)[0]
+                else:
+                    known_module_specs[file_path] = module_spec
 
     repo_manager = FullRepoManager(
         source_dir, paths=source_files, providers={FullyQualifiedNameProvider}
@@ -217,8 +244,8 @@ def treeshake_package(
         references_counter.reset()
         for file_path, file_module in file_modules.items():
             module_spec = known_module_specs[file_path]
+            log.debug(f"Start processing referencs for module {module_spec}")
             references_counter.module_spec = module_spec
-            references_counter.entire_module = references_counts[module_spec] > 0
             file_module.visit(references_counter)
             # TODO: find out if this step is necessary; it could be that both dicts share the same identity
             references_counts |= references_counter.references_counts
