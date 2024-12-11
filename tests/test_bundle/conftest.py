@@ -4,6 +4,8 @@ import typing as t
 from flay.bundle.package import bundle_package
 import sys
 import shutil
+import os
+import subprocess
 
 RunBundlePackageT = t.Callable[[str, str], tuple[Path, Path]]
 
@@ -21,7 +23,23 @@ def run_bundle_package(tmp_path: Path) -> RunBundlePackageT:
         shutil.copytree(
             str(PACKAGES_PATH / package_name), str(pre_bundle_path / package_name)
         )
-        sys.path = [str(pre_bundle_path), *sys.path]
+        build_before = "pyproject.toml" in os.listdir(
+            str(pre_bundle_path / package_name)
+        )
+        if build_before:
+            subprocess.run(
+                [
+                    "pdm",
+                    "run",
+                    "pip",
+                    "install",
+                    "-e",
+                    str(pre_bundle_path / package_name),
+                ]
+            )
+
+        else:
+            sys.path = [str(pre_bundle_path), *sys.path]
         try:
             bundle_package(
                 module_spec=module_spec,
@@ -29,7 +47,10 @@ def run_bundle_package(tmp_path: Path) -> RunBundlePackageT:
                 vendor_module_name=vendor_module_name,
             )
         finally:
-            sys.path = sys.path[1:]
+            if build_before:
+                subprocess.run(["pdm", "run", "pip", "uninstall", "-y", package_name])
+            else:
+                sys.path = sys.path[1:]
         return pre_bundle_path / package_name, bundled_path / package_name
 
     return _run_bundle_package

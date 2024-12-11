@@ -1,0 +1,16 @@
+[project]
+name = "fibunacci"
+description = "Fibunacci implemented in C"
+version = "1.0"
+requires-python = ">=3.10"
+
+[build-system]
+requires = ["setuptools", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools]
+ext-modules = [
+  { name = "fibunacci.fibunacci_c", sources = [
+    "fibunacci/fibunacci_c.c",
+  ] },
+]
