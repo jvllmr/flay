@@ -3,7 +3,6 @@ from pathlib import Path
 import typing as t
 import os
 
-from flay.common.logging import enable_debug_logging
 
 TEST_DIR = Path(__file__).parent
 TEST_PACKAGES_DIR = TEST_DIR / "packages"
@@ -34,7 +33,6 @@ def test_treeshake_package_remove_unused_import(
 def test_treeshake_package_import_star(
     run_treeshake_package: RunTreeshakePackageT,
 ) -> None:
-    enable_debug_logging()
     source_path = TEST_PACKAGES_DIR / "import_star"
     result_path = run_treeshake_package(source_path)
 
