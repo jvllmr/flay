@@ -28,6 +28,10 @@ def test_treeshake_package_remove_unused_import(
         "from remove_unused_import.unused_file import unused_func"
         not in init_file_content
     )
+    assert "from secrets import token_urlsafe, choice" not in init_file_content
+    assert "from secrets import token_urlsafe" in init_file_content
+    assert "import random, asyncio" not in init_file_content
+    assert "import random" in init_file_content
 
 
 def test_treeshake_package_import_star(
@@ -52,3 +56,14 @@ def test_treeshake_package_import_star(
 
     assert "def goodbye() -> None:" not in unused_source_content
     assert 'def moin() -> None:\n    print("Moin Welt!")' in unused_source_content
+
+
+def test_treeshake_package_remove_empty_modules(
+    run_treeshake_package: RunTreeshakePackageT,
+) -> None:
+    source_path = TEST_PACKAGES_DIR / "remove_empty_modules"
+    result_path = run_treeshake_package(source_path)
+
+    assert (result_path / "main.py").exists()
+    assert (result_path / "__init__.py").exists()
+    assert not (result_path / "unused").exists()

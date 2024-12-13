@@ -4,7 +4,12 @@ from pathlib import Path
 import shutil
 from flay.treeshake.package import treeshake_package
 
-RunTreeshakePackageT = t.Callable[[Path], Path]
+
+class RunTreeshakePackageT(t.Protocol):
+    def __call__(
+        self,
+        path: Path,
+    ) -> Path: ...
 
 
 @pytest.fixture

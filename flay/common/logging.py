@@ -101,7 +101,7 @@ class LazyStr:
         self._cached_string = str_value
         return str_value
 
-    def __repr__(self) -> str:
+    def __repr__(self) -> str:  # pragma: no cover
         return f"<LazyStr resolved_value='{self.get_string()}' >"
 
     def __str__(self) -> str:

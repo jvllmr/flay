@@ -7,7 +7,11 @@ import shutil
 import os
 import subprocess
 
-RunBundlePackageT = t.Callable[[str, str], tuple[Path, Path]]
+
+class RunBundlePackageT(t.Protocol):
+    def __call__(
+        self, package_name: str, module_spec: str, vendor_module_name: str = "_vendor"
+    ) -> tuple[Path, Path]: ...
 
 
 PACKAGES_PATH = Path() / "tests" / "test_bundle" / "packages"

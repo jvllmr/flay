@@ -15,6 +15,7 @@ import os.path
 from libcst.metadata import ScopeProvider
 from libcst import MetadataWrapper
 import shutil
+import sys
 
 log = logging.getLogger(__name__)
 
@@ -199,6 +200,9 @@ def bundle_package(
         if not target_dir.exists():
             target_dir.mkdir(parents=True)
         if module_node:
-            target_file.write_text(module_node.code)
+            target_file.write_text(
+                module_node.code,
+                encoding="utf-8" if sys.platform.startswith("win") else None,
+            )
         else:
             shutil.copy2(str(found_path), str(target_file))

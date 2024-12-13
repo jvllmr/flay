@@ -57,3 +57,51 @@ def test_bundle_c_extension(run_bundle_package: RunBundlePackageT) -> None:
         assert lib_file is not None
         assert lib_file.endswith(file_ending)
         assert lib_file.startswith("fibunacci_c")
+
+
+@pytest.mark.parametrize(["vendor_module_name"], [("_vendor",), ("_bundled_packages",)])
+def test_bundle_vendor_bundle(
+    vendor_module_name: str, run_bundle_package: RunBundlePackageT
+) -> None:
+    _, result_path = run_bundle_package(
+        "vendor_bundle", "vendor_bundle", vendor_module_name=vendor_module_name
+    )
+
+    init_file = result_path / "__init__.py"
+    init_file_content = init_file.read_text()
+
+    assert (
+        f"import vendor_bundle.{vendor_module_name}.libcst as cst" in init_file_content
+    )
+    assert (
+        f"from vendor_bundle.{vendor_module_name}.click import ClickException"
+        in init_file_content
+    )
+    assert f"import vendor_bundle.{vendor_module_name}.typer" in init_file_content
+    assert (
+        f"from vendor_bundle.{vendor_module_name}.libcst.helpers import ensure_type"
+        in init_file_content
+    )
+    assert f"import vendor_bundle.{vendor_module_name}.rich.emoji" in init_file_content
+
+    assert (
+        f'heart_emoji = vendor_bundle.{vendor_module_name}.rich.emoji.Emoji("heart")'
+        in init_file_content
+    )
+    assert (
+        f"vendor_bundle.{vendor_module_name}.typer.echo(heart_emoji)"
+        in init_file_content
+    )
+    assert (
+        f"vendor_bundle.{vendor_module_name}.typer.echo(heart_emoji)"
+        in init_file_content
+    )
+    assert (
+        'cst.parse_expression("assert answer_of_universe == 42")' in init_file_content
+    )
+    assert "tree = ensure_type(\n" in init_file_content
+    assert "except ClickException:" in init_file_content
+    assert (
+        f'vendor_bundle.{vendor_module_name}.typer.echo("Something went wrong...")'
+        in init_file_content
+    )

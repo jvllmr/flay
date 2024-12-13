@@ -18,8 +18,9 @@ import os
 from collections import defaultdict
 import typing as t
 import logging
-from flay.common.util import safe_remove_dir
+from flay.common.util import safe_remove_empty_dir
 from libcst.helpers import get_full_name_for_node
+from collections import OrderedDict
 
 log = logging.getLogger(__name__)
 
@@ -221,10 +222,12 @@ def treeshake_package(
     repo_manager = FullRepoManager(
         source_dir, paths=source_files, providers={FullyQualifiedNameProvider}
     )
-    file_modules: dict[str, MetadataWrapper] = {}
+    file_modules: OrderedDict[str, MetadataWrapper] = OrderedDict()
     references_counts: dict[str, int] = defaultdict(int)
     new_references_count = 1
-    for file_path in source_files:
+    for file_path in sorted(
+        source_files, key=lambda x: 1 if x.endswith("__init__.py") else 0
+    ):
         file_modules[file_path] = file_module = (
             repo_manager.get_metadata_wrapper_for_path(file_path)
         )
@@ -267,24 +270,20 @@ def treeshake_package(
             os.remove(file_path)
             log.debug(f"Removed file {file_path}")
             stats["Module"] += 1
-            safe_remove_dir(file_path)
-
-        else:
-            with open(file_path, "w") as f:
-                f.write(new_module.code)
-            log.debug(f"Processed code of {file_path}")
-    stats |= nodes_remover.stats
-
-    # clean-up empty modules
-    for file_path, file_module in sorted(file_modules.items(), key=lambda x: len(x[0])):
-        if (
-            not file_module.module.body
+            safe_remove_empty_dir(file_path)
+        elif (
+            not new_module.body
             and file_path.endswith("__init__.py")
             and len(os.listdir(os.path.dirname(file_path))) == 1
         ):
             os.remove(file_path)
             log.debug(f"Removed file {file_path}")
             stats["Module"] += 1
-            safe_remove_dir(file_path)
+            safe_remove_empty_dir(file_path)
+        else:
+            with open(file_path, "w") as f:
+                f.write(new_module.code)
+            log.debug(f"Processed code of {file_path}")
+    stats |= nodes_remover.stats
 
     return stats
