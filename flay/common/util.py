@@ -5,7 +5,7 @@ import logging
 log = logging.getLogger(__name__)
 
 
-def safe_remove_dir(path: str) -> None:
+def safe_remove_empty_dir(path: str) -> None:
     if os.path.isfile(path):
         path = os.path.dirname(path)
     while not os.path.exists(path):

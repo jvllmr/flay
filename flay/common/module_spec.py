@@ -21,7 +21,11 @@ def get_parent_package(module_spec: str) -> str:
     return ".".join(module_spec.split(".")[:-1])
 
 
-VALID_FILE_EXTENSIONS = {"py", "so"}
+VALID_FILE_EXTENSIONS = {
+    "py",
+    "so",  # shared objects
+    "pyd",  # shared objects windows
+}
 
 
 def _path_can_lead_to_module_spec(
