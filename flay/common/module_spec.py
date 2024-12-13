@@ -29,7 +29,9 @@ def _path_can_lead_to_module_spec(
 ) -> bool:
     for i in range(len(module_spec_parts)):
         search_value = os.path.sep.join(module_spec_parts[:i])
-        if f"{path}/{file_name}".endswith(search_value) or path.endswith(search_value):
+        if f"{path}{os.path.sep}{file_name}".endswith(search_value) or path.endswith(
+            search_value
+        ):
             return True
     return False
 
