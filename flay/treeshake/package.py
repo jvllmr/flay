@@ -202,11 +202,15 @@ def treeshake_package(
     for path, dirs, files in os.walk(source_dir):
         for file in files:
             if file.endswith(".py") or file.endswith(".pyi"):
-                file_path = f"{path}/{file}"
+                file_path = f"{path}{os.path.sep}{file}"
                 source_files.add(file_path)
-                module_spec = ".".join(
-                    file_path[len(source_dir) :].strip("/").split(".")[0].split("/")
+                module_spec = (
+                    file_path[len(source_dir) :]
+                    .strip(os.path.sep)
+                    .split(".")[0]
+                    .replace(os.path.sep, ".")
                 )
+
                 if module_spec.endswith(".__init__") or module_spec.endswith(
                     ".__main__"
                 ):

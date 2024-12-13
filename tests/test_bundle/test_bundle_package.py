@@ -6,6 +6,7 @@ import pytest
 import sys
 from flay.common.exc import FlayFileNotFoundError
 from flay.bundle.package import bundle_package
+import libcst as cst
 
 if t.TYPE_CHECKING:
     from .conftest import RunBundlePackageT
@@ -21,7 +22,6 @@ def test_invalid_package(run_bundle_package: RunBundlePackageT) -> None:
         run_bundle_package("invalid_module", "invalid_module")
 
 
-@pytest.mark.skipif(sys.platform.startswith("win"), reason="Not working on windows...")
 def test_simple_bundle_hello_world(run_bundle_package: RunBundlePackageT) -> None:
     source_path, result_path = run_bundle_package("hello_world", "hello_world")
 
@@ -32,13 +32,20 @@ def test_simple_bundle_hello_world(run_bundle_package: RunBundlePackageT) -> Non
         assert files2 == files1
         for file1, file2 in zip(files1, files2):
             assert file2 == file1
-            with open(sub_path1 + "/" + file1) as f:
+            with open(sub_path1 + os.path.sep + file1) as f:
                 content1 = f.read()
 
-            with open(sub_path2 + "/" + file2) as f:
+            with open(sub_path2 + os.path.sep + file2) as f:
                 content2 = f.read()
 
-            assert content2 == content1
+            if sys.platform.startswith(
+                "win"
+            ):  # file content is not fully equal on windows
+                assert cst.parse_module(content2).deep_equals(
+                    cst.parse_module(content1)
+                )
+            else:
+                assert content2 == content1
 
 
 def test_bundle_c_extension(run_bundle_package: RunBundlePackageT) -> None:
