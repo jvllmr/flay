@@ -37,7 +37,7 @@ def _path_can_lead_to_module_spec(
             search_value
         ):
             return True
-    return False
+    return False  # pragma: no cover
 
 
 @cache

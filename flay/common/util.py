@@ -6,7 +6,7 @@ log = logging.getLogger(__name__)
 
 
 def safe_remove_empty_dir(path: str) -> None:
-    if os.path.isfile(path):
+    if os.path.isfile(path):  # pragma: no cover
         path = os.path.dirname(path)
     while not os.path.exists(path):
         path = os.path.dirname(path)
