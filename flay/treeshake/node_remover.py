@@ -48,6 +48,7 @@ def import_handler(
         return cst.RemoveFromParent(), log_cst_code(updated_node)
 
     if len(new_names) != len(updated_node.names):
+        new_names[-1] = new_names[-1].with_changes(comma=cst.MaybeSentinel.DEFAULT)
         new_node = updated_node.with_changes(names=new_names)
         return new_node, LazyStr(
             lambda: f"{log_cst_code(updated_node)} => {log_cst_code(new_node)}"

@@ -30,6 +30,8 @@ def test_treeshake_package_remove_unused_import(
     )
     assert "from secrets import token_urlsafe, choice" not in init_file_content
     assert "from secrets import token_urlsafe" in init_file_content
+    assert "import random, asyncio" not in init_file_content
+    assert "import random" in init_file_content
 
 
 def test_treeshake_package_import_star(
