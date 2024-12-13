@@ -16,6 +16,7 @@ from libcst.metadata import ScopeProvider
 from libcst import MetadataWrapper
 import shutil
 import sys
+from libcst.helpers import get_full_name_for_node
 
 log = logging.getLogger(__name__)
 
@@ -28,8 +29,7 @@ class ImportsTransformer(CSTTransformer):
     ) -> None:
         self.top_level_package = top_level_package
         self.vendor_module_name = vendor_module_name
-        self._affected_attributes: list[Attribute] = []
-        self._affected_names: list[Name] = []
+        self._affected_names: set[str] = set()
         super().__init__()
 
     def _prepend_vendor(self, node: Attribute | Name) -> Attribute:
@@ -67,11 +67,8 @@ class ImportsTransformer(CSTTransformer):
     ) -> Attribute | Name:
         if module_spec.startswith(self.top_level_package) or in_stdlib(module_spec):
             return node
-        if references_need_update:
-            if isinstance(node, Name) and node not in self._affected_names:
-                self._affected_names.append(node)
-            elif isinstance(node, Attribute) and node not in self._affected_attributes:
-                self._affected_attributes.append(node)
+        if references_need_update and (full_name := get_full_name_for_node(node)):
+            self._affected_names.add(full_name)
         return self._prepend_vendor(node)
 
     def leave_Import(self, original_node: Import, updated_node: Import) -> Import:
@@ -119,33 +116,40 @@ class ImportsTransformer(CSTTransformer):
                 return new_node
         return updated_node
 
-    def leave_Name(self, original_node: Name, updated_node: Name) -> Name | Attribute:
+    @t.overload
+    def _prepend_vendor_to_name(
+        self, original_node: Name, updated_node: Name
+    ) -> Name: ...
+
+    @t.overload
+    def _prepend_vendor_to_name(
+        self, original_node: Attribute, updated_node: Attribute
+    ) -> Attribute: ...
+
+    def _prepend_vendor_to_name(
+        self, original_node: Name | Attribute, updated_node: Name | Attribute
+    ) -> Attribute | Name:
         # TODO: we need to make sure that we are inside the scope of the original import
-        for maybe_name in self._affected_names:
-            if maybe_name.deep_equals(updated_node):
-                new_node = self._prepend_vendor(updated_node)
-                log.debug(
-                    "Transformed Name: '%s' => '%s'",
-                    log_cst_code(updated_node),
-                    log_cst_code(new_node),
-                )
-                return new_node
+        full_name = get_full_name_for_node(updated_node)
+        if full_name in self._affected_names:
+            new_node = self._prepend_vendor(updated_node)
+            log.debug(
+                "Transformed %s: '%s' => '%s'",
+                original_node.__class__.__name__,
+                log_cst_code(updated_node),
+                log_cst_code(new_node),
+            )
+            return new_node
+
         return updated_node
+
+    def leave_Name(self, original_node: Name, updated_node: Name) -> Name | Attribute:
+        return self._prepend_vendor_to_name(original_node, updated_node)
 
     def leave_Attribute(
         self, original_node: Attribute, updated_node: Attribute
     ) -> Attribute:
-        # TODO: we need to make sure that we are inside the scope of the original import
-        for maybe_attribute in self._affected_attributes:
-            if maybe_attribute.deep_equals(updated_node):
-                new_node = self._prepend_vendor(updated_node)
-                log.debug(
-                    "Transformed Attribute '%s' to '%s'",
-                    log_cst_code(updated_node),
-                    log_cst_code(new_node),
-                )
-                return new_node
-        return updated_node
+        return self._prepend_vendor_to_name(original_node, updated_node)
 
 
 def bundle_package(
