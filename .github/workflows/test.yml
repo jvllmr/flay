@@ -26,8 +26,13 @@ jobs:
       - name: Install dependencies
         run: pdm install --frozen-lock
       - name: Run pytest
-        run: pdm run pytest --cov --cov-report=xml
+        run: pdm run pytest --cov --cov-report=xml --junitxml=junit.xml -o junit_family=legacy
       - name: Upload coverage report to Codecov
         uses: codecov/codecov-action@v5
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+      - name: Upload test results to Codecov
+        if: ${{ !cancelled() }}
+        uses: codecov/test-results-action@v1
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
