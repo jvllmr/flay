@@ -34,7 +34,7 @@ test = [
   "pip>=24.3.1",
   "wheel>=0.45.1",
 ]
-lint = ["mypy>=1.13.0", "ruff>=0.8.2", "pre-commit>=4.0.1"]
+lint = ["mypy>=1.13.0", "ruff>=0.8.3", "pre-commit>=4.0.1"]
 dev = ["nox>=2024.10.9"]
 debug = ["tuna>=0.5.11"]
 types = ["types-setuptools>=75.6.0.20241126"]
