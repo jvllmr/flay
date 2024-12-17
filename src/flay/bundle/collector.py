@@ -13,7 +13,11 @@ from flay.common.libcst import (
     file_to_node,
     get_import_from_absolute_module_spec,
 )
-from ..common.module_spec import find_module_path, get_parent_package
+from ..common.module_spec import (
+    find_module_path,
+    get_parent_package,
+    get_top_level_package,
+)
 from stdlib_list import in_stdlib
 import logging
 
@@ -35,7 +39,7 @@ class FileCollector(BatchableCSTVisitor):
         super().__init__()
 
     def _process_module(self, module_spec: str) -> None:
-        if in_stdlib(module_spec):
+        if in_stdlib(get_top_level_package(module_spec)):
             return
 
         file_path = find_module_path(module_spec)

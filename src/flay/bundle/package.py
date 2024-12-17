@@ -1,5 +1,5 @@
 from __future__ import annotations
-from libcst import visit_batched
+from libcst import Module, visit_batched
 from stdlib_list import in_stdlib
 from flay.bundle.collector import FileCollector, ModuleCollection
 from flay.common.libcst import file_to_node
@@ -29,8 +29,16 @@ class ImportsTransformer(CSTTransformer):
     ) -> None:
         self.top_level_package = top_level_package
         self.vendor_module_name = vendor_module_name
-        self._affected_names: set[str] = set()
+        self.reset()
         super().__init__()
+
+    def reset(self) -> None:
+        self._affected_names: set[str] = set()
+        self.changes_count = 0
+
+    def visit_Module(self, node: Module) -> bool:
+        self.reset()
+        return True
 
     def _prepend_vendor(self, node: Attribute | Name) -> Attribute:
         if isinstance(node, Name):
@@ -56,7 +64,7 @@ class ImportsTransformer(CSTTransformer):
                     attr=deepest_attribute.value,
                 ),
             )
-
+        self.changes_count += 1
         return new_name
 
     def _prepend_vendor_for_import(
@@ -65,7 +73,9 @@ class ImportsTransformer(CSTTransformer):
         module_spec: str,
         references_need_update: bool = False,
     ) -> Attribute | Name:
-        if module_spec.startswith(self.top_level_package) or in_stdlib(module_spec):
+        if module_spec.startswith(self.top_level_package) or in_stdlib(
+            get_top_level_package(module_spec)
+        ):
             return node
         if references_need_update and (full_name := get_full_name_for_node(node)):
             self._affected_names.add(full_name)
@@ -171,13 +181,6 @@ def bundle_package(
 
     files |= collector.collected_files
     top_level_package = get_top_level_package(module_spec)
-    imports_transformer = ImportsTransformer(
-        top_level_package=top_level_package,
-        vendor_module_name=vendor_module_name,
-    )
-    for key, node in files.items():
-        if node:
-            files[key] = MetadataWrapper(node).visit(imports_transformer)
 
     vendor_path = destination_path / top_level_package / vendor_module_name
 
@@ -185,8 +188,15 @@ def bundle_package(
     if not gitignore.exists():
         gitignore.parent.mkdir(parents=True, exist_ok=True)
         gitignore.write_text("*")
-
+    imports_transformer = ImportsTransformer(
+        top_level_package=top_level_package,
+        vendor_module_name=vendor_module_name,
+    )
     for (found_module, found_path), module_node in files.items():
+        if module_node:
+            module_node = MetadataWrapper(module_node, unsafe_skip_copy=True).visit(
+                imports_transformer
+            )
         module_path_part = Path(os.path.sep.join(found_module.split(".")))
         is_external = get_top_level_package(found_module) != top_level_package
 
@@ -203,10 +213,12 @@ def bundle_package(
         target_dir = target_file.parent
         if not target_dir.exists():
             target_dir.mkdir(parents=True)
-        if module_node:
+        if imports_transformer.changes_count and module_node:
             target_file.write_text(
                 module_node.code,
                 encoding="utf-8" if sys.platform.startswith("win") else None,
             )
+            log.debug(f"Written new CST of {found_path} to {target_file}")
         else:
             shutil.copy2(str(found_path), str(target_file))
+            log.debug(f"Copied {found_path} to {target_file}")
