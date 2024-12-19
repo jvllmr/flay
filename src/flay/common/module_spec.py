@@ -31,13 +31,13 @@ VALID_FILE_EXTENSIONS = {
 def _path_can_lead_to_module_spec(
     path: str, file_name: str, module_spec_parts: list[str]
 ) -> bool:
-    for i in range(len(module_spec_parts)):
-        search_value = os.path.sep.join(module_spec_parts[:i])
+    for i in range(1, len(module_spec_parts)):
+        search_value = os.path.sep.join(module_spec_parts[: i + 1])
         if f"{path}{os.path.sep}{file_name}".endswith(search_value) or path.endswith(
             search_value
         ):
             return True
-    return False  # pragma: no cover
+    return False
 
 
 @cache
