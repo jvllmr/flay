@@ -28,10 +28,12 @@ def test_invalid_package(run_bundle_package: RunBundlePackageT) -> None:
 def test_simple_bundle_hello_world(run_bundle_package: RunBundlePackageT) -> None:
     source_path, result_path = run_bundle_package("hello_world", "hello_world")
 
-    for (sub_path1, dirs1, files1), (sub_path2, dirs2, files2) in zip(
+    for (sub_path1, dirs1, _files1), (sub_path2, dirs2, _files2) in zip(
         os.walk(str(source_path)), os.walk(str(result_path))
     ):
         assert dirs2 == dirs1
+        files1 = sorted(_files1)
+        files2 = sorted(_files2)
         assert files2 == files1
         for file1, file2 in zip(files1, files2):
             assert file2 == file1
@@ -105,3 +107,8 @@ def test_bundle_vendor_bundle(
         f'vendor_bundle.{vendor_module_name}.typer.echo("Something went wrong...")'
         in init_file_content
     )
+    assert (
+        f"from vendor_bundle.{vendor_module_name}.flay.cli.debug.bundle import debug_bundle_package"
+        in init_file_content
+    )
+    assert "from pathlib import Path" in init_file_content

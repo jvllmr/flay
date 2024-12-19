@@ -4,7 +4,11 @@ import typer  # noqa: F401
 from libcst.helpers import ensure_type  # noqa: F401
 import rich.emoji  # noqa: F401
 
+from flay.cli.debug.bundle import debug_bundle_package
+from pathlib import Path
+
 try:
+    debug_bundle_package("flay", Path("debug_bundle"))
     heart_emoji = rich.emoji.Emoji("heart")
     typer.echo(heart_emoji)
     tree = ensure_type(

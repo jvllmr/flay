@@ -23,8 +23,27 @@ Source = "https://github.com/jvllmr/flay"
 flay = "flay.cli:cli"
 
 [build-system]
-requires = ["pdm-backend"]
-build-backend = "pdm.backend"
+requires = ["maturin>=1.5,<2.0"]
+build-backend = "maturin"
+
+[tool.maturin]
+features = ["pyo3/extension-module"]
+module-name = "flay._flay_rs"
+manifest-path = "rust/Cargo.toml"
+
+[tool.pdm]
+distribution = true
+
+[tool.pdm.version]
+source = "scm"
+
+[tool.pdm.scripts]
+hook = "python -m maturin_import_hook site install"
+
+test = "pytest"
+test_matrix = "nox"
+cov = "pytest --cov=flay --cov-report=html"
+dev = "maturin develop"
 
 [dependency-groups]
 test = [
@@ -35,26 +54,17 @@ test = [
   "wheel>=0.45.1",
 ]
 lint = ["mypy>=1.13.0", "ruff>=0.8.3", "pre-commit>=4.0.1"]
-dev = ["nox>=2024.10.9"]
+dev = ["nox>=2024.10.9", "maturin>=1.7.8", "maturin-import-hook>=0.2.0"]
 debug = ["tuna>=0.5.11"]
 types = ["types-setuptools>=75.6.0.20241126"]
 
 [tool.mypy]
 python_version = "3.10"
-files = "flay"
+files = "src/flay"
 strict = true
 
-[tool.pdm]
-distribution = true
-
-[tool.pdm.version]
-source = "scm"
-
-[tool.pdm.scripts]
-post_install = "pre-commit install"
-test = "pytest"
-test_matrix = "nox"
-cov = "pytest --cov=flay --cov-report=html"
+[tool.pyright]
+typeCheckingMode = "off"
 
 [tool.coverage.paths]
 source = ["/home/runner/work/", "D:\\a\\"]

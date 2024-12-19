@@ -1,8 +1,13 @@
 ci:
   skip:
     - mypy
+    - cargo-fix
 
 repos:
+  - repo: https://github.com/AndrejOrsula/pre-commit-cargo
+    rev: 0.3.0
+    hooks:
+      - id: cargo-fmt
   - repo: https://github.com/asottile/pyupgrade
     rev: v3.19.0
     hooks:
@@ -16,9 +21,8 @@ repos:
         args:
           - --fix
       - id: ruff-format
-
-  - repo: https://github.com/pre-commit/mirrors-prettier
-    rev: v3.1.0
+  - repo: https://github.com/jvllmr/pre-commit-prettier
+    rev: v3.4.2
     hooks:
       - id: prettier
         additional_dependencies:
@@ -38,3 +42,11 @@ repos:
         language: system
         entry: .venv/bin/mypy --fast-module-lookup
         pass_filenames: false
+      - id: cargo-fix
+        name: cargo fix
+        description: Fix Rust code
+        language: rust
+        files: \.rs$
+        pass_filenames: false
+        entry: cargo fix
+        args: ["--workspace", "--allow-dirty", "--allow-staged"]

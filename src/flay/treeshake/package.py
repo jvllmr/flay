@@ -103,7 +103,7 @@ class ReferencesCounter(CSTVisitor):
         for key in self.references_counts.keys():
             if key.startswith(self.module_spec) and self.references_counts[key] > 0:
                 return True
-        return False
+        return False  # pragma: no cover
 
     def reset(self) -> None:
         self.new_references_count = 0

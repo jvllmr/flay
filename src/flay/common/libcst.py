@@ -6,10 +6,8 @@ from libcst.helpers import get_full_name_for_node_or_raise
 from flay.common.exc import ParsingError
 
 
-def file_to_node(file: Path | str) -> cst.Module | None:
-    if isinstance(file, str):
-        file = Path(file)
-    if file.match("*.so") or file.match("*.pyd"):
+def file_to_node(file: Path) -> cst.Module | None:
+    if file.match("*.so") or file.match("*.pyd"):  # pragma: no cover
         return None
     try:
         file_content = file.read_bytes()

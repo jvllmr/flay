@@ -84,6 +84,11 @@ def enable_debug_logging() -> None:
     flay_logger.setLevel(logging.DEBUG)
 
 
+def reset_logging_level() -> None:
+    flay_logger = get_flay_logger()
+    flay_logger.setLevel(logging.NOTSET)
+
+
 class _Serializable(t.Protocol):
     def __str__(self) -> str: ...
 
