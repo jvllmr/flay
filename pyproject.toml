@@ -38,10 +38,7 @@ distribution = true
 source = "scm"
 
 [tool.pdm.scripts]
-post_install = { composite = [
-  "python -m maturin_import_hook site install",
-  "pre-commit install",
-] }
+hook = "python -m maturin_import_hook site install"
 
 test = "pytest"
 test_matrix = "nox"
