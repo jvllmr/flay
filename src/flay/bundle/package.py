@@ -1,6 +1,6 @@
 from __future__ import annotations
 from stdlib_list import in_stdlib
-from flay._flay_rs.bundle import FileCollector
+from flay._flay_rs import FileCollector
 from flay.common.libcst import file_to_node
 from flay.common.logging import log_cst_code
 from flay.common.module_spec import find_all_files_in_module_spec, get_top_level_package

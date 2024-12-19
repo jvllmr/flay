@@ -1,5 +1,5 @@
 import typer
-from flay._flay_rs.bundle import FileCollector
+from flay._flay_rs import FileCollector
 import typing as t
 
 from flay.bundle.package import bundle_package

@@ -28,10 +28,12 @@ def test_invalid_package(run_bundle_package: RunBundlePackageT) -> None:
 def test_simple_bundle_hello_world(run_bundle_package: RunBundlePackageT) -> None:
     source_path, result_path = run_bundle_package("hello_world", "hello_world")
 
-    for (sub_path1, dirs1, files1), (sub_path2, dirs2, files2) in zip(
+    for (sub_path1, dirs1, _files1), (sub_path2, dirs2, _files2) in zip(
         os.walk(str(source_path)), os.walk(str(result_path))
     ):
         assert dirs2 == dirs1
+        files1 = sorted(_files1)
+        files2 = sorted(_files2)
         assert files2 == files1
         for file1, file2 in zip(files1, files2):
             assert file2 == file1
