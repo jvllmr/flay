@@ -6,7 +6,13 @@ use rustpython_ast::StmtImportFrom;
 
 // does the same as libcst's resolve_name
 fn resolve_name(name: &str, package: &str, level: &usize) -> PyResult<String> {
-    let bits: Vec<&str> = package.rsplit(".").take(*level).collect();
+    if *level == 0 {
+        return Ok(name.to_string());
+    }
+
+    let mut bits: Vec<&str> = package.rsplitn(*level, ".").collect();
+    bits.reverse();
+
     if bits.len() < *level {
         return Err(PyImportError::new_err(
             "attempted relative import beyond top-level package",
@@ -35,9 +41,6 @@ pub fn get_import_from_absolute_module_spec(
             None => 0,
         };
         let module_node = node.module.as_ref().unwrap();
-        if level == 0 {
-            return Ok(vec![module_node.to_string()]);
-        }
 
         return Ok(vec![
             resolve_name(&module_node, parent_package, &level).unwrap()

@@ -201,6 +201,8 @@ def bundle_package(
             module_node = MetadataWrapper(module_node, unsafe_skip_copy=True).visit(
                 imports_transformer
             )
+        else:
+            module_node = None
         module_path_part = Path(os.path.sep.join(found_module.split(".")))
         is_external = get_top_level_package(found_module) != top_level_package
 

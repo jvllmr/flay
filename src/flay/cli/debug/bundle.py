@@ -1,11 +1,9 @@
 import typer
-from flay.bundle.collector import FileCollector
-from libcst import visit_batched
+from flay._flay_rs.bundle import FileCollector
 import typing as t
 
 from flay.bundle.package import bundle_package
 from ...common.module_spec import find_all_files_in_module_spec
-from ...common.libcst import file_to_node
 import logging
 from pathlib import Path
 import shutil
@@ -22,9 +20,12 @@ def bundle_collector(
     collector = FileCollector(package=module_spec)
     for path in find_all_files_in_module_spec(module_spec):
         log.debug(f"Found: {path}")
-        module_node = file_to_node(path)
-        if module_node:
-            visit_batched(module_node, [collector])
+        file_module_spec = (
+            module_spec
+            if path.name == "__init__.py"
+            else f"{module_spec}.{path.name}"[:-3]
+        )
+        collector._process_module(file_module_spec)
 
     typer.echo({str(k): type(v) for k, v in collector.collected_files.items()})
 
