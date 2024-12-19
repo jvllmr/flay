@@ -54,6 +54,7 @@ jobs:
           target: ${{ matrix.target }}
           manylinux: ${{ matrix.manylinux || 'auto' }}
           container: ${{ matrix.container }}
+          docker-options: -e CI
       - name: Upload wheels
         uses: actions/upload-artifact@v3
         with:
