@@ -105,3 +105,8 @@ def test_bundle_vendor_bundle(
         f'vendor_bundle.{vendor_module_name}.typer.echo("Something went wrong...")'
         in init_file_content
     )
+    assert (
+        f"from vendor_bundle.{vendor_module_name}.flay.cli.debug.bundle import debug_bundle_package"
+        in init_file_content
+    )
+    assert "from pathlib import Path" in init_file_content
