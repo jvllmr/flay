@@ -1,6 +1,7 @@
 ci:
   skip:
     - mypy
+    - cargo-fix
 
 repos:
   - repo: https://github.com/AndrejOrsula/pre-commit-cargo
