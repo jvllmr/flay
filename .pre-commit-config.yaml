@@ -3,6 +3,10 @@ ci:
     - mypy
 
 repos:
+  - repo: https://github.com/AndrejOrsula/pre-commit-cargo
+    rev: 0.3.0
+    hooks:
+      - id: cargo-fmt
   - repo: https://github.com/asottile/pyupgrade
     rev: v3.19.0
     hooks:

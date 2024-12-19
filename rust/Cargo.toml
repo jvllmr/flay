@@ -1,5 +1,5 @@
 [package]
-name = "flay"
+name = "flay_rs"
 version = "0.1.0"
 edition = "2021"
 
@@ -9,5 +9,9 @@ name = "flay"
 crate-type = ["cdylib"]
 
 [dependencies]
-pyo3 = "0.20.0"
-ruff_python_ast = { workspace = true }
+fern = { version = "0.7.1", features = ["colored"] }
+log = "0.4.22"
+pyo3 = { version = "0.23.0", features = ["extension-module"] }
+rustpython-ast = { version = "0.4.0", features = ["visitor", "unparse"] }
+rustpython-literal = "0.4.0"
+rustpython-parser = { version = "0.4.0" }

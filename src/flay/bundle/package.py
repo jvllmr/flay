@@ -1,18 +1,16 @@
 from __future__ import annotations
-from libcst import Module, visit_batched
 from stdlib_list import in_stdlib
-from flay.bundle.collector import FileCollector, ModuleCollection
+from flay._flay_rs.bundle import FileCollector
 from flay.common.libcst import file_to_node
 from flay.common.logging import log_cst_code
 from flay.common.module_spec import find_all_files_in_module_spec, get_top_level_package
-from libcst import CSTTransformer, Import, ImportFrom
-from libcst import Attribute, Name
+import libcst as cst
 from pathlib import Path
 import typing as t
 from libcst.helpers import get_absolute_module_for_import_or_raise
 import logging
 import os.path
-from libcst.metadata import ScopeProvider
+
 from libcst import MetadataWrapper
 import shutil
 import sys
@@ -21,9 +19,7 @@ from libcst.helpers import get_full_name_for_node
 log = logging.getLogger(__name__)
 
 
-class ImportsTransformer(CSTTransformer):
-    METADATA_DEPENDENCIES = (ScopeProvider,)
-
+class ImportsTransformer(cst.CSTTransformer):
     def __init__(
         self, top_level_package: str, vendor_module_name: str = "_vendor"
     ) -> None:
@@ -36,30 +32,30 @@ class ImportsTransformer(CSTTransformer):
         self._affected_names: set[str] = set()
         self.changes_count = 0
 
-    def visit_Module(self, node: Module) -> bool:
+    def visit_Module(self, node: cst.Module) -> bool:
         self.reset()
         return True
 
-    def _prepend_vendor(self, node: Attribute | Name) -> Attribute:
-        if isinstance(node, Name):
-            new_name = Attribute(
-                value=Attribute(
-                    value=Name(self.top_level_package),
-                    attr=Name(self.vendor_module_name),
+    def _prepend_vendor(self, node: cst.Attribute | cst.Name) -> cst.Attribute:
+        if isinstance(node, cst.Name):
+            new_name = cst.Attribute(
+                value=cst.Attribute(
+                    value=cst.Name(self.top_level_package),
+                    attr=cst.Name(self.vendor_module_name),
                 ),
                 attr=node,
             )
         else:
             deepest_attribute = node
-            while not isinstance(deepest_attribute.value, Name):
-                deepest_attribute = t.cast(Attribute, deepest_attribute.value)
+            while not isinstance(deepest_attribute.value, cst.Name):
+                deepest_attribute = t.cast(cst.Attribute, deepest_attribute.value)
 
             new_name = node.with_deep_changes(
                 deepest_attribute,
-                value=Attribute(
-                    value=Attribute(
-                        value=Name(self.top_level_package),
-                        attr=Name(self.vendor_module_name),
+                value=cst.Attribute(
+                    value=cst.Attribute(
+                        value=cst.Name(self.top_level_package),
+                        attr=cst.Name(self.vendor_module_name),
                     ),
                     attr=deepest_attribute.value,
                 ),
@@ -69,10 +65,10 @@ class ImportsTransformer(CSTTransformer):
 
     def _prepend_vendor_for_import(
         self,
-        node: Attribute | Name,
+        node: cst.Attribute | cst.Name,
         module_spec: str,
         references_need_update: bool = False,
-    ) -> Attribute | Name:
+    ) -> cst.Attribute | cst.Name:
         if module_spec.startswith(self.top_level_package) or in_stdlib(
             get_top_level_package(module_spec)
         ):
@@ -81,7 +77,9 @@ class ImportsTransformer(CSTTransformer):
             self._affected_names.add(full_name)
         return self._prepend_vendor(node)
 
-    def leave_Import(self, original_node: Import, updated_node: Import) -> Import:
+    def leave_Import(
+        self, original_node: cst.Import, updated_node: cst.Import
+    ) -> cst.Import:
         old_names = updated_node.names
         new_names = [
             name_val.with_changes(name=new_name_val)
@@ -108,8 +106,8 @@ class ImportsTransformer(CSTTransformer):
         return updated_node
 
     def leave_ImportFrom(
-        self, original_node: ImportFrom, updated_node: ImportFrom
-    ) -> ImportFrom:
+        self, original_node: cst.ImportFrom, updated_node: cst.ImportFrom
+    ) -> cst.ImportFrom:
         if updated_node.module and not updated_node.relative:
             module_spec = get_absolute_module_for_import_or_raise(None, updated_node)
             old_module = updated_node.module
@@ -128,17 +126,19 @@ class ImportsTransformer(CSTTransformer):
 
     @t.overload
     def _prepend_vendor_to_name(
-        self, original_node: Name, updated_node: Name
-    ) -> Name: ...
+        self, original_node: cst.Name, updated_node: cst.Name
+    ) -> cst.Name: ...
 
     @t.overload
     def _prepend_vendor_to_name(
-        self, original_node: Attribute, updated_node: Attribute
-    ) -> Attribute: ...
+        self, original_node: cst.Attribute, updated_node: cst.Attribute
+    ) -> cst.Attribute: ...
 
     def _prepend_vendor_to_name(
-        self, original_node: Name | Attribute, updated_node: Name | Attribute
-    ) -> Attribute | Name:
+        self,
+        original_node: cst.Name | cst.Attribute,
+        updated_node: cst.Name | cst.Attribute,
+    ) -> cst.Attribute | cst.Name:
         # TODO: we need to make sure that we are inside the scope of the original import
         full_name = get_full_name_for_node(updated_node)
         if full_name in self._affected_names:
@@ -153,12 +153,14 @@ class ImportsTransformer(CSTTransformer):
 
         return updated_node
 
-    def leave_Name(self, original_node: Name, updated_node: Name) -> Name | Attribute:
+    def leave_Name(
+        self, original_node: cst.Name, updated_node: cst.Name
+    ) -> cst.Name | cst.Attribute:
         return self._prepend_vendor_to_name(original_node, updated_node)
 
     def leave_Attribute(
-        self, original_node: Attribute, updated_node: Attribute
-    ) -> Attribute:
+        self, original_node: cst.Attribute, updated_node: cst.Attribute
+    ) -> cst.Attribute:
         return self._prepend_vendor_to_name(original_node, updated_node)
 
 
@@ -166,7 +168,7 @@ def bundle_package(
     module_spec: str, destination_path: Path, vendor_module_name: str = "_vendor"
 ) -> None:
     collector = FileCollector(package=module_spec)
-    files: ModuleCollection = {}
+
     for path in find_all_files_in_module_spec(module_spec):
         module = file_to_node(path)
 
@@ -176,10 +178,9 @@ def bundle_package(
                 if path.match("*/__init__.py")
                 else f"{module_spec}.{path.stem}"
             )
-            files[(found_module_spec, path)] = module
-            visit_batched(module, [collector])
+            collector._process_module(found_module_spec)
 
-    files |= collector.collected_files
+    files = collector.collected_files
     top_level_package = get_top_level_package(module_spec)
 
     vendor_path = destination_path / top_level_package / vendor_module_name
@@ -192,8 +193,11 @@ def bundle_package(
         top_level_package=top_level_package,
         vendor_module_name=vendor_module_name,
     )
-    for (found_module, found_path), module_node in files.items():
-        if module_node:
+    for (found_module, _found_path), module_source in files.items():
+        found_path = Path(_found_path)
+        if module_source:
+            module_node = file_to_node(path)
+            assert module_node is not None
             module_node = MetadataWrapper(module_node, unsafe_skip_copy=True).visit(
                 imports_transformer
             )

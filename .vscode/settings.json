@@ -4,11 +4,17 @@
   "[python]": {
     "editor.defaultFormatter": "charliermarsh.ruff"
   },
+  "[rust]": {
+    "editor.defaultFormatter": "rust-lang.rust-analyzer"
+  },
+  "[toml]": {
+    "editor.defaultFormatter": "tamasfe.even-better-toml"
+  },
   "python.terminal.activateEnvInCurrentTerminal": true,
   "editor.defaultFormatter": "esbenp.prettier-vscode",
   "python.analysis.inlayHints.functionReturnTypes": true,
   "python.analysis.inlayHints.variableTypes": true,
-  "cSpell.words": ["fqns", "setuptools", "treeshake"],
+  "cSpell.words": ["fqns", "pyclass", "rustpython", "setuptools", "treeshake"],
   "cSpell.enabled": true,
   "python.testing.pytestArgs": ["tests"],
   "python.testing.unittestEnabled": false,

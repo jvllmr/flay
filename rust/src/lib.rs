@@ -1,15 +1,29 @@
+mod bundle;
+mod common;
+mod rustpython;
+use bundle::file_collector::FileCollector;
 use pyo3::prelude::*;
 
-/// Formats the sum of two numbers as string.
-#[pyfunction]
-fn sum_as_string(a: usize, b: usize) -> PyResult<String> {
-    Ok((a + b).to_string())
-}
-
-/// A Python module implemented in Rust.
 #[pymodule]
 #[pyo3(name = "_flay_rs")]
-fn flay(_py: Python, m: &PyModule) -> PyResult<()> {
-    m.add_function(wrap_pyfunction!(sum_as_string, m)?)?;
-    Ok(())
+mod flay {
+    use super::*;
+
+    #[pymodule]
+    mod bundle {
+        #[pymodule_export]
+        use super::FileCollector;
+        use super::*;
+
+        #[pymodule_init]
+        fn init(m: &Bound<'_, PyModule>) -> PyResult<()> {
+            Python::with_gil(|py| {
+                let _ = py
+                    .import("sys")?
+                    .getattr("modules")?
+                    .set_item("flay._flay_rs.bundle", m);
+                Ok(())
+            })
+        }
+    }
 }
