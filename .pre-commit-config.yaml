@@ -41,3 +41,11 @@ repos:
         language: system
         entry: .venv/bin/mypy --fast-module-lookup
         pass_filenames: false
+      - id: cargo-fix
+        name: cargo fix
+        description: Fix Rust code
+        language: rust
+        files: \.rs$
+        pass_filenames: false
+        entry: cargo fix
+        args: ["--workspace", "--allow-dirty", "--allow-staged"]
