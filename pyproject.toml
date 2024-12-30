@@ -23,7 +23,7 @@ Source = "https://github.com/jvllmr/flay"
 flay = "flay.cli:cli"
 
 [build-system]
-requires = ["maturin>=1.7.8,<2.0"]
+requires = ["maturin>=1.8.0,<2.0"]
 build-backend = "maturin"
 
 [tool.maturin]
@@ -54,7 +54,7 @@ test = [
   "wheel>=0.45.1",
 ]
 lint = ["mypy>=1.14.0", "ruff>=0.8.4", "pre-commit>=4.0.1"]
-dev = ["nox>=2024.10.9", "maturin>=1.7.8", "maturin-import-hook>=0.2.0"]
+dev = ["nox>=2024.10.9", "maturin>=1.8.0", "maturin-import-hook>=0.2.0"]
 debug = ["tuna>=0.5.11"]
 types = ["types-setuptools>=75.6.0.20241223"]
 
