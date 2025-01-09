@@ -9,9 +9,7 @@ name = "flay"
 crate-type = ["cdylib"]
 
 [dependencies]
-fern = { version = "0.7.1", features = ["colored"] }
-log = "0.4.22"
 pyo3 = { version = "0.23.0", features = ["extension-module"] }
-rustpython-ast = { version = "0.4.0", features = ["visitor", "unparse"] }
-rustpython-literal = "0.4.0"
+rustpython-ast = { version = "0.4.0", features = ["visitor"] }
 rustpython-parser = { version = "0.4.0" }
+rustpython-unparser = "0.1.1"

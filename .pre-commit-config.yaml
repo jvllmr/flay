@@ -5,9 +5,10 @@ ci:
 
 repos:
   - repo: https://github.com/AndrejOrsula/pre-commit-cargo
-    rev: 0.3.0
+    rev: 0.4.0
     hooks:
       - id: cargo-fmt
+      - id: cargo-fix
   - repo: https://github.com/asottile/pyupgrade
     rev: v3.19.0
     hooks:
@@ -42,11 +43,3 @@ repos:
         language: system
         entry: .venv/bin/mypy --fast-module-lookup
         pass_filenames: false
-      - id: cargo-fix
-        name: cargo fix
-        description: Fix Rust code
-        language: rust
-        files: \.rs$
-        pass_filenames: false
-        entry: cargo fix
-        args: ["--workspace", "--allow-dirty", "--allow-staged"]

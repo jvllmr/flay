@@ -6,6 +6,7 @@ import pytest
 import sys
 from flay.common.exc import FlayFileNotFoundError
 from flay.bundle.package import bundle_package
+import ast
 
 if t.TYPE_CHECKING:
     from .conftest import RunBundlePackageT
@@ -43,7 +44,7 @@ def test_simple_bundle_hello_world(run_bundle_package: RunBundlePackageT) -> Non
             with open(sub_path2 + os.path.sep + file2) as f:
                 content2 = f.read()
 
-            assert content2 == content1
+            assert ast.dump(ast.parse(content2)) == ast.dump(ast.parse(content1))
 
 
 def test_bundle_c_extension(run_bundle_package: RunBundlePackageT) -> None:
@@ -87,7 +88,7 @@ def test_bundle_vendor_bundle(
     assert f"import vendor_bundle.{vendor_module_name}.rich.emoji" in init_file_content
 
     assert (
-        f'heart_emoji = vendor_bundle.{vendor_module_name}.rich.emoji.Emoji("heart")'
+        f"heart_emoji = vendor_bundle.{vendor_module_name}.rich.emoji.Emoji('heart')"
         in init_file_content
     )
     assert (
@@ -99,12 +100,12 @@ def test_bundle_vendor_bundle(
         in init_file_content
     )
     assert (
-        'cst.parse_expression("assert answer_of_universe == 42")' in init_file_content
+        "cst.parse_expression('assert answer_of_universe == 42')" in init_file_content
     )
-    assert "tree = ensure_type(\n" in init_file_content
+    assert "tree = ensure_type(" in init_file_content
     assert "except ClickException:" in init_file_content
     assert (
-        f'vendor_bundle.{vendor_module_name}.typer.echo("Something went wrong...")'
+        f"vendor_bundle.{vendor_module_name}.typer.echo('Something went wrong...')"
         in init_file_content
     )
     assert (
