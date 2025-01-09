@@ -1,11 +1,12 @@
+use crate::common::module_spec::{get_top_level_package, is_in_std_lib};
 use pyo3::pyfunction;
 use rustpython_ast::{
-    text_size::TextRange, Alias, Fold, Identifier, Stmt, StmtImport, StmtImportFrom, Suite,
+    fold::fold_expr, text_size::TextRange, Alias, Expr, ExprAttribute, ExprName, Fold, Identifier,
+    StmtImport, StmtImportFrom, Suite,
 };
-use rustpython_parser::{Parse, ParseError};
+use rustpython_parser::Parse;
+use rustpython_unparser::Unparser;
 use std::collections::HashSet;
-
-use crate::common::module_spec::{get_top_level_package, is_in_std_lib};
 
 struct ImportsTransformer {
     top_level_package: String,
@@ -21,11 +22,14 @@ impl ImportsTransformer {
             affected_names: HashSet::new(),
         }
     }
+
+    fn get_vendor_string(&self) -> String {
+        return self.top_level_package.to_owned() + "." + &self.vendor_module_name;
+    }
+
     fn _prepend_vendor(&self, node: &Identifier) -> Identifier {
         let node_str = node.as_str();
-        return Identifier::from(
-            self.top_level_package.to_owned() + "." + &self.vendor_module_name + "." + node_str,
-        );
+        return Identifier::from(self.get_vendor_string() + "." + node_str);
     }
 
     fn _prepend_vendor_import<'a>(
@@ -50,7 +54,7 @@ impl Fold<TextRange> for ImportsTransformer {
     fn fold_stmt_import(
         &mut self,
         node: StmtImport<TextRange>,
-    ) -> Result<StmtImport<TextRange>, ParseError> {
+    ) -> Result<StmtImport<TextRange>, std::convert::Infallible> {
         Ok(StmtImport {
             names: node
                 .names
@@ -72,8 +76,8 @@ impl Fold<TextRange> for ImportsTransformer {
     fn fold_stmt_import_from(
         &mut self,
         node: StmtImportFrom<TextRange>,
-    ) -> Result<StmtImportFrom<TextRange>, ParseError> {
-        if node.module.is_some() && node.level.is_none() {
+    ) -> Result<StmtImportFrom<TextRange>, std::convert::Infallible> {
+        if node.module.is_some() && node.level.is_none_or(|v| v.to_usize() == 0) {
             let module_node = node.module.unwrap();
             let module_spec = module_node.as_str();
             let new_module = Option::from(self._prepend_vendor_import(
@@ -91,9 +95,71 @@ impl Fold<TextRange> for ImportsTransformer {
         Ok(node)
     }
 
+    fn fold_expr_attribute(
+        &mut self,
+        node: ExprAttribute<TextRange>,
+    ) -> Result<ExprAttribute<Self::TargetU>, Self::Error> {
+        let mut full_name = node.attr.to_string();
+
+        let mut deepest_attribute = node.clone();
+        loop {
+            let value_expr = *deepest_attribute.value.clone();
+
+            match value_expr {
+                Expr::Attribute(attr) => {
+                    full_name = format!("{}.{}", attr.attr, full_name);
+                    deepest_attribute = attr;
+                }
+                Expr::Name(name) => {
+                    full_name = format!("{}.{}", name.id, full_name);
+                    break;
+                }
+                _ => {
+                    fold_expr(self, value_expr)?;
+                    break;
+                }
+            }
+        }
+
+        let name_parts: Vec<&str> = full_name.rsplitn(2, ".").collect();
+        let mut module_part = name_parts[0];
+        if name_parts.len() > 1 {
+            module_part = name_parts[1];
+        }
+        if self.affected_names.contains(module_part) {
+            let new_attribute = ExprAttribute {
+                attr: Identifier::from(full_name),
+                range: node.range,
+                ctx: node.ctx,
+                value: Box::new(Expr::Name(ExprName {
+                    range: deepest_attribute.range,
+                    id: Identifier::from(self.get_vendor_string()),
+                    ctx: deepest_attribute.ctx,
+                })),
+            };
+            return Ok(new_attribute);
+        }
+
+        Ok(node)
+    }
+
+    fn fold_expr_name(
+        &mut self,
+        node: ExprName<TextRange>,
+    ) -> Result<ExprName<Self::TargetU>, Self::Error> {
+        if self.affected_names.contains(node.id.as_str()) {
+            return Ok(ExprName {
+                id: self._prepend_vendor(&node.id),
+                ctx: node.ctx,
+                range: node.range,
+            });
+        }
+        Ok(node)
+    }
+
     type TargetU = TextRange;
 
-    type Error = ParseError;
+    type Error = std::convert::Infallible;
 
     type UserContext = bool;
 
@@ -115,16 +181,17 @@ pub fn transform_imports(
     source_path: &str,
     top_level_package: &str,
     vendor_module_name: &str,
-) {
-    let asts = Suite::parse(source, source_path).unwrap();
-    let mut new_asts: Vec<Stmt> = Vec::new();
-    // let unparser = Unparser { f: ??? };
-    asts.iter().for_each(|ast| {
-        let mut transformer = ImportsTransformer::new(
-            top_level_package.to_string(),
-            vendor_module_name.to_string(),
-        );
-        let new_ast = transformer.fold_stmt(ast.to_owned());
-        new_asts.push(new_ast.unwrap());
+) -> String {
+    let stmts = Suite::parse(source, source_path).unwrap();
+    let mut unparser = Unparser::new();
+    let mut transformer = ImportsTransformer::new(
+        top_level_package.to_string(),
+        vendor_module_name.to_string(),
+    );
+    stmts.iter().for_each(|stmt| {
+        let new_stmt = transformer.fold_stmt(stmt.to_owned()).unwrap();
+        unparser.unparse_stmt(&new_stmt);
     });
+    let new_source = unparser.source;
+    return new_source;
 }

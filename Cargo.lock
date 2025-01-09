@@ -75,8 +75,8 @@ version = "0.1.0"
 dependencies = [
  "pyo3",
  "rustpython-ast",
- "rustpython-literal",
  "rustpython-parser",
+ "rustpython-unparser",
 ]
 
 [[package]]
@@ -497,7 +497,6 @@ checksum = "4cdaf8ee5c1473b993b398c174641d3aa9da847af36e8d5eb8291930b72f31a5"
 dependencies = [
  "is-macro",
  "malachite-bigint",
- "rustpython-literal",
  "rustpython-parser-core",
  "static_assertions",
 ]
@@ -561,6 +560,16 @@ dependencies = [
 ]
 
 [[package]]
+name = "rustpython-unparser"
+version = "0.1.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "282c5b5fa8876c23c9cf92500a06086fd0946358261336143248bf8448d6fd03"
+dependencies = [
+ "rustpython-ast",
+ "rustpython-literal",
+]
+
+[[package]]
 name = "ryu"
 version = "1.0.18"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -586,9 +595,9 @@ checksum = "a2eb9349b6444b326872e140eb1cf5e7c522154d69e7a0ffb0fb81c06b37543f"
 
 [[package]]
 name = "syn"
-version = "2.0.93"
+version = "2.0.94"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "9c786062daee0d6db1132800e623df74274a0a87322d8e183338e01b3d98d058"
+checksum = "987bc0be1cdea8b10216bd06e2ca407d40b9543468fafd3ddfb02f36e77f71f3"
 dependencies = [
  "proc-macro2",
  "quote",
