@@ -122,7 +122,7 @@ class ReferencesCounter(CSTVisitor):
 
         for fqn in fq_names:
             self.increase(fqn)
-            log.debug(f"Increased references count for {fqn.name}")
+            log.debug("Increased references count for %s", fqn)
 
     def has_references_for(self, node: cst.CSTNode) -> bool:
         fq_names = self.get_metadata(FullyQualifiedNameProvider, node, default=None)
@@ -234,7 +234,7 @@ def treeshake_package(
 
         # __main__.py should be preserved
         if file_path.endswith("__main__.py"):
-            log.debug(f"File {file_path} will be preserved")
+            log.debug("File %s will be preserved", file_path)
             fqnames = file_module.resolve(FullyQualifiedNameProvider)
             for fqns in fqnames.values():
                 for fqn in fqns:
@@ -246,12 +246,15 @@ def treeshake_package(
     # count references until no new references get added
     # NOTE: maybe follow imports instead? should be taken into consideration for future improvements
     while new_references_count:
-        log.debug(f"Treeshake reference counter iteration {treeshake_iteration}")
+        log.debug(
+            "Treeshake reference counter iteration %s",
+            treeshake_iteration,
+        )
         treeshake_iteration += 1
         references_counter.reset()
         for file_path, file_module in file_modules.items():
             module_spec = known_module_specs[file_path]
-            log.debug(f"Start processing referencs for module {module_spec}")
+            log.debug("Start processing referencs for module %s", module_spec)
             references_counter.module_spec = module_spec
             file_module.visit(references_counter)
             # TODO: find out if this step is necessary; it could be that both dicts share the same identity
@@ -268,7 +271,7 @@ def treeshake_package(
 
         if not new_module.body and not file_path.endswith("__init__.py"):
             os.remove(file_path)
-            log.debug(f"Removed file {file_path}")
+            log.debug("Removed file %s", file_path)
             stats["Module"] += 1
             safe_remove_empty_dir(file_path)
         elif (
@@ -277,13 +280,13 @@ def treeshake_package(
             and len(os.listdir(os.path.dirname(file_path))) == 1
         ):
             os.remove(file_path)
-            log.debug(f"Removed file {file_path}")
+            log.debug("Removed file %s", file_path)
             stats["Module"] += 1
             safe_remove_empty_dir(file_path)
         else:
             with open(file_path, "w") as f:
                 f.write(new_module.code)
-            log.debug(f"Processed code of {file_path}")
+            log.debug("Processed code of %s", file_path)
     stats |= nodes_remover.stats
 
     return stats

@@ -36,8 +36,8 @@ def get_import_from_absolute_module_spec(
     elif parent_package is not None and len(node.relative) == 1:
         res = [parent_package]
         if not isinstance(node.names, cst.ImportStar):
-            for name in node.names:
-                res.append(f"{parent_package}.{name.evaluated_name}")
+            res.extend(f"{parent_package}.{name.evaluated_name}" for name in node.names)
+
         return res
 
     raise ParsingError(  # pragma: no cover

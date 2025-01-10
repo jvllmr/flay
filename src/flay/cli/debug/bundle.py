@@ -19,7 +19,7 @@ def bundle_collector(
 ) -> None:
     collector = FileCollector(package=module_spec)
     for path in find_all_files_in_module_spec(module_spec):
-        log.debug(f"Found: {path}")
+        log.debug("Found: %s", path)
         file_module_spec = (
             module_spec
             if path.name == "__init__.py"

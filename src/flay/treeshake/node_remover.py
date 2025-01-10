@@ -156,8 +156,8 @@ class NodeRemover(cst.CSTTransformer):
         new_node, removed_message = handler(self, original_node, updated_node)
 
         if isinstance(new_node, cst.RemovalSentinel):
-            log.debug(f"Removed {removed_message}")
+            log.debug("Removed %s", removed_message)
             return cst.RemoveFromParent()
         if removed_message is not None:
-            log.debug(f"Partial remove {removed_message}")
+            log.debug("Partial remove %s", removed_message)
         return new_node
