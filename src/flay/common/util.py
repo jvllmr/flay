@@ -14,7 +14,7 @@ def safe_remove_empty_dir(path: str) -> None:
     while directory_path:
         if not os.listdir(directory_path):
             os.rmdir(directory_path)
-            log.debug(f"Removed directory {directory_path}")
+            log.debug("Removed directory %s", directory_path)
             # TODO: never delete a root path just to be sure -> handling on windows?
             if directory_path != "/":
                 directory_path = os.path.dirname(directory_path)

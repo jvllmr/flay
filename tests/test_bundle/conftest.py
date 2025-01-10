@@ -38,7 +38,7 @@ def run_bundle_package(tmp_path: Path) -> RunBundlePackageT:
                 "install",
                 str(pre_bundle_path / package_name),
             ]
-            print(
+            print(  # noqa: T201
                 f"Running to install {package_name}:",
                 " ".join(install_cmd),
             )

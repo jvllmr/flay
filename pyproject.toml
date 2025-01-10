@@ -75,3 +75,21 @@ exclude_also = [
   "if TYPE_CHECKING:",
   "if t.TYPE_CHECKING:",
 ]
+
+[tool.ruff]
+exclude = [
+  ".venv",
+  "tests/test_bundle/packages",
+  "tests/test_treeshake/packages",
+]
+target-version = "py312"
+
+[tool.ruff.lint]
+ignore = ["UP038"]
+select = ["RUF", "PERF", "G", "UP", "T", "ICN"]
+
+[tool.ruff.lint.flake8-import-conventions]
+banned-from = ["typing"]
+
+[tool.ruff.lint.flake8-import-conventions.extend-aliases]
+typing = "t"

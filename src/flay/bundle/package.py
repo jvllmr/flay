@@ -66,7 +66,11 @@ def bundle_package(
                 module_source,
                 encoding="utf-8" if sys.platform.startswith("win") else None,
             )
-            log.debug(f"Written new source of {found_path} to {target_file}")
+            log.debug(
+                "Written new source of %s to %s",
+                found_path,
+                target_file,
+            )
         else:
             shutil.copy2(str(found_path), str(target_file))
-            log.debug(f"Copied {found_path} to {target_file}")
+            log.debug("Copied %s to %s", found_path, target_file)
