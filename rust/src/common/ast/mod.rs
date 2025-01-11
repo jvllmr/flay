@@ -1,3 +1,5 @@
+pub mod full_name;
+
 use pyo3::{
     exceptions::{PyImportError, PyValueError},
     PyResult,
@@ -50,7 +52,7 @@ pub fn get_import_from_absolute_module_spec(
     if node.level.is_some_and(|level| level.to_usize() == 1) {
         let mut result = vec![parent_package.to_string()];
         for name in &node.names {
-            let name_str = name.name.parse::<String>().unwrap();
+            let name_str = name.name.to_string();
             if name_str != "*" {
                 result.push(name_str);
             }
