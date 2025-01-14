@@ -10,7 +10,7 @@ repos:
       - id: cargo-fmt
       - id: cargo-fix
   - repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: "v0.6.4"
+    rev: "v0.9.1"
     hooks:
       - id: ruff
         args:
@@ -24,7 +24,7 @@ repos:
           - prettier@latest
           - prettier-plugin-toml@latest
   - repo: https://github.com/pre-commit/pre-commit-hooks
-    rev: v4.6.0
+    rev: v5.0.0
     hooks:
       - id: check-yaml
       - id: end-of-file-fixer
