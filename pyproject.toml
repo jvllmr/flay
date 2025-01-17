@@ -82,7 +82,7 @@ exclude = [
   "tests/test_bundle/packages",
   "tests/test_treeshake/packages",
 ]
-target-version = "py312"
+target-version = "py310"
 
 [tool.ruff.lint]
 ignore = ["UP038"]
