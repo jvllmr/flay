@@ -65,10 +65,12 @@ impl ImportsTrackingProvider {
                     self.active_star_imports.insert(module_spec.to_string());
                 } else if let Some(asname) = &name.asname {
                     self.active_imports
-                        .insert(asname.to_string(), module_spec.to_string());
+                        .insert(asname.to_string(), format!("{}.{}", module_spec, name.name));
                 } else {
-                    self.active_imports
-                        .insert(name.name.to_string(), module_spec.to_string());
+                    self.active_imports.insert(
+                        name.name.to_string(),
+                        format!("{}.{}", module_spec, name.name),
+                    );
                 }
             }
         }

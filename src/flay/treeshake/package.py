@@ -4,6 +4,7 @@ from libcst import (
     MetadataWrapper,
 )
 
+from flay._flay_rs import ReferencesCounter
 from flay.common.libcst import get_import_from_absolute_module_spec
 from flay.common.module_spec import get_parent_package
 from .node_remover import NodeRemover
@@ -23,175 +24,6 @@ from libcst.helpers import get_full_name_for_node
 from collections import OrderedDict
 
 log = logging.getLogger(__name__)
-
-
-def is_if_name_main(node: cst.CSTNode) -> bool:
-    match node:
-        case (
-            cst.If(
-                test=cst.Comparison(
-                    left=cst.Name(
-                        value="__name__",
-                    ),
-                    comparisons=[
-                        cst.ComparisonTarget(
-                            operator=cst.Equal(),
-                            comparator=cst.SimpleString(
-                                value='"__main__"',
-                            ),
-                        ),
-                    ],
-                )
-            )
-            | cst.If(
-                test=cst.Comparison(
-                    left=cst.SimpleString(
-                        value='"__main__"',
-                    ),
-                    comparisons=[
-                        cst.ComparisonTarget(
-                            operator=cst.Equal(),
-                            comparator=cst.Name(
-                                value="__name__",
-                            ),
-                        ),
-                    ],
-                )
-            )
-        ):
-            return True
-        case _:
-            return False
-
-
-class ReferenceBumper(CSTVisitor):
-    METADATA_DEPENENCIES = (FullyQualifiedNameProvider,)
-
-    def __init__(self, references_counter: ReferencesCounter):
-        self.references_counter = references_counter
-
-    def on_visit(self, node: cst.CSTNode) -> bool:
-        self.references_counter.maybe_increase(node)
-        return True
-
-
-class CustomReferenceBumper(CSTVisitor):
-    METADATA_DEPENENCIES = (FullyQualifiedNameProvider,)
-
-    def __init__(self, custom_handler: t.Callable[[cst.CSTNode], None]):
-        self.custom_handler = custom_handler
-
-    def on_visit(self, node: cst.CSTNode) -> bool:
-        self.custom_handler(node)
-        return True
-
-
-class ReferencesCounter(CSTVisitor):
-    METADATA_DEPENDENCIES = (FullyQualifiedNameProvider, ScopeProvider)
-    module: cst.Module
-
-    def __init__(self, references_counts: dict[str, int]) -> None:
-        self.references_counts: dict[str, int] = references_counts
-        self.new_references_count = 0
-        self.module_spec = ""
-
-        self.bumper = ReferenceBumper(self)
-        super().__init__()
-
-    @property
-    def module_spec_has_references(self) -> bool:
-        for key in self.references_counts.keys():
-            if key.startswith(self.module_spec) and self.references_counts[key] > 0:
-                return True
-        return False  # pragma: no cover
-
-    def reset(self) -> None:
-        self.new_references_count = 0
-
-    def increase(self, fqn: QualifiedName | str) -> None:
-        key = fqn if isinstance(fqn, str) else fqn.name
-        old_reference_counts = self.references_counts[key]
-        self.references_counts[key] = old_reference_counts + 1
-        if old_reference_counts == 0:
-            self.new_references_count += 1
-
-    def maybe_increase(self, node: cst.CSTNode) -> None:
-        fq_names = self.get_metadata(FullyQualifiedNameProvider, node, default=None)
-        if not fq_names:
-            return
-
-        for fqn in fq_names:
-            self.increase(fqn)
-            log.debug("Increased references count for %s", fqn)
-
-    def has_references_for(self, node: cst.CSTNode) -> bool:
-        fq_names = self.get_metadata(FullyQualifiedNameProvider, node, default=None)
-        if not fq_names:
-            return False
-
-        for fqn in fq_names:
-            if self.references_counts[fqn.name] > 0:
-                return True
-
-        return False
-
-    def on_visit(self, node: cst.CSTNode) -> bool:
-        match node:
-            case (
-                cst.ClassDef(body=body, decorators=decorators)
-                | cst.FunctionDef(body=body, decorators=decorators)
-            ):
-                if decorators or self.has_references_for(node):
-                    # TODO: accessing children this way with libcst is heavy
-                    # stdlib ast solves this in less costly way, but then receiving FQNs is not simple
-                    # -> only implement relevant visitors to bump references?
-                    self.maybe_increase(node)
-                    # NOTE: maybe discard unused ClassVars/instance attributes in the future
-                    body.visit(self.bumper)
-                return False
-            case cst.Assign(targets=targets) | cst.AnnAssign(target=targets):
-                if isinstance(targets, cst.BaseAssignTargetExpression):
-                    targets = [targets]
-                for target in targets:  # type: ignore[attr-defined]
-                    if self.has_references_for(target):
-                        self.maybe_increase(node)
-                        node.visit(self.bumper)
-                        break
-                return True
-            case cst.Call():
-                scope = self.get_metadata(ScopeProvider, node, default=None)
-                if not scope:  # pragma: no cover
-                    return True
-                if scope is scope.globals:
-                    self.maybe_increase(node)
-                    node.visit(self.bumper)
-                return False
-            case cst.Module(body=body):
-                self.module = node
-                for body_node in body:
-                    if isinstance(body_node, cst.If) and is_if_name_main(body_node):
-                        self.maybe_increase(node)
-
-                        for accepted_node in body_node.body.body:
-                            self.maybe_increase(accepted_node)
-                            accepted_node.visit(self.bumper)
-
-                return True
-            case cst.ImportFrom(names=cst.ImportStar()):
-                if self.module_spec_has_references:
-                    module_specs = get_import_from_absolute_module_spec(
-                        node, get_parent_package(self.module_spec)
-                    )
-                    for module_spec in module_specs:
-                        custom_bumper = CustomReferenceBumper(
-                            lambda node: self.increase(
-                                f"{module_spec}.{get_full_name_for_node(node)}"
-                            )
-                        )
-                        self.module.visit(custom_bumper)
-                return False
-            case _:
-                return True
 
 
 def treeshake_package(
@@ -240,7 +72,6 @@ def treeshake_package(
                 for fqn in fqns:
                     references_counts[fqn.name] = references_counts[fqn.name] + 1
                     new_references_count += 1
-
     references_counter = ReferencesCounter(references_counts)
     treeshake_iteration = 1
     # count references until no new references get added
@@ -251,21 +82,27 @@ def treeshake_package(
             treeshake_iteration,
         )
         treeshake_iteration += 1
-        references_counter.reset()
+        references_counter.reset_counter()
         for file_path, file_module in file_modules.items():
             module_spec = known_module_specs[file_path]
+
             log.debug("Start processing referencs for module %s", module_spec)
-            references_counter.module_spec = module_spec
-            file_module.visit(references_counter)
-            # TODO: find out if this step is necessary; it could be that both dicts share the same identity
-            references_counts |= references_counter.references_counts
-            new_references_count = references_counter.new_references_count
+            references_counter.visit_module(
+                module_spec=module_spec, source_path=file_path
+            )
+
+        new_references_count = references_counter.new_references_count
+    references_counts |= references_counter.references_counts
 
     # remove nodes without references
     nodes_remover = NodeRemover(references_counts, set(known_module_specs.values()))
     for file_path, file_module in file_modules.items():
         module_spec = known_module_specs[file_path]
-        parent_package = get_parent_package(module_spec)
+        parent_package = (
+            module_spec
+            if file_path.endswith("__init__.py") or file_path.endswith("__main__.py")
+            else get_parent_package(module_spec)
+        )
         nodes_remover.parent_package = parent_package
         new_module = file_module.visit(nodes_remover)
 

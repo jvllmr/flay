@@ -15,7 +15,7 @@ pub struct FullyQualifiedNameProviderScope {
 }
 
 pub struct FullyQualifiedNameProvider {
-    name_context: TNameContext,
+    pub name_context: TNameContext,
     module_spec: String,
     imports_provider: ImportsTrackingProvider,
 }
@@ -29,9 +29,17 @@ impl FullyQualifiedNameProvider {
         }
     }
 
+    fn maybe_format_with_name_context(&self, name: &str) -> String {
+        if self.name_context.len() > 0 {
+            format!("{}.{}", self.name_context, name)
+        } else {
+            name.to_string()
+        }
+    }
+
     fn get_expr_qualified_name(&self, expr: &Expr) -> Option<String> {
         get_full_name_for_expr(expr).map(|name| match expr {
-            Expr::NamedExpr(_) => format!("{}.{}", self.name_context, &name),
+            Expr::NamedExpr(_) => self.maybe_format_with_name_context(&name),
             _ => name,
         })
     }
@@ -48,7 +56,7 @@ impl FullyQualifiedNameProvider {
                 | Stmt::ClassDef(_)
                 | Stmt::FunctionDef(_)
                 | Stmt::AsyncFunctionDef(_) => {
-                    format!("{}.{}", self.name_context, name)
+                    self.maybe_format_with_name_context(name)
                 }
                 _ => name.to_string(),
             })

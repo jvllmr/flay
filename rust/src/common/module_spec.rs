@@ -4,6 +4,9 @@ use pyo3::{
 };
 
 pub fn get_parent_package(package: &str) -> String {
+    if !package.contains(".") {
+        return package.to_owned();
+    }
     let parts: Vec<&str> = package.split(".").collect();
     let parent_package_parts = &parts[..parts.len() - 1];
 
