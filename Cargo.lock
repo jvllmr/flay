@@ -561,9 +561,9 @@ dependencies = [
 
 [[package]]
 name = "rustpython-unparser"
-version = "0.1.1"
+version = "0.1.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "282c5b5fa8876c23c9cf92500a06086fd0946358261336143248bf8448d6fd03"
+checksum = "316130974298a60680e35889d106d6ffed450f9be091239c80a80fc01cafebdc"
 dependencies = [
  "rustpython-ast",
  "rustpython-literal",
