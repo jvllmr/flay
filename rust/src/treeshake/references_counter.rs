@@ -8,15 +8,13 @@ use pyo3::{pyclass, pymethods};
 use rustpython_ast::{Expr, ExprCompare, Stmt, StmtImport, StmtImportFrom, Suite, Visitor};
 use rustpython_parser::Parse;
 
-use crate::{
-    common::{
-        ast::{
-            full_name::{get_full_name_for_expr, get_full_name_for_stmt},
-            get_import_from_absolute_module_spec,
-        },
-        module_spec::get_parent_package,
+use crate::common::{
+    ast::{
+        full_name::{get_full_name_for_expr, get_full_name_for_stmt},
+        get_import_from_absolute_module_spec,
+        providers::fully_qualified_name_provider::FullyQualifiedNameProvider,
     },
-    providers::fully_qualified_name_provider::FullyQualifiedNameProvider,
+    module_spec::get_parent_package,
 };
 
 #[pyclass]

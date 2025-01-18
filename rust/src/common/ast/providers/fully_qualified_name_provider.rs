@@ -107,9 +107,9 @@ impl FullyQualifiedNameProvider {
     }
 
     pub fn enter_scope(&mut self, stmt: &Stmt) -> FullyQualifiedNameProviderScope {
-        let full_names = get_full_name_for_stmt(stmt, &self.parent_package);
         let old_name_context: Option<TNameContext> = match stmt {
             Stmt::ClassDef(_) | Stmt::FunctionDef(_) | Stmt::AsyncFunctionDef(_) => {
+                let full_names = get_full_name_for_stmt(stmt, &self.parent_package);
                 let mut ret_value: Option<TNameContext> = None;
                 if full_names.len() == 1 {
                     ret_value = Some(self.name_context.clone());

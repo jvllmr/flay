@@ -1,6 +1,5 @@
 mod bundle;
 mod common;
-mod providers;
 mod treeshake;
 use bundle::file_collector::FileCollector;
 use bundle::imports_transformer::transform_imports;
