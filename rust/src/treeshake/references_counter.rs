@@ -17,6 +17,49 @@ use crate::common::{
     module_spec::get_parent_package,
 };
 
+pub trait ReferencesHolder {
+    fn get_references_counts(&self) -> &HashMap<String, usize>;
+    fn get_names_provider(&self) -> &FullyQualifiedNameProvider;
+    fn get_source_path(&self) -> &PathBuf;
+    fn get_module_spec(&self) -> &String;
+
+    fn module_spec_has_references(&self) -> bool {
+        let references_counts = self.get_references_counts();
+        let module_spec = self.get_module_spec();
+        for (key, count) in references_counts {
+            if key.starts_with(module_spec) && *count > 0 {
+                return true;
+            }
+        }
+        false
+    }
+
+    fn has_references_for_stmt(&self, stmt: &Stmt) -> bool {
+        let names_provider = self.get_names_provider();
+        let references_counts = self.get_references_counts();
+        for fqn in names_provider.get_stmt_fully_qualified_name(stmt) {
+            // TODO: ??? this looks wrong; someone with more rust xp please help
+            if references_counts.get(&fqn).unwrap_or(&(0 as usize)) > &0 {
+                return true;
+            }
+        }
+        false
+    }
+
+    fn is_in_package(&self) -> bool {
+        let source_path = self.get_source_path();
+        source_path.ends_with("__init__.py") || source_path.ends_with("__main__.py")
+    }
+
+    fn get_parent_package(&self) -> String {
+        let module_spec = self.get_module_spec();
+        if self.is_in_package() {
+            return module_spec.to_owned();
+        }
+        return get_parent_package(&module_spec);
+    }
+}
+
 #[pyclass]
 pub struct ReferencesCounter {
     names_provider: FullyQualifiedNameProvider,
@@ -87,15 +130,6 @@ impl ReferencesCounter {
         self.names_provider.name_context.len() == 0
     }
 
-    fn module_spec_has_references(&self) -> bool {
-        for (key, count) in &self.references_counts {
-            if key.starts_with(&self.module_spec) && *count > 0 {
-                return true;
-            }
-        }
-        false
-    }
-
     fn maybe_increase_stmt(&mut self, stmt: &Stmt) {
         for fqn in self.names_provider.get_stmt_fully_qualified_name(stmt) {
             self.increase(&fqn);
@@ -123,27 +157,6 @@ impl ReferencesCounter {
                 }
             }
         }
-    }
-
-    fn has_references_for_stmt(&self, stmt: &Stmt) -> bool {
-        for fqn in self.names_provider.get_stmt_fully_qualified_name(stmt) {
-            // TODO: ??? this looks wrong; someone with more rust xp please help
-            if self.references_counts.get(&fqn).unwrap_or(&(0 as usize)) > &0 {
-                return true;
-            }
-        }
-        false
-    }
-
-    fn is_in_package(&self) -> bool {
-        self.source_path.ends_with("__init__.py") || self.source_path.ends_with("__main__.py")
-    }
-
-    fn get_parent_package(&self) -> String {
-        if self.is_in_package() {
-            return self.module_spec.to_owned();
-        }
-        return get_parent_package(&self.module_spec);
     }
 }
 
@@ -181,6 +194,23 @@ fn is_if_name_main(expr: &Expr) -> bool {
     }
 
     return false;
+}
+
+impl ReferencesHolder for ReferencesCounter {
+    fn get_module_spec(&self) -> &String {
+        &self.module_spec
+    }
+
+    fn get_source_path(&self) -> &PathBuf {
+        &self.source_path
+    }
+    fn get_names_provider(&self) -> &FullyQualifiedNameProvider {
+        &self.names_provider
+    }
+
+    fn get_references_counts(&self) -> &HashMap<String, usize> {
+        &self.references_counts
+    }
 }
 
 impl Visitor for ReferencesCounter {
