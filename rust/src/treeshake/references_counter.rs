@@ -38,7 +38,7 @@ impl ReferencesCounter {
     fn new(references_counts: HashMap<String, usize>) -> Self {
         ReferencesCounter {
             module_spec: String::new(),
-            names_provider: FullyQualifiedNameProvider::new(""),
+            names_provider: FullyQualifiedNameProvider::new("", ""),
             references_counts,
             always_bump_context: false,
             new_references_count: 0,
@@ -57,9 +57,11 @@ impl ReferencesCounter {
         source_path: PathBuf,
     ) -> Result<(), std::io::Error> {
         self.always_bump_context = false;
-        self.names_provider = FullyQualifiedNameProvider::new(&module_spec);
         self.module_spec = module_spec;
         self.source_path = source_path;
+        self.names_provider =
+            FullyQualifiedNameProvider::new(&self.module_spec, &self.get_parent_package());
+
         let file_content = fs::read_to_string(&self.source_path)?;
         let stmts = Suite::parse(&file_content, &self.source_path.to_str().unwrap()).unwrap();
         for stmt in stmts {
@@ -104,7 +106,7 @@ impl ReferencesCounter {
         // bump for this node because it is a global name that could be imported somewhere else via star import
         if self.import_star_module_specs.len() > 0 {
             for module_spec in self.import_star_module_specs.to_owned() {
-                for full_name in get_full_name_for_stmt(stmt) {
+                for full_name in get_full_name_for_stmt(stmt, &self.get_parent_package()) {
                     self.increase(&format!("{}.{}", module_spec, full_name));
                 }
             }
@@ -191,20 +193,6 @@ impl Visitor for ReferencesCounter {
         }
 
         match &stmt {
-            Stmt::Expr(expr) => {
-                let expr_value = *expr.value.to_owned();
-
-                match &expr_value {
-                    Expr::Call(_) => {
-                        if self.is_global_scope() && self.module_spec_has_references() {
-                            self.maybe_increase_expr(&expr_value);
-                            self.always_bump_context = true;
-                        }
-                    }
-                    _ => {}
-                }
-            }
-
             Stmt::ClassDef(class_def) => {
                 if class_def.decorator_list.len() > 0 || self.has_references_for_stmt(&stmt) {
                     self.maybe_increase_stmt(&stmt);
@@ -261,10 +249,25 @@ impl Visitor for ReferencesCounter {
     }
 
     fn visit_expr(&mut self, expr: Expr) {
+        let can_reset_context = !self.always_bump_context;
         if self.always_bump_context {
             self.maybe_increase_expr(&expr);
         };
+
+        match expr {
+            Expr::Call(_) => {
+                if self.is_global_scope() && self.module_spec_has_references() {
+                    self.maybe_increase_expr(&expr);
+                    self.always_bump_context = true;
+                }
+            }
+            _ => {}
+        }
+
         self.generic_visit_expr(expr);
+        if can_reset_context {
+            self.always_bump_context = false;
+        }
     }
 
     fn visit_stmt_import(&mut self, node: StmtImport) {
