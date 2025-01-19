@@ -1,9 +1,13 @@
 use rustpython_ast::{
-    Alias, Arg, ArgWithDefault, Arguments, ExceptHandler, ExceptHandlerExceptHandler, Expr, Stmt,
-    StmtAnnAssign, StmtAssert, StmtAsyncFor, StmtAsyncFunctionDef, StmtAsyncWith, StmtBreak,
-    StmtContinue, StmtDelete, StmtExpr, StmtFor, StmtFunctionDef, StmtGlobal, StmtImport,
-    StmtImportFrom, StmtNonlocal, StmtPass, StmtRaise, StmtReturn, StmtTry, StmtTryStar, StmtWith,
-    TypeParam, TypeParamParamSpec, TypeParamTypeVar, TypeParamTypeVarTuple, WithItem,
+    Alias, Arg, ArgWithDefault, Arguments, ExceptHandler, ExceptHandlerExceptHandler, Expr,
+    Keyword, MatchCase, Pattern, PatternMatchAs, PatternMatchClass, PatternMatchMapping,
+    PatternMatchOr, PatternMatchSequence, PatternMatchSingleton, PatternMatchStar,
+    PatternMatchValue, Stmt, StmtAnnAssign, StmtAssert, StmtAssign, StmtAsyncFor,
+    StmtAsyncFunctionDef, StmtAsyncWith, StmtAugAssign, StmtBreak, StmtClassDef, StmtContinue,
+    StmtDelete, StmtExpr, StmtFor, StmtFunctionDef, StmtGlobal, StmtIf, StmtImport, StmtImportFrom,
+    StmtMatch, StmtNonlocal, StmtPass, StmtRaise, StmtReturn, StmtTry, StmtTryStar, StmtTypeAlias,
+    StmtWhile, StmtWith, TypeParam, TypeParamParamSpec, TypeParamTypeVar, TypeParamTypeVarTuple,
+    WithItem,
 };
 
 fn box_expr_option(expr: Option<Expr>) -> Option<Box<Expr>> {
@@ -71,13 +75,27 @@ pub trait Transformer {
             Stmt::Raise(raise) => self
                 .visit_stmt_raise(raise)
                 .map(|new_stmt| Stmt::Raise(new_stmt)),
-            Stmt::ClassDef(stmt_class_def) => todo!(),
-            Stmt::Assign(stmt_assign) => todo!(),
-            Stmt::TypeAlias(stmt_type_alias) => todo!(),
-            Stmt::AugAssign(stmt_aug_assign) => todo!(),
-            Stmt::While(stmt_while) => todo!(),
-            Stmt::If(stmt_if) => todo!(),
-            Stmt::Match(stmt_match) => todo!(),
+            Stmt::ClassDef(stmt_class_def) => self
+                .visit_stmt_class_def(stmt_class_def)
+                .map(|new_stmt| Stmt::ClassDef(new_stmt)),
+            Stmt::Assign(stmt_assign) => self
+                .visit_stmt_assign(stmt_assign)
+                .map(|new_stmt| Stmt::Assign(new_stmt)),
+            Stmt::TypeAlias(stmt_type_alias) => self
+                .visit_stmt_type_alias(stmt_type_alias)
+                .map(|new_stmt| Stmt::TypeAlias(new_stmt)),
+            Stmt::AugAssign(stmt_aug_assign) => self
+                .visit_stmt_aug_assign(stmt_aug_assign)
+                .map(|new_stmt| Stmt::AugAssign(new_stmt)),
+            Stmt::While(stmt_while) => self
+                .visit_stmt_while(stmt_while)
+                .map(|new_stmt| Stmt::While(new_stmt)),
+            Stmt::If(stmt_if) => self
+                .visit_stmt_if(stmt_if)
+                .map(|new_stmt| Stmt::If(new_stmt)),
+            Stmt::Match(stmt_match) => self
+                .visit_stmt_match(stmt_match)
+                .map(|new_stmt| Stmt::Match(new_stmt)),
             Stmt::Try(stmt_try) => self
                 .visit_stmt_try(stmt_try)
                 .map(|new_stmt| Stmt::Try(new_stmt)),
@@ -100,6 +118,359 @@ pub trait Transformer {
                 .visit_stmt_expr(stmt_expr)
                 .map(|new_stmt| Stmt::Expr(new_stmt)),
         }
+    }
+
+    fn generic_visit_keyword_vec(&mut self, mut keywords: Vec<Keyword>) -> Vec<Keyword> {
+        let mut new_keywords = Vec::new();
+
+        for keyword in keywords {
+            if let Some(new_keyword) = self.visit_keyword(keyword) {
+                new_keywords.push(new_keyword);
+            }
+        }
+        new_keywords
+    }
+
+    fn visit_keyword(&mut self, mut keyword: Keyword) -> Option<Keyword> {
+        self.generic_visit_keyword(keyword)
+    }
+
+    fn generic_visit_keyword(&mut self, mut keyword: Keyword) -> Option<Keyword> {
+        keyword.value = self
+            .visit_expr(keyword.value)
+            .expect("Cannot remove value from keyword");
+
+        Some(keyword)
+    }
+
+    fn visit_stmt_class_def(&mut self, mut stmt: StmtClassDef) -> Option<StmtClassDef> {
+        self.generic_visit_stmt_class_def(stmt)
+    }
+
+    fn generic_visit_stmt_class_def(&mut self, mut stmt: StmtClassDef) -> Option<StmtClassDef> {
+        stmt.decorator_list = self.visit_expr_vec(stmt.decorator_list);
+
+        stmt.type_params = self.generic_visit_type_param_vec(stmt.type_params);
+        stmt.bases = self.visit_expr_vec(stmt.bases);
+        stmt.keywords = self.generic_visit_keyword_vec(stmt.keywords);
+        stmt.body = self.visit_stmt_vec(stmt.body);
+
+        if stmt.body.len() == 0 {
+            panic!("Cannot remove body from class def")
+        }
+
+        Some(stmt)
+    }
+
+    fn visit_stmt_assign(&mut self, mut stmt: StmtAssign) -> Option<StmtAssign> {
+        self.generic_visit_stmt_assign(stmt)
+    }
+
+    fn generic_visit_stmt_assign(&mut self, mut stmt: StmtAssign) -> Option<StmtAssign> {
+        stmt.targets = self.visit_expr_vec(stmt.targets);
+        if stmt.targets.len() == 0 {
+            panic!("Cannot remove all targets from assignment")
+        }
+        stmt.value = Box::new(
+            self.visit_expr(*stmt.value)
+                .expect("Cannot remove value from assignment"),
+        );
+
+        Some(stmt)
+    }
+
+    fn visit_stmt_type_alias(&mut self, mut stmt: StmtTypeAlias) -> Option<StmtTypeAlias> {
+        self.generic_visit_stmt_type_alias(stmt)
+    }
+
+    fn generic_visit_stmt_type_alias(&mut self, mut stmt: StmtTypeAlias) -> Option<StmtTypeAlias> {
+        stmt.name = Box::new(
+            self.visit_expr(*stmt.name)
+                .expect("Cannot remove name from type alias"),
+        );
+        stmt.type_params = self.generic_visit_type_param_vec(stmt.type_params);
+        stmt.value = Box::new(
+            self.visit_expr(*stmt.value)
+                .expect("Cannot remove value from type alias"),
+        );
+
+        Some(stmt)
+    }
+
+    fn visit_stmt_aug_assign(&mut self, mut stmt: StmtAugAssign) -> Option<StmtAugAssign> {
+        self.generic_visit_stmt_aug_assign(stmt)
+    }
+
+    fn generic_visit_stmt_aug_assign(&mut self, mut stmt: StmtAugAssign) -> Option<StmtAugAssign> {
+        stmt.value = Box::new(
+            self.visit_expr(*stmt.value)
+                .expect("Cannot remove value from augmented assignment"),
+        );
+        stmt.target = Box::new(
+            self.visit_expr(*stmt.target)
+                .expect("Cannot remove target from augmented assignment"),
+        );
+
+        Some(stmt)
+    }
+
+    fn visit_stmt_while(&mut self, mut stmt: StmtWhile) -> Option<StmtWhile> {
+        self.generic_visit_stmt_while(stmt)
+    }
+
+    fn generic_visit_stmt_while(&mut self, mut stmt: StmtWhile) -> Option<StmtWhile> {
+        stmt.test = Box::new(
+            self.visit_expr(*stmt.test)
+                .expect("Cannot remove test from while statement"),
+        );
+        stmt.body = self.visit_stmt_vec(stmt.body);
+        stmt.orelse = self.visit_stmt_vec(stmt.orelse);
+
+        if stmt.body.len() == 0 && stmt.orelse.len() == 0 {
+            return None;
+        }
+
+        Some(stmt)
+    }
+
+    fn visit_stmt_if(&mut self, mut stmt: StmtIf) -> Option<StmtIf> {
+        self.generic_visit_stmt_if(stmt)
+    }
+
+    fn generic_visit_stmt_if(&mut self, mut stmt: StmtIf) -> Option<StmtIf> {
+        stmt.test = Box::new(
+            self.visit_expr(*stmt.test)
+                .expect("Cannot remove test from if statement"),
+        );
+        stmt.body = self.visit_stmt_vec(stmt.body);
+        stmt.orelse = self.visit_stmt_vec(stmt.orelse);
+
+        if stmt.body.len() == 0 && stmt.orelse.len() == 0 {
+            return None;
+        }
+
+        Some(stmt)
+    }
+
+    fn visit_pattern_match_or(&mut self, mut pattern: PatternMatchOr) -> Option<PatternMatchOr> {
+        self.generic_visit_pattern_match_or(pattern)
+    }
+
+    fn generic_visit_pattern_match_or(
+        &mut self,
+        mut pattern: PatternMatchOr,
+    ) -> Option<PatternMatchOr> {
+        pattern.patterns = self.generic_visit_pattern_vec(pattern.patterns);
+        if pattern.patterns.len() == 0 {
+            return None;
+        }
+
+        Some(pattern)
+    }
+
+    fn visit_pattern_match_as(&mut self, mut pattern: PatternMatchAs) -> Option<PatternMatchAs> {
+        self.generic_visit_pattern_match_as(pattern)
+    }
+
+    fn generic_visit_pattern_match_as(
+        &mut self,
+        mut pattern: PatternMatchAs,
+    ) -> Option<PatternMatchAs> {
+        if let Some(inner_pattern) = pattern.pattern {
+            pattern.pattern = self
+                .visit_pattern(*inner_pattern)
+                .map(|new_pattern| Box::new(new_pattern));
+        }
+
+        Some(pattern)
+    }
+
+    fn visit_pattern_match_mapping(
+        &mut self,
+        mut pattern: PatternMatchMapping,
+    ) -> Option<PatternMatchMapping> {
+        self.generic_visit_pattern_match_mapping(pattern)
+    }
+
+    fn generic_visit_pattern_match_mapping(
+        &mut self,
+        mut pattern: PatternMatchMapping,
+    ) -> Option<PatternMatchMapping> {
+        pattern.keys = self.visit_expr_vec(pattern.keys);
+        pattern.patterns = self.generic_visit_pattern_vec(pattern.patterns);
+        Some(pattern)
+    }
+
+    fn visit_pattern_match_star(
+        &mut self,
+        mut pattern: PatternMatchStar,
+    ) -> Option<PatternMatchStar> {
+        self.generic_visit_pattern_match_star(pattern)
+    }
+
+    fn generic_visit_pattern_match_star(
+        &mut self,
+        mut pattern: PatternMatchStar,
+    ) -> Option<PatternMatchStar> {
+        Some(pattern)
+    }
+
+    fn visit_pattern_match_class(
+        &mut self,
+        mut pattern: PatternMatchClass,
+    ) -> Option<PatternMatchClass> {
+        self.generic_visit_pattern_match_class(pattern)
+    }
+
+    fn generic_visit_pattern_match_class(
+        &mut self,
+        mut pattern: PatternMatchClass,
+    ) -> Option<PatternMatchClass> {
+        pattern.cls = Box::new(
+            self.visit_expr(*pattern.cls)
+                .expect("Cannot remove class from pattern match class"),
+        );
+        pattern.patterns = self.generic_visit_pattern_vec(pattern.patterns);
+        pattern.kwd_patterns = self.generic_visit_pattern_vec(pattern.kwd_patterns);
+        Some(pattern)
+    }
+
+    fn visit_pattern_match_sequence(
+        &mut self,
+        mut pattern: PatternMatchSequence,
+    ) -> Option<PatternMatchSequence> {
+        self.generic_visit_pattern_match_sequence(pattern)
+    }
+
+    fn generic_visit_pattern_match_sequence(
+        &mut self,
+        mut pattern: PatternMatchSequence,
+    ) -> Option<PatternMatchSequence> {
+        pattern.patterns = self.generic_visit_pattern_vec(pattern.patterns);
+        if pattern.patterns.len() == 0 {
+            return None;
+        }
+
+        Some(pattern)
+    }
+
+    fn visit_pattern_match_singleton(
+        &mut self,
+        mut pattern: PatternMatchSingleton,
+    ) -> Option<PatternMatchSingleton> {
+        self.generic_visit_pattern_match_singleton(pattern)
+    }
+
+    fn generic_visit_pattern_match_singleton(
+        &mut self,
+        mut pattern: PatternMatchSingleton,
+    ) -> Option<PatternMatchSingleton> {
+        Some(pattern)
+    }
+
+    fn visit_pattern_match_value(
+        &mut self,
+        mut pattern: PatternMatchValue,
+    ) -> Option<PatternMatchValue> {
+        self.generic_visit_pattern_match_value(pattern)
+    }
+
+    fn generic_visit_pattern_match_value(
+        &mut self,
+        mut pattern: PatternMatchValue,
+    ) -> Option<PatternMatchValue> {
+        pattern.value = Box::new(
+            self.visit_expr(*pattern.value)
+                .expect("Cannot remove value from pattern match value"),
+        );
+        Some(pattern)
+    }
+
+    fn generic_visit_pattern_vec(&mut self, patterns: Vec<Pattern>) -> Vec<Pattern> {
+        let mut new_patterns: Vec<Pattern> = Vec::new();
+        for pattern in patterns {
+            if let Some(new_pattern) = self.visit_pattern(pattern) {
+                new_patterns.push(new_pattern);
+            }
+        }
+
+        new_patterns
+    }
+
+    fn visit_pattern(&mut self, pattern: Pattern) -> Option<Pattern> {
+        self.generic_visit_pattern(pattern)
+    }
+
+    fn generic_visit_pattern(&mut self, pattern: Pattern) -> Option<Pattern> {
+        match pattern {
+            Pattern::MatchValue(pattern_match_value) => self
+                .visit_pattern_match_value(pattern_match_value)
+                .map(|new_pattern| Pattern::MatchValue(new_pattern)),
+            Pattern::MatchSingleton(pattern_match_singleton) => self
+                .visit_pattern_match_singleton(pattern_match_singleton)
+                .map(|new_pattern| Pattern::MatchSingleton(new_pattern)),
+            Pattern::MatchSequence(pattern_match_sequence) => self
+                .visit_pattern_match_sequence(pattern_match_sequence)
+                .map(|new_pattern| Pattern::MatchSequence(new_pattern)),
+            Pattern::MatchMapping(pattern_match_mapping) => self
+                .visit_pattern_match_mapping(pattern_match_mapping)
+                .map(|new_pattern| Pattern::MatchMapping(new_pattern)),
+            Pattern::MatchClass(pattern_match_class) => self
+                .visit_pattern_match_class(pattern_match_class)
+                .map(|new_pattern| Pattern::MatchClass(new_pattern)),
+            Pattern::MatchStar(pattern_match_star) => self
+                .visit_pattern_match_star(pattern_match_star)
+                .map(|new_pattern| Pattern::MatchStar(new_pattern)),
+            Pattern::MatchAs(pattern_match_as) => self
+                .visit_pattern_match_as(pattern_match_as)
+                .map(|new_pattern| Pattern::MatchAs(new_pattern)),
+            Pattern::MatchOr(pattern_match_or) => self
+                .visit_pattern_match_or(pattern_match_or)
+                .map(|new_pattern| Pattern::MatchOr(new_pattern)),
+        }
+    }
+
+    fn generic_visit_match_case_vec(&mut self, cases: Vec<MatchCase>) -> Vec<MatchCase> {
+        let mut new_cases: Vec<MatchCase> = Vec::new();
+        for case in cases {
+            if let Some(new_case) = self.visit_match_case(case) {
+                new_cases.push(new_case);
+            }
+        }
+
+        new_cases
+    }
+
+    fn visit_match_case(&mut self, mut case: MatchCase) -> Option<MatchCase> {
+        self.generic_visit_match_case(case)
+    }
+
+    fn generic_visit_match_case(&mut self, mut case: MatchCase) -> Option<MatchCase> {
+        if let Some(guard) = case.guard {
+            case.guard = box_expr_option(self.visit_expr(*guard));
+        }
+
+        case.body = self.visit_stmt_vec(case.body);
+        if case.body.len() == 0 {
+            return None;
+        }
+        Some(case)
+    }
+
+    fn visit_stmt_match(&mut self, mut stmt: StmtMatch) -> Option<StmtMatch> {
+        self.generic_visit_stmt_match(stmt)
+    }
+
+    fn generic_visit_stmt_match(&mut self, mut stmt: StmtMatch) -> Option<StmtMatch> {
+        stmt.subject = Box::new(
+            self.visit_expr(*stmt.subject)
+                .expect("Cannot remove subject from match statement"),
+        );
+        stmt.cases = self.generic_visit_match_case_vec(stmt.cases);
+        if stmt.cases.len() == 0 {
+            return None;
+        }
+        Some(stmt)
     }
 
     fn generic_visit_except_handler_vec(

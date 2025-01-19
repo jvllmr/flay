@@ -56,6 +56,10 @@ pub fn get_full_name_for_stmt(stmt: &Stmt, parent_package: &str) -> Vec<String> 
             }
             return names;
         }
+        Stmt::TypeAlias(type_alias) => match get_full_name_for_expr(&type_alias.name) {
+            Some(name) => vec![name],
+            None => Vec::new(),
+        },
         _ => Vec::new(),
     }
 }
