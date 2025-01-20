@@ -1,8 +1,12 @@
 use rustpython_ast::{
-    Alias, Arg, ArgWithDefault, Arguments, ExceptHandler, ExceptHandlerExceptHandler, Expr,
-    Keyword, MatchCase, Pattern, PatternMatchAs, PatternMatchClass, PatternMatchMapping,
-    PatternMatchOr, PatternMatchSequence, PatternMatchSingleton, PatternMatchStar,
-    PatternMatchValue, Stmt, StmtAnnAssign, StmtAssert, StmtAssign, StmtAsyncFor,
+    Alias, Arg, ArgWithDefault, Arguments, Comprehension, ExceptHandler,
+    ExceptHandlerExceptHandler, Expr, ExprAttribute, ExprAwait, ExprBinOp, ExprBoolOp, ExprCall,
+    ExprCompare, ExprConstant, ExprDict, ExprDictComp, ExprFormattedValue, ExprGeneratorExp,
+    ExprIfExp, ExprJoinedStr, ExprLambda, ExprList, ExprListComp, ExprName, ExprNamedExpr, ExprSet,
+    ExprSetComp, ExprSlice, ExprStarred, ExprSubscript, ExprTuple, ExprUnaryOp, ExprYield,
+    ExprYieldFrom, Keyword, MatchCase, Pattern, PatternMatchAs, PatternMatchClass,
+    PatternMatchMapping, PatternMatchOr, PatternMatchSequence, PatternMatchSingleton,
+    PatternMatchStar, PatternMatchValue, Stmt, StmtAnnAssign, StmtAssert, StmtAssign, StmtAsyncFor,
     StmtAsyncFunctionDef, StmtAsyncWith, StmtAugAssign, StmtBreak, StmtClassDef, StmtContinue,
     StmtDelete, StmtExpr, StmtFor, StmtFunctionDef, StmtGlobal, StmtIf, StmtImport, StmtImportFrom,
     StmtMatch, StmtNonlocal, StmtPass, StmtRaise, StmtReturn, StmtTry, StmtTryStar, StmtTypeAlias,
@@ -876,34 +880,481 @@ pub trait Transformer {
 
     fn generic_visit_expr(&mut self, expr: Expr) -> Option<Expr> {
         match expr {
-            Expr::BoolOp(expr_bool_op) => todo!(),
-            Expr::NamedExpr(expr_named_expr) => todo!(),
-            Expr::BinOp(expr_bin_op) => todo!(),
-            Expr::UnaryOp(expr_unary_op) => todo!(),
-            Expr::Lambda(expr_lambda) => todo!(),
-            Expr::IfExp(expr_if_exp) => todo!(),
-            Expr::Dict(expr_dict) => todo!(),
-            Expr::Set(expr_set) => todo!(),
-            Expr::ListComp(expr_list_comp) => todo!(),
-            Expr::SetComp(expr_set_comp) => todo!(),
-            Expr::DictComp(expr_dict_comp) => todo!(),
-            Expr::GeneratorExp(expr_generator_exp) => todo!(),
-            Expr::Await(expr_await) => todo!(),
-            Expr::Yield(expr_yield) => todo!(),
-            Expr::YieldFrom(expr_yield_from) => todo!(),
-            Expr::Compare(expr_compare) => todo!(),
-            Expr::Call(expr_call) => todo!(),
-            Expr::FormattedValue(expr_formatted_value) => todo!(),
-            Expr::JoinedStr(expr_joined_str) => todo!(),
-            Expr::Constant(expr_constant) => todo!(),
-            Expr::Attribute(expr_attribute) => todo!(),
-            Expr::Subscript(expr_subscript) => todo!(),
-            Expr::Starred(expr_starred) => todo!(),
-            Expr::Name(expr_name) => todo!(),
-            Expr::List(expr_list) => todo!(),
-            Expr::Tuple(expr_tuple) => todo!(),
-            Expr::Slice(expr_slice) => todo!(),
+            Expr::BoolOp(expr_bool_op) => self
+                .visit_expr_bool_op(expr_bool_op)
+                .map(|new_expr| Expr::BoolOp(new_expr)),
+            Expr::NamedExpr(expr_named_expr) => self
+                .visit_expr_named_expr(expr_named_expr)
+                .map(|new_expr| Expr::NamedExpr(new_expr)),
+            Expr::BinOp(expr_bin_op) => self
+                .visit_expr_bin_op(expr_bin_op)
+                .map(|new_expr| Expr::BinOp(new_expr)),
+            Expr::UnaryOp(expr_unary_op) => self
+                .visit_expr_unary_op(expr_unary_op)
+                .map(|new_expr| Expr::UnaryOp(new_expr)),
+            Expr::Lambda(expr_lambda) => self
+                .visit_expr_lambda(expr_lambda)
+                .map(|new_expr| Expr::Lambda(new_expr)),
+            Expr::IfExp(expr_if_exp) => self
+                .visit_expr_if_exp(expr_if_exp)
+                .map(|new_expr| Expr::IfExp(new_expr)),
+            Expr::Dict(expr_dict) => self
+                .visit_expr_dict(expr_dict)
+                .map(|new_expr| Expr::Dict(new_expr)),
+            Expr::Set(expr_set) => self
+                .visit_expr_set(expr_set)
+                .map(|new_expr| Expr::Set(new_expr)),
+            Expr::ListComp(expr_list_comp) => self
+                .visit_expr_list_comp(expr_list_comp)
+                .map(|new_expr| Expr::ListComp(new_expr)),
+            Expr::SetComp(expr_set_comp) => self
+                .visit_expr_set_comp(expr_set_comp)
+                .map(|new_expr| Expr::SetComp(new_expr)),
+            Expr::DictComp(expr_dict_comp) => self
+                .visit_expr_dict_comp(expr_dict_comp)
+                .map(|new_expr| Expr::DictComp(new_expr)),
+            Expr::GeneratorExp(expr_generator_exp) => self
+                .visit_expr_generator_exp(expr_generator_exp)
+                .map(|new_expr| Expr::GeneratorExp(new_expr)),
+            Expr::Await(expr_await) => self
+                .visit_expr_await(expr_await)
+                .map(|new_expr| Expr::Await(new_expr)),
+            Expr::Yield(expr_yield) => self
+                .visit_expr_yield(expr_yield)
+                .map(|new_expr| Expr::Yield(new_expr)),
+            Expr::YieldFrom(expr_yield_from) => self
+                .visit_expr_yield_from(expr_yield_from)
+                .map(|new_expr| Expr::YieldFrom(new_expr)),
+            Expr::Compare(expr_compare) => self
+                .visit_expr_compare(expr_compare)
+                .map(|new_expr| Expr::Compare(new_expr)),
+            Expr::Call(expr_call) => self
+                .visit_expr_call(expr_call)
+                .map(|new_expr| Expr::Call(new_expr)),
+            Expr::FormattedValue(expr_formatted_value) => self
+                .visit_expr_formatted_value(expr_formatted_value)
+                .map(|new_expr| Expr::FormattedValue(new_expr)),
+            Expr::JoinedStr(expr_joined_str) => self
+                .visit_expr_joined_str(expr_joined_str)
+                .map(|new_expr| Expr::JoinedStr(new_expr)),
+            Expr::Constant(expr_constant) => self
+                .visit_expr_constant(expr_constant)
+                .map(|new_expr| Expr::Constant(new_expr)),
+            Expr::Attribute(expr_attribute) => self
+                .visit_expr_attribute(expr_attribute)
+                .map(|new_expr| Expr::Attribute(new_expr)),
+            Expr::Subscript(expr_subscript) => self
+                .visit_expr_subscript(expr_subscript)
+                .map(|new_expr| Expr::Subscript(new_expr)),
+            Expr::Starred(expr_starred) => self
+                .visit_expr_starred(expr_starred)
+                .map(|new_expr| Expr::Starred(new_expr)),
+            Expr::Name(expr_name) => self
+                .visit_expr_name(expr_name)
+                .map(|new_expr| Expr::Name(new_expr)),
+            Expr::List(expr_list) => self
+                .visit_expr_list(expr_list)
+                .map(|new_expr| Expr::List(new_expr)),
+            Expr::Tuple(expr_tuple) => self
+                .visit_expr_tuple(expr_tuple)
+                .map(|new_expr| Expr::Tuple(new_expr)),
+            Expr::Slice(expr_slice) => self
+                .visit_expr_slice(expr_slice)
+                .map(|new_expr| Expr::Slice(new_expr)),
         }
+    }
+
+    fn visit_expr_slice(&mut self, mut expr: ExprSlice) -> Option<ExprSlice> {
+        self.generic_visit_expr_slice(expr)
+    }
+
+    fn generic_visit_expr_slice(&mut self, mut expr: ExprSlice) -> Option<ExprSlice> {
+        if let Some(lower) = expr.lower {
+            expr.lower = box_expr_option(self.visit_expr(*lower));
+        }
+
+        if let Some(upper) = expr.upper {
+            expr.upper = box_expr_option(self.visit_expr(*upper));
+        }
+
+        if let Some(step) = expr.step {
+            expr.step = box_expr_option(self.visit_expr(*step));
+        }
+
+        Some(expr)
+    }
+
+    fn visit_expr_tuple(&mut self, mut expr: ExprTuple) -> Option<ExprTuple> {
+        self.generic_visit_expr_tuple(expr)
+    }
+
+    fn generic_visit_expr_tuple(&mut self, mut expr: ExprTuple) -> Option<ExprTuple> {
+        expr.elts = self.visit_expr_vec(expr.elts);
+
+        Some(expr)
+    }
+
+    fn visit_expr_list(&mut self, mut expr: ExprList) -> Option<ExprList> {
+        self.generic_visit_expr_list(expr)
+    }
+
+    fn generic_visit_expr_list(&mut self, mut expr: ExprList) -> Option<ExprList> {
+        expr.elts = self.visit_expr_vec(expr.elts);
+        Some(expr)
+    }
+
+    fn visit_expr_name(&mut self, mut expr: ExprName) -> Option<ExprName> {
+        self.generic_visit_expr_name(expr)
+    }
+
+    fn generic_visit_expr_name(&mut self, mut expr: ExprName) -> Option<ExprName> {
+        Some(expr)
+    }
+
+    fn visit_expr_starred(&mut self, mut expr: ExprStarred) -> Option<ExprStarred> {
+        self.generic_visit_expr_starred(expr)
+    }
+
+    fn generic_visit_expr_starred(&mut self, mut expr: ExprStarred) -> Option<ExprStarred> {
+        expr.value = Box::new(
+            self.visit_expr(*expr.value)
+                .expect("Cannot remove value from starred expression"),
+        );
+
+        Some(expr)
+    }
+
+    fn visit_expr_subscript(&mut self, mut expr: ExprSubscript) -> Option<ExprSubscript> {
+        self.generic_visit_expr_subscript(expr)
+    }
+
+    fn generic_visit_expr_subscript(&mut self, mut expr: ExprSubscript) -> Option<ExprSubscript> {
+        expr.value = Box::new(
+            self.visit_expr(*expr.value)
+                .expect("Cannot remove value from subscript expression"),
+        );
+        expr.slice = Box::new(
+            self.visit_expr(*expr.slice)
+                .expect("Cannot remove slice from subscript expression"),
+        );
+        Some(expr)
+    }
+
+    fn visit_expr_attribute(&mut self, mut expr: ExprAttribute) -> Option<ExprAttribute> {
+        self.generic_visit_expr_attribute(expr)
+    }
+
+    fn generic_visit_expr_attribute(&mut self, mut expr: ExprAttribute) -> Option<ExprAttribute> {
+        expr.value = Box::new(
+            self.visit_expr(*expr.value)
+                .expect("Cannot remove value from attribute expression"),
+        );
+        Some(expr)
+    }
+
+    fn visit_expr_constant(&mut self, mut expr: ExprConstant) -> Option<ExprConstant> {
+        self.generic_visit_expr_constant(expr)
+    }
+
+    fn generic_visit_expr_constant(&mut self, mut expr: ExprConstant) -> Option<ExprConstant> {
+        Some(expr)
+    }
+
+    fn visit_expr_joined_str(&mut self, mut expr: ExprJoinedStr) -> Option<ExprJoinedStr> {
+        self.generic_visit_expr_joined_str(expr)
+    }
+
+    fn generic_visit_expr_joined_str(&mut self, mut expr: ExprJoinedStr) -> Option<ExprJoinedStr> {
+        expr.values = self.visit_expr_vec(expr.values);
+
+        Some(expr)
+    }
+
+    fn visit_expr_formatted_value(
+        &mut self,
+        mut expr: ExprFormattedValue,
+    ) -> Option<ExprFormattedValue> {
+        self.generic_visit_expr_formatted_value(expr)
+    }
+
+    fn generic_visit_expr_formatted_value(
+        &mut self,
+        mut expr: ExprFormattedValue,
+    ) -> Option<ExprFormattedValue> {
+        expr.value = Box::new(
+            self.visit_expr(*expr.value)
+                .expect("Cannot remove value from formatted value expression"),
+        );
+        if let Some(format_spec) = expr.format_spec {
+            expr.format_spec = box_expr_option(self.visit_expr(*format_spec));
+        }
+
+        Some(expr)
+    }
+
+    fn visit_expr_call(&mut self, mut expr: ExprCall) -> Option<ExprCall> {
+        self.generic_visit_expr_call(expr)
+    }
+
+    fn generic_visit_expr_call(&mut self, mut expr: ExprCall) -> Option<ExprCall> {
+        expr.func = Box::new(
+            self.visit_expr(*expr.func)
+                .expect("Cannot remove func from call expression"),
+        );
+        expr.args = self.visit_expr_vec(expr.args);
+        expr.keywords = self.generic_visit_keyword_vec(expr.keywords);
+        Some(expr)
+    }
+
+    fn visit_expr_compare(&mut self, mut expr: ExprCompare) -> Option<ExprCompare> {
+        self.generic_visit_expr_compare(expr)
+    }
+
+    fn generic_visit_expr_compare(&mut self, mut expr: ExprCompare) -> Option<ExprCompare> {
+        expr.left = Box::new(
+            self.visit_expr(*expr.left)
+                .expect("Cannot remove left from compare expression"),
+        );
+        expr.comparators = self.visit_expr_vec(expr.comparators);
+        Some(expr)
+    }
+
+    fn visit_expr_yield_from(&mut self, mut expr: ExprYieldFrom) -> Option<ExprYieldFrom> {
+        self.generic_visit_expr_yield_from(expr)
+    }
+
+    fn generic_visit_expr_yield_from(&mut self, mut expr: ExprYieldFrom) -> Option<ExprYieldFrom> {
+        expr.value = Box::new(
+            self.visit_expr(*expr.value)
+                .expect("Cannot remove value from yield from expression"),
+        );
+        Some(expr)
+    }
+
+    fn visit_expr_yield(&mut self, mut expr: ExprYield) -> Option<ExprYield> {
+        self.generic_visit_expr_yield(expr)
+    }
+
+    fn generic_visit_expr_yield(&mut self, mut expr: ExprYield) -> Option<ExprYield> {
+        if let Some(value) = expr.value {
+            expr.value = box_expr_option(self.visit_expr(*value));
+        }
+
+        Some(expr)
+    }
+
+    fn visit_expr_await(&mut self, mut expr: ExprAwait) -> Option<ExprAwait> {
+        self.generic_visit_expr_await(expr)
+    }
+
+    fn generic_visit_expr_await(&mut self, mut expr: ExprAwait) -> Option<ExprAwait> {
+        match self.visit_expr(*expr.value) {
+            Some(new_value) => {
+                expr.value = Box::new(new_value);
+                Some(expr)
+            }
+            None => None,
+        }
+    }
+
+    fn generic_visit_comprehension_vec(&mut self, comps: Vec<Comprehension>) -> Vec<Comprehension> {
+        let mut new_comps: Vec<Comprehension> = Vec::new();
+
+        for comp in comps {
+            if let Some(new_comp) = self.visit_comprehension(comp) {
+                new_comps.push(new_comp);
+            }
+        }
+        new_comps
+    }
+
+    fn visit_comprehension(&mut self, mut comp: Comprehension) -> Option<Comprehension> {
+        self.generic_visit_comprehension(comp)
+    }
+
+    fn generic_visit_comprehension(&mut self, mut comp: Comprehension) -> Option<Comprehension> {
+        comp.ifs = self.visit_expr_vec(comp.ifs);
+        comp.iter = self
+            .visit_expr(comp.iter)
+            .expect("Cannot remove iter from comprehension");
+        comp.target = self
+            .visit_expr(comp.target)
+            .expect("Cannot remove target from comprehension");
+
+        Some(comp)
+    }
+
+    fn visit_expr_generator_exp(&mut self, mut expr: ExprGeneratorExp) -> Option<ExprGeneratorExp> {
+        self.generic_visit_expr_generator_expr(expr)
+    }
+
+    fn generic_visit_expr_generator_expr(
+        &mut self,
+        mut expr: ExprGeneratorExp,
+    ) -> Option<ExprGeneratorExp> {
+        expr.elt = Box::new(
+            self.visit_expr(*expr.elt)
+                .expect("Cannot remove elt from generator expression"),
+        );
+        expr.generators = self.generic_visit_comprehension_vec(expr.generators);
+        Some(expr)
+    }
+
+    fn visit_expr_dict_comp(&mut self, mut expr: ExprDictComp) -> Option<ExprDictComp> {
+        self.generic_visit_expr_dict_comp(expr)
+    }
+
+    fn generic_visit_expr_dict_comp(&mut self, mut expr: ExprDictComp) -> Option<ExprDictComp> {
+        expr.key = Box::new(
+            self.visit_expr(*expr.key)
+                .expect("Cannot remove key from dict comprehension"),
+        );
+        expr.value = Box::new(
+            self.visit_expr(*expr.value)
+                .expect("Cannot remove value from dict comprehension"),
+        );
+        expr.generators = self.generic_visit_comprehension_vec(expr.generators);
+        Some(expr)
+    }
+
+    fn visit_expr_set_comp(&mut self, mut expr: ExprSetComp) -> Option<ExprSetComp> {
+        self.generic_visit_expr_set_comp(expr)
+    }
+
+    fn generic_visit_expr_set_comp(&mut self, mut expr: ExprSetComp) -> Option<ExprSetComp> {
+        expr.elt = Box::new(
+            self.visit_expr(*expr.elt)
+                .expect("Cannot remove elt from set comprehension"),
+        );
+        expr.generators = self.generic_visit_comprehension_vec(expr.generators);
+        Some(expr)
+    }
+
+    fn visit_expr_list_comp(&mut self, mut expr: ExprListComp) -> Option<ExprListComp> {
+        self.generic_visit_expr_list_comp(expr)
+    }
+
+    fn generic_visit_expr_list_comp(&mut self, mut expr: ExprListComp) -> Option<ExprListComp> {
+        expr.elt = Box::new(
+            self.visit_expr(*expr.elt)
+                .expect("Cannot remove elt from list comprehension"),
+        );
+        expr.generators = self.generic_visit_comprehension_vec(expr.generators);
+        Some(expr)
+    }
+
+    fn visit_expr_set(&mut self, mut expr: ExprSet) -> Option<ExprSet> {
+        self.generic_visit_expr_set(expr)
+    }
+
+    fn generic_visit_expr_set(&mut self, mut expr: ExprSet) -> Option<ExprSet> {
+        expr.elts = self.visit_expr_vec(expr.elts);
+        Some(expr)
+    }
+
+    fn visit_expr_dict(&mut self, mut expr: ExprDict) -> Option<ExprDict> {
+        self.generic_visit_expr_dict(expr)
+    }
+
+    fn generic_visit_expr_dict(&mut self, mut expr: ExprDict) -> Option<ExprDict> {
+        let mut new_keys: Vec<Option<Expr>> = Vec::new();
+        for key in expr.keys {
+            if let Some(key_value) = key {
+                new_keys.push(self.visit_expr(key_value));
+            }
+        }
+        expr.keys = new_keys;
+        expr.values = self.visit_expr_vec(expr.values);
+        Some(expr)
+    }
+
+    fn visit_expr_if_exp(&mut self, mut expr: ExprIfExp) -> Option<ExprIfExp> {
+        self.generic_visit_expr_if_exp(expr)
+    }
+
+    fn generic_visit_expr_if_exp(&mut self, mut expr: ExprIfExp) -> Option<ExprIfExp> {
+        expr.test = Box::new(
+            self.visit_expr(*expr.test)
+                .expect("Cannot remove test from if expression"),
+        );
+        expr.body = Box::new(
+            self.visit_expr(*expr.body)
+                .expect("Cannot remove body from if expression"),
+        );
+        expr.orelse = Box::new(
+            self.visit_expr(*expr.orelse)
+                .expect("Cannot remove orelse from if expression"),
+        );
+        Some(expr)
+    }
+
+    fn visit_expr_lambda(&mut self, mut expr: ExprLambda) -> Option<ExprLambda> {
+        self.generic_visit_expr_lambda(expr)
+    }
+
+    fn generic_visit_expr_lambda(&mut self, mut expr: ExprLambda) -> Option<ExprLambda> {
+        expr.args = Box::new(self.visit_arguments(*expr.args));
+        expr.body = Box::new(
+            self.visit_expr(*expr.body)
+                .expect("Cannot remove body from lambda expression"),
+        );
+        Some(expr)
+    }
+
+    fn visit_expr_unary_op(&mut self, mut expr: ExprUnaryOp) -> Option<ExprUnaryOp> {
+        self.generic_visit_expr_unary_op(expr)
+    }
+
+    fn generic_visit_expr_unary_op(&mut self, mut expr: ExprUnaryOp) -> Option<ExprUnaryOp> {
+        expr.operand = Box::new(
+            self.visit_expr(*expr.operand)
+                .expect("Cannot remove operand from unary operation"),
+        );
+        Some(expr)
+    }
+
+    fn visit_expr_bin_op(&mut self, mut expr: ExprBinOp) -> Option<ExprBinOp> {
+        self.generic_visit_expr_bin_op(expr)
+    }
+
+    fn generic_visit_expr_bin_op(&mut self, mut expr: ExprBinOp) -> Option<ExprBinOp> {
+        expr.left = Box::new(
+            self.visit_expr(*expr.left)
+                .expect("Cannot remove left from binary operation"),
+        );
+        expr.right = Box::new(
+            self.visit_expr(*expr.right)
+                .expect("Cannot remove right from binary operation"),
+        );
+        Some(expr)
+    }
+
+    fn visit_expr_named_expr(&mut self, mut expr: ExprNamedExpr) -> Option<ExprNamedExpr> {
+        self.generic_visit_expr_named_expr(expr)
+    }
+
+    fn generic_visit_expr_named_expr(&mut self, mut expr: ExprNamedExpr) -> Option<ExprNamedExpr> {
+        expr.target = Box::new(
+            self.visit_expr(*expr.target)
+                .expect("Cannot remove target from named expression"),
+        );
+        expr.value = Box::new(
+            self.visit_expr(*expr.value)
+                .expect("Cannot remove value from named expression"),
+        );
+        Some(expr)
+    }
+
+    fn visit_expr_bool_op(&mut self, mut expr: ExprBoolOp) -> Option<ExprBoolOp> {
+        self.generic_visit_expr_bool_op(expr)
+    }
+
+    fn generic_visit_expr_bool_op(&mut self, mut expr: ExprBoolOp) -> Option<ExprBoolOp> {
+        expr.values = self.visit_expr_vec(expr.values);
+        if expr.values.len() == 0 {
+            panic!("Cannot remove all values from bool op");
+        }
+        Some(expr)
     }
 
     fn visit_arg(&mut self, arg: Arg) -> Option<Arg> {
