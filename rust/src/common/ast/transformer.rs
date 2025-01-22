@@ -1,5 +1,5 @@
 use rustpython_ast::{
-    Alias, Arg, ArgWithDefault, Arguments, Comprehension, ExceptHandler,
+    text_size::TextRange, Alias, Arg, ArgWithDefault, Arguments, Comprehension, ExceptHandler,
     ExceptHandlerExceptHandler, Expr, ExprAttribute, ExprAwait, ExprBinOp, ExprBoolOp, ExprCall,
     ExprCompare, ExprConstant, ExprDict, ExprDictComp, ExprFormattedValue, ExprGeneratorExp,
     ExprIfExp, ExprJoinedStr, ExprLambda, ExprList, ExprListComp, ExprName, ExprNamedExpr, ExprSet,
@@ -160,7 +160,9 @@ pub trait Transformer {
         stmt.body = self.visit_stmt_vec(stmt.body);
 
         if stmt.body.len() == 0 {
-            panic!("Cannot remove body from class def")
+            stmt.body.push(Stmt::Pass(StmtPass {
+                range: TextRange::default(),
+            }));
         }
 
         Some(stmt)
@@ -450,6 +452,9 @@ pub trait Transformer {
     }
 
     fn generic_visit_match_case(&mut self, mut case: MatchCase) -> Option<MatchCase> {
+        case.pattern = self
+            .visit_pattern(case.pattern)
+            .expect("Cannot remove pattern from match case");
         if let Some(guard) = case.guard {
             case.guard = box_expr_option(self.visit_expr(*guard));
         }
