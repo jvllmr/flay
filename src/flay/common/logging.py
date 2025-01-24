@@ -1,7 +1,6 @@
 from __future__ import annotations
 import logging
 import logging.handlers
-from libcst import CSTNode, Module
 import platformdirs
 import contextvars
 import typing as t
@@ -98,7 +97,7 @@ class LazyStr:
         self.factory = factory
         self._cached_string: str | None = None
 
-    def get_string(self) -> str:
+    def get_string(self) -> str:  # pragma: no cover
         if self._cached_string is not None:
             return self._cached_string
         resolved = self.factory()
@@ -111,16 +110,3 @@ class LazyStr:
 
     def __str__(self) -> str:
         return self.get_string()
-
-
-def log_cst_code(node: CSTNode) -> LazyStr:
-    """
-    A helper method for when the code of a CST node needs to be logged.
-    It returns a LazyStr which only evaluates the needed code when serialized.
-    """
-
-    def gen_str() -> str:
-        fake_module = Module([node])  # type: ignore
-        return fake_module.code_for_node(node)
-
-    return LazyStr(gen_str)

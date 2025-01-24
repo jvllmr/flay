@@ -4,6 +4,11 @@ ci:
     - cargo-fix
 
 repos:
+  - repo: https://github.com/hadialqattan/pycln
+    rev: "v2.4.0"
+    hooks:
+      - id: pycln
+        args: [--config=pyproject.toml, --all, --disable-all-dunder-policy]
   - repo: https://github.com/AndrejOrsula/pre-commit-cargo
     rev: 0.4.0
     hooks:

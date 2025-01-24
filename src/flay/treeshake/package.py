@@ -1,27 +1,17 @@
 from __future__ import annotations
-from libcst import (
-    CSTVisitor,
-    MetadataWrapper,
-)
 
 from flay._flay_rs import NodesRemover, ReferencesCounter
-from flay.common.libcst import get_import_from_absolute_module_spec
-from flay.common.module_spec import get_parent_package
+
 
 from libcst.metadata import (
     FullyQualifiedNameProvider,
     FullRepoManager,
-    ScopeProvider,
-    QualifiedName,
 )
-import libcst as cst
 import os
 from collections import defaultdict
 import typing as t
 import logging
-from flay.common.util import safe_remove_empty_dir
-from libcst.helpers import get_full_name_for_node
-from collections import OrderedDict
+
 
 log = logging.getLogger(__name__)
 
