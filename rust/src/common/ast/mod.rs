@@ -1,6 +1,6 @@
 pub mod full_name;
 pub mod providers;
-pub mod transformer;
+
 use pyo3::{
     exceptions::{PyImportError, PyValueError},
     PyResult,
