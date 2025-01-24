@@ -41,7 +41,7 @@ impl NodesRemover {
         for new_key in new_keys {
             references_counts.insert(new_key, 1);
         }
-        println!("{:?}", references_counts);
+
         NodesRemover {
             references_counts,
             names_provider: FullyQualifiedNameProvider::new("", ""),

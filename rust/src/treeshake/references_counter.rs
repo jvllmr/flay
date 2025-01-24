@@ -60,7 +60,7 @@ pub trait ReferencesHolder {
             }
             _ => names_provider.get_stmt_fully_qualified_name(stmt),
         };
-        println!("{:?}", fqns);
+
         for fqn in fqns {
             if self.has_references_for_str(&fqn) {
                 return true;
