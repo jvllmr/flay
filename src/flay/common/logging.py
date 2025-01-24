@@ -86,27 +86,3 @@ def enable_debug_logging() -> None:
 def reset_logging_level() -> None:
     flay_logger = get_flay_logger()
     flay_logger.setLevel(logging.NOTSET)
-
-
-class _Serializable(t.Protocol):
-    def __str__(self) -> str: ...
-
-
-class LazyStr:
-    def __init__(self, factory: t.Callable[[], str | _Serializable]):
-        self.factory = factory
-        self._cached_string: str | None = None
-
-    def get_string(self) -> str:  # pragma: no cover
-        if self._cached_string is not None:
-            return self._cached_string
-        resolved = self.factory()
-        str_value = resolved if isinstance(resolved, str) else str(resolved)
-        self._cached_string = str_value
-        return str_value
-
-    def __repr__(self) -> str:  # pragma: no cover
-        return f"<LazyStr resolved_value='{self.get_string()}' >"
-
-    def __str__(self) -> str:
-        return self.get_string()
