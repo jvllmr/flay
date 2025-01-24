@@ -263,7 +263,7 @@ impl Visitor for ReferencesCounter {
                     self.always_bump_context = true;
                 }
             }
-            Stmt::AnnAssign(_) | Stmt::Assign(_) => {
+            Stmt::AnnAssign(_) | Stmt::Assign(_) | Stmt::AugAssign(_) => {
                 if self.has_references_for_stmt(&stmt) {
                     self.maybe_increase_stmt(&stmt);
                     self.always_bump_context = true;

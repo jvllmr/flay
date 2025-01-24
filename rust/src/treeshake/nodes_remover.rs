@@ -105,6 +105,21 @@ impl ReferencesHolder for NodesRemover {
 
 impl Transformer for NodesRemover {
     fn visit_stmt(&mut self, stmt: Stmt) -> Option<Stmt> {
+        let cannot_remove_stmt = match stmt {
+            Stmt::ClassDef(_)
+            | Stmt::FunctionDef(_)
+            | Stmt::AsyncFunctionDef(_)
+            | Stmt::AnnAssign(_)
+            | Stmt::AugAssign(_)
+            | Stmt::Assign(_)
+            | Stmt::Import(_)
+            | Stmt::ImportFrom(_) => false,
+            _ => true,
+        };
+        if cannot_remove_stmt {
+            return Some(stmt);
+        }
+
         if !self.has_references_for_stmt(&stmt) {
             return None;
         }

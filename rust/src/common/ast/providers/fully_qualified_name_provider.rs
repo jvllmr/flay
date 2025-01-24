@@ -69,8 +69,11 @@ impl FullyQualifiedNameProvider {
         let mut result: Vec<String> = Vec::new();
 
         for (key, value) in &self.imports_provider.active_imports {
-            if qualified_name.contains(key) {
-                result.push(qualified_name.replace(key, &value));
+            if (qualified_name.len() == key.len() && qualified_name == key)
+                || qualified_name.starts_with(&format!("{}.", key))
+            {
+                println!("{} {} {}", qualified_name, key, value);
+                result.push(qualified_name.replacen(key, &value, 1));
             }
         }
 

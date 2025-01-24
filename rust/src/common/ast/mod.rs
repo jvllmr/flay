@@ -38,16 +38,13 @@ pub fn get_import_from_absolute_module_spec(
             "No absolute module spec could be found for node",
         ));
     }
-    if node.module.is_some() {
+    if let Some(module) = &node.module {
         let level = match node.level {
             Some(level) => level.to_usize(),
             None => 0,
         };
-        let module_node = node.module.as_ref().unwrap();
 
-        return Ok(vec![
-            resolve_name(&module_node, parent_package, &level).unwrap()
-        ]);
+        return Ok(vec![resolve_name(module, parent_package, &level)?]);
     }
 
     if node.level.is_some_and(|level| level.to_usize() == 1) {

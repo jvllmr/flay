@@ -113,3 +113,11 @@ def test_bundle_vendor_bundle(
         in init_file_content
     )
     assert "from pathlib import Path" in init_file_content
+
+
+def test_bundle_transitive_init_file(run_bundle_package: RunBundlePackageT) -> None:
+    _, result_path = run_bundle_package("transitive_init_file", "transitive_init_file")
+    assert (result_path / "__init__.py").exists()
+    assert (result_path / "module" / "abc.py").exists()
+    assert (result_path / "module" / "def_.py").exists()
+    assert (result_path / "module" / "__init__.py").exists()

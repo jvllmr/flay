@@ -1,7 +1,11 @@
 from __future__ import annotations
 from flay._flay_rs import FileCollector
-from flay.common.libcst import file_to_node
-from flay.common.module_spec import find_all_files_in_module_spec, get_top_level_package
+
+from flay.common.module_spec import (
+    find_all_files_in_module_spec,
+    get_parent_package,
+    get_top_level_package,
+)
 from pathlib import Path
 import logging
 import os.path
@@ -19,9 +23,7 @@ def bundle_package(
     collector = FileCollector(package=module_spec)
 
     for path in find_all_files_in_module_spec(module_spec):
-        module = file_to_node(path)
-
-        if module is not None:
+        if path.match("*.py"):
             found_module_spec = (
                 module_spec
                 if path.match("*/__init__.py")
@@ -39,8 +41,23 @@ def bundle_package(
         gitignore.parent.mkdir(parents=True, exist_ok=True)
         gitignore.write_text("*")
 
+    files_keys = set(files.keys())
+
+    for found_module, _found_path in files_keys:
+        found_path = Path(_found_path)
+        if found_path.match("*.py") and not found_path.match("*/__init__.py"):
+            new_init_key = (
+                get_parent_package(found_module),
+                str(found_path.parent / "__init__.py"),
+            )
+            if new_init_key not in files_keys and "__init__.py" in os.listdir(
+                str(found_path.parent)
+            ):
+                files[new_init_key] = ""
+
     for (found_module, _found_path), module_source in files.items():
         found_path = Path(_found_path)
+
         if module_source:
             module_source = transform_imports(
                 module_source, _found_path, top_level_package, vendor_module_name
@@ -61,7 +78,7 @@ def bundle_package(
         target_dir = target_file.parent
         if not target_dir.exists():
             target_dir.mkdir(parents=True)
-        if module_source:
+        if module_source is not None:
             target_file.write_text(
                 module_source,
                 encoding="utf-8" if sys.platform.startswith("win") else None,

@@ -15,6 +15,12 @@ def get_top_level_package(module_spec: str) -> str:
     return module_spec.split(".", 1)[0]
 
 
+def get_parent_package(module_spec: str) -> str:
+    if "." not in module_spec:
+        return module_spec
+    return ".".join(module_spec.split(".")[:-1])
+
+
 VALID_FILE_EXTENSIONS = {
     "py",
     "so",  # shared objects
