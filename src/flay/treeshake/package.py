@@ -1,27 +1,17 @@
 from __future__ import annotations
-from libcst import (
-    CSTVisitor,
-    MetadataWrapper,
-)
 
-from flay._flay_rs import ReferencesCounter
-from flay.common.libcst import get_import_from_absolute_module_spec
-from flay.common.module_spec import get_parent_package
-from .node_remover import NodeRemover
+from flay._flay_rs import NodesRemover, ReferencesCounter
+
+
 from libcst.metadata import (
     FullyQualifiedNameProvider,
     FullRepoManager,
-    ScopeProvider,
-    QualifiedName,
 )
-import libcst as cst
 import os
 from collections import defaultdict
 import typing as t
 import logging
-from flay.common.util import safe_remove_empty_dir
-from libcst.helpers import get_full_name_for_node
-from collections import OrderedDict
+
 
 log = logging.getLogger(__name__)
 
@@ -54,15 +44,14 @@ def treeshake_package(
     repo_manager = FullRepoManager(
         source_dir, paths=source_files, providers={FullyQualifiedNameProvider}
     )
-    file_modules: OrderedDict[str, MetadataWrapper] = OrderedDict()
+    file_modules: list[str] = []
     references_counts: dict[str, int] = defaultdict(int)
     new_references_count = 1
     for file_path in sorted(
         source_files, key=lambda x: 1 if x.endswith("__init__.py") else 0
     ):
-        file_modules[file_path] = file_module = (
-            repo_manager.get_metadata_wrapper_for_path(file_path)
-        )
+        file_modules.append(file_path)
+        file_module = repo_manager.get_metadata_wrapper_for_path(file_path)
 
         # __main__.py should be preserved
         if file_path.endswith("__main__.py"):
@@ -83,7 +72,7 @@ def treeshake_package(
         )
         treeshake_iteration += 1
         references_counter.reset_counter()
-        for file_path, file_module in file_modules.items():
+        for file_path in file_modules:
             module_spec = known_module_specs[file_path]
 
             log.debug("Start processing referencs for module %s", module_spec)
@@ -95,17 +84,12 @@ def treeshake_package(
     references_counts |= references_counter.references_counts
 
     # remove nodes without references
-    nodes_remover = NodeRemover(references_counts, set(known_module_specs.values()))
-    for file_path, file_module in file_modules.items():
+    nodes_remover = NodesRemover(references_counts, set(known_module_specs.values()))
+    for file_path in file_modules:
         module_spec = known_module_specs[file_path]
-        parent_package = (
-            module_spec
-            if file_path.endswith("__init__.py") or file_path.endswith("__main__.py")
-            else get_parent_package(module_spec)
-        )
-        nodes_remover.parent_package = parent_package
-        new_module = file_module.visit(nodes_remover)
 
+        nodes_remover.process_module(module_spec=module_spec, source_path=file_path)
+        """
         if not new_module.body and not file_path.endswith("__init__.py"):
             os.remove(file_path)
             log.debug("Removed file %s", file_path)
@@ -124,6 +108,5 @@ def treeshake_package(
             with open(file_path, "w") as f:
                 f.write(new_module.code)
             log.debug("Processed code of %s", file_path)
-    stats |= nodes_remover.stats
-
+        """
     return stats

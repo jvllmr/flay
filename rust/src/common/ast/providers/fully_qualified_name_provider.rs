@@ -17,15 +17,17 @@ pub struct FullyQualifiedNameProviderScope {
 pub struct FullyQualifiedNameProvider {
     pub name_context: TNameContext,
     module_spec: String,
+    parent_package: String,
     imports_provider: ImportsTrackingProvider,
 }
 
 impl FullyQualifiedNameProvider {
-    pub fn new(module_spec: &str) -> Self {
+    pub fn new(module_spec: &str, parent_package: &str) -> Self {
         FullyQualifiedNameProvider {
             name_context: String::new(),
             imports_provider: ImportsTrackingProvider::new(&get_parent_package(module_spec)),
             module_spec: module_spec.to_string(),
+            parent_package: parent_package.to_string(),
         }
     }
 
@@ -45,7 +47,7 @@ impl FullyQualifiedNameProvider {
     }
 
     fn get_stmt_qualified_name(&self, stmt: &Stmt) -> Vec<String> {
-        get_full_name_for_stmt(stmt)
+        get_full_name_for_stmt(stmt, &self.parent_package)
             .iter()
             .map(|name|
                 // TODO: match outside of map
@@ -91,10 +93,16 @@ impl FullyQualifiedNameProvider {
     }
 
     pub fn get_stmt_fully_qualified_name(&self, stmt: &Stmt) -> Vec<String> {
-        self.get_stmt_qualified_name(stmt)
-            .iter()
-            .flat_map(|name| self.resolve_fully_qualified_name(name))
-            .collect()
+        match stmt {
+            Stmt::Import(_) | Stmt::ImportFrom(_) => {
+                get_full_name_for_stmt(stmt, &self.parent_package)
+            }
+            _ => self
+                .get_stmt_qualified_name(stmt)
+                .iter()
+                .flat_map(|name| self.resolve_fully_qualified_name(name))
+                .collect(),
+        }
     }
 
     pub fn visit_import_from(&mut self, import_from: &StmtImportFrom) {
@@ -105,12 +113,19 @@ impl FullyQualifiedNameProvider {
     }
 
     pub fn enter_scope(&mut self, stmt: &Stmt) -> FullyQualifiedNameProviderScope {
-        let full_names = get_full_name_for_stmt(stmt);
-        let mut old_name_context: Option<TNameContext> = None;
-        if full_names.len() == 1 {
-            old_name_context = Some(self.name_context.clone());
-            self.name_context = format!("{}.{}", self.name_context, full_names[0]);
-        }
+        let old_name_context: Option<TNameContext> = match stmt {
+            Stmt::ClassDef(_) | Stmt::FunctionDef(_) | Stmt::AsyncFunctionDef(_) => {
+                let full_names = get_full_name_for_stmt(stmt, &self.parent_package);
+                let mut ret_value: Option<TNameContext> = None;
+                if full_names.len() == 1 {
+                    ret_value = Some(self.name_context.clone());
+                    self.name_context = format!("{}.{}", self.name_context, full_names[0]);
+                }
+
+                ret_value
+            }
+            _ => None,
+        };
 
         FullyQualifiedNameProviderScope {
             name_context: old_name_context,

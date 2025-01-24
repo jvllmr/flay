@@ -1,3 +1,4 @@
+# nopycln: file
 from . import unused_file
 from remove_unused_import import unused_file  # type: ignore  # noqa: F401, F811
 import remove_unused_import.unused_file  # type: ignore  # noqa: F401
