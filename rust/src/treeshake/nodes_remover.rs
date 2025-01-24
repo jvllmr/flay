@@ -8,11 +8,11 @@ use pyo3::{pyclass, pymethods};
 
 use rustpython_ast::{Alias, Stmt, StmtImport, StmtImportFrom, Suite};
 use rustpython_parser::Parse;
-use rustpython_unparser::Unparser;
+use rustpython_unparser::{transformer::Transformer, Unparser};
 
 use crate::common::ast::{
     get_import_from_absolute_module_spec,
-    providers::fully_qualified_name_provider::FullyQualifiedNameProvider, transformer::Transformer,
+    providers::fully_qualified_name_provider::FullyQualifiedNameProvider,
 };
 
 use super::references_counter::ReferencesHolder;
