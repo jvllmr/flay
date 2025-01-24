@@ -4,7 +4,3 @@ class FlayError(Exception):
 
 class FlayFileNotFoundError(FlayError):
     pass
-
-
-class ParsingError(FlayError):
-    pass

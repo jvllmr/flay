@@ -67,3 +67,14 @@ def test_treeshake_package_remove_empty_modules(
     assert (result_path / "main.py").exists()
     assert (result_path / "__init__.py").exists()
     assert not (result_path / "unused").exists()
+
+
+def test_treeshake_package_preserve_with_decorators(
+    run_treeshake_package: RunTreeshakePackageT,
+) -> None:
+    source_path = TEST_PACKAGES_DIR / "preserve_with_decorators"
+    result_path = run_treeshake_package(source_path)
+    init_file = result_path / "__init__.py"
+    init_file_content = init_file.read_text()
+    assert "@dataclass\nclass MyClass:\n    pass" in init_file_content
+    assert "@contextmanager\ndef my_context_manager() ->" in init_file_content

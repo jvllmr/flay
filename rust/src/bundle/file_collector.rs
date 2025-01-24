@@ -53,9 +53,7 @@ impl FileCollector {
             return Ok(Some((file_path_name, file_path_origin)));
         })
         .unwrap();
-        if key_option.is_some() {
-            let key = key_option.unwrap();
-
+        if let Some(key) = key_option {
             if self.collected_files.contains_key(&key) {
                 return;
             }
@@ -69,7 +67,7 @@ impl FileCollector {
             }
             let mut next_parent_package = get_parent_package(&file_name).to_string();
 
-            if file_origin.ends_with("__init__.py") {
+            if file_origin.ends_with("__init__.py") || file_origin.ends_with("__main__.py") {
                 next_parent_package = file_name;
             }
 
@@ -77,14 +75,14 @@ impl FileCollector {
                 package: next_parent_package,
                 collected_files: self.collected_files.to_owned(),
             };
-            let asts = Suite::parse(
+            let stmts = Suite::parse(
                 &file_content_option.unwrap(),
                 &file_origin.to_str().unwrap(),
             )
             .unwrap();
-            asts.iter().for_each(|node| {
-                sub_collector.visit_stmt(node.to_owned());
-            });
+            for stmt in stmts {
+                sub_collector.visit_stmt(stmt);
+            }
             self.collected_files.extend(sub_collector.collected_files);
         }
     }
@@ -101,6 +99,14 @@ impl Visitor for FileCollector {
             get_import_from_absolute_module_spec(&node, &self.package).unwrap()
         {
             self._process_module(&absolute_module_spec);
+            // imported name could be a module
+            /* TODO: causes segmentation fault???
+            for name in &node.names {
+                if name.name.as_str() != "*" {
+                    self._process_module(&format!("{}.{}", absolute_module_spec, name.name));
+                }
+            }
+            */
         }
     }
 }
