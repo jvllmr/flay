@@ -6,11 +6,12 @@ use std::{
 
 use pyo3::{pyclass, pymethods};
 
-use rustpython_ast::{Stmt, Suite};
+use rustpython_ast::{Alias, Stmt, StmtImport, StmtImportFrom, Suite};
 use rustpython_parser::Parse;
 use rustpython_unparser::Unparser;
 
 use crate::common::ast::{
+    get_import_from_absolute_module_spec,
     providers::fully_qualified_name_provider::FullyQualifiedNameProvider, transformer::Transformer,
 };
 
@@ -27,6 +28,7 @@ pub struct NodesRemover {
 impl NodesRemover {
     #[new]
     fn new(mut references_counts: HashMap<String, usize>, known_modules: HashSet<String>) -> Self {
+        // known modules whose members are references should also be count as referenced
         let mut new_keys: Vec<String> = Vec::new();
 
         for known_module in &known_modules {
@@ -39,7 +41,7 @@ impl NodesRemover {
         for new_key in new_keys {
             references_counts.insert(new_key, 1);
         }
-
+        println!("{:?}", references_counts);
         NodesRemover {
             references_counts,
             names_provider: FullyQualifiedNameProvider::new("", ""),
@@ -106,9 +108,45 @@ impl Transformer for NodesRemover {
         if !self.has_references_for_stmt(&stmt) {
             return None;
         }
+        let scope = self.names_provider.enter_scope(&stmt);
         if let Some(new_stmt) = self.generic_visit_stmt(stmt) {
+            self.names_provider.exit_scope(scope);
             return Some(new_stmt);
+        } else {
+            self.names_provider.exit_scope(scope);
         }
+
         None
+    }
+
+    fn visit_stmt_import(&mut self, mut stmt: StmtImport) -> Option<StmtImport> {
+        let mut new_names: Vec<Alias> = Vec::new();
+        for name in stmt.names {
+            if self.has_references_for_str(&name.name) {
+                new_names.push(name);
+            }
+        }
+        stmt.names = new_names;
+        Some(stmt)
+    }
+
+    fn visit_stmt_import_from(&mut self, mut stmt: StmtImportFrom) -> Option<StmtImportFrom> {
+        let mut new_names: Vec<Alias> = Vec::new();
+
+        if let Ok(module_specs) =
+            get_import_from_absolute_module_spec(&stmt, &self.get_parent_package())
+        {
+            for module_spec in module_specs {
+                for name in &stmt.names {
+                    if name.name.as_str() == "*"
+                        || self.has_references_for_str(&format!("{}.{}", module_spec, name.name))
+                    {
+                        new_names.push(name.clone());
+                    }
+                }
+            }
+        }
+        stmt.names = new_names;
+        Some(stmt)
     }
 }

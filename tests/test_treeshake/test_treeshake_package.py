@@ -49,13 +49,13 @@ def test_treeshake_package_import_star(
     source_content = source_file.read_text()
 
     assert "from .unused_source import *" in source_content
-    assert 'def hello_world() -> None:\n    print("Hello world!")' in source_content
+    assert "def hello_world() -> None:\n    print('Hello world!')" in source_content
 
     unused_source_file = result_path / "unused_source.py"
     unused_source_content = unused_source_file.read_text()
 
     assert "def goodbye() -> None:" not in unused_source_content
-    assert 'def moin() -> None:\n    print("Moin Welt!")' in unused_source_content
+    assert "def moin() -> None:\n    print('Moin Welt!')" in unused_source_content
 
 
 def test_treeshake_package_remove_empty_modules(

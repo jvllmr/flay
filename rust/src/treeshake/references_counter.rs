@@ -34,12 +34,35 @@ pub trait ReferencesHolder {
         false
     }
 
+    fn has_references_for_str(&self, str_: &str) -> bool {
+        let references_counts = self.get_references_counts();
+        // TODO: ??? this looks wrong; someone with more rust xp please help
+        return references_counts.get(str_).unwrap_or(&(0 as usize)) > &0;
+    }
+
     fn has_references_for_stmt(&self, stmt: &Stmt) -> bool {
         let names_provider = self.get_names_provider();
-        let references_counts = self.get_references_counts();
-        for fqn in names_provider.get_stmt_fully_qualified_name(stmt) {
-            // TODO: ??? this looks wrong; someone with more rust xp please help
-            if references_counts.get(&fqn).unwrap_or(&(0 as usize)) > &0 {
+
+        let fqns: Vec<String> = match stmt {
+            Stmt::ImportFrom(import_from) => {
+                if import_from.names.len() == 1 && import_from.names[0].name.as_str() == "*" {
+                    if let Ok(module_specs) = get_import_from_absolute_module_spec(
+                        import_from,
+                        &self.get_parent_package(),
+                    ) {
+                        module_specs
+                    } else {
+                        Vec::new()
+                    }
+                } else {
+                    names_provider.get_stmt_fully_qualified_name(stmt)
+                }
+            }
+            _ => names_provider.get_stmt_fully_qualified_name(stmt),
+        };
+        println!("{:?}", fqns);
+        for fqn in fqns {
+            if self.has_references_for_str(&fqn) {
                 return true;
             }
         }

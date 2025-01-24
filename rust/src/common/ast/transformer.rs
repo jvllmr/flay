@@ -1398,7 +1398,7 @@ pub trait Transformer {
         let mut new_nodes: Vec<ArgWithDefault> = Vec::new();
 
         for arg in node {
-            if let Some(new_arg) = self.generic_visit_arg_with_default(arg) {
+            if let Some(new_arg) = self.visit_arg_with_default(arg) {
                 new_nodes.push(new_arg);
             }
         }

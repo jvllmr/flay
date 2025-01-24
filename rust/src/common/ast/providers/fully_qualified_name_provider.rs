@@ -93,10 +93,16 @@ impl FullyQualifiedNameProvider {
     }
 
     pub fn get_stmt_fully_qualified_name(&self, stmt: &Stmt) -> Vec<String> {
-        self.get_stmt_qualified_name(stmt)
-            .iter()
-            .flat_map(|name| self.resolve_fully_qualified_name(name))
-            .collect()
+        match stmt {
+            Stmt::Import(_) | Stmt::ImportFrom(_) => {
+                get_full_name_for_stmt(stmt, &self.parent_package)
+            }
+            _ => self
+                .get_stmt_qualified_name(stmt)
+                .iter()
+                .flat_map(|name| self.resolve_fully_qualified_name(name))
+                .collect(),
+        }
     }
 
     pub fn visit_import_from(&mut self, import_from: &StmtImportFrom) {
