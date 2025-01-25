@@ -238,6 +238,14 @@ impl ReferencesHolder for ReferencesCounter {
 
 impl Visitor for ReferencesCounter {
     fn visit_stmt(&mut self, stmt: Stmt) {
+        // everything in __main__.py should be preserved
+        if self
+            .source_path
+            .file_name()
+            .is_some_and(|file_name| file_name == "__main__.py")
+        {
+            self.maybe_increase_stmt(&stmt);
+        }
         let can_reset_context = !self.always_bump_context;
         if self.always_bump_context {
             self.maybe_increase_stmt(&stmt);
@@ -300,6 +308,14 @@ impl Visitor for ReferencesCounter {
     }
 
     fn visit_expr(&mut self, expr: Expr) {
+        // everything in __main__.py should be preserved
+        if self
+            .source_path
+            .file_name()
+            .is_some_and(|file_name| file_name == "__main__.py")
+        {
+            self.maybe_increase_expr(&expr);
+        }
         let can_reset_context = !self.always_bump_context;
         if self.always_bump_context {
             self.maybe_increase_expr(&expr);

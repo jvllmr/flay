@@ -4,7 +4,6 @@ description = "Bundle, treeshake and minify your python projects"
 authors = [{ name = "Jan Vollmer", email = "jan@vllmr.dev" }]
 dependencies = [
   "stdlib-list>=0.11.0",
-  "libcst>=1.6.0",
   "typer>=0.15.1",
   "rich>=13.9.4",
   "typing-extensions>=4.12.2",
