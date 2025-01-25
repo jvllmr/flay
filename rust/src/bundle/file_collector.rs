@@ -58,7 +58,8 @@ impl FileCollector {
                     return;
                 }
 
-                let (file_name, file_origin) = key.to_owned();
+                let (module_name, file_origin) = key.to_owned();
+
                 if file_origin
                     .extension()
                     .is_some_and(|extension| extension == "py")
@@ -66,14 +67,12 @@ impl FileCollector {
                     if let Ok(file_content) = read_to_string(&file_origin) {
                         self.collected_files.insert(key, Some(file_content.clone()));
 
-                        let mut next_parent_package = get_parent_package(&file_name).to_string();
-
-                        if file_origin.ends_with("__init__.py")
-                            || file_origin.ends_with("__main__.py")
-                        {
-                            next_parent_package = file_name;
+                        let mut next_parent_package = get_parent_package(&module_name).to_string();
+                        if file_origin.file_name().is_some_and(|file_name| {
+                            file_name == "__init__.py" || file_name == "__main__.py"
+                        }) {
+                            next_parent_package = module_name
                         }
-
                         let mut sub_collector = FileCollector {
                             package: next_parent_package,
                             collected_files: self.collected_files.to_owned(),
@@ -85,6 +84,8 @@ impl FileCollector {
                         }
                         self.collected_files.extend(sub_collector.collected_files);
                     }
+                } else {
+                    self.collected_files.insert(key, None);
                 }
             }
         }

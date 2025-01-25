@@ -72,7 +72,9 @@ def _lookup_paths_for_module_spec(module_spec: str) -> list[str] | None:
 
 
 def _valid_module_spec(module_spec: str, result: ModuleSpec) -> bool:
-    # rebuild the module spec from the found path and check if the searched value is equal
+    """
+    rebuild the module spec from the found path and check if the searched value is equal
+    """
     if result.origin is None:
         return False
     origin = Path(result.origin)
@@ -82,7 +84,7 @@ def _valid_module_spec(module_spec: str, result: ModuleSpec) -> bool:
         origin = origin.parent
     built_module_spec_segments = []
     for _ in range(segments_count):
-        built_module_spec_segments.append(origin.stem)
+        built_module_spec_segments.append(origin.name.split(".", 1)[0])
         origin = origin.parent
     return ".".join(reversed(built_module_spec_segments)) == module_spec
 
@@ -90,9 +92,12 @@ def _valid_module_spec(module_spec: str, result: ModuleSpec) -> bool:
 def find_module_path(
     module_spec: str,
 ) -> ModuleSpec | None:
+    assert "__init__" not in module_spec
     lookup_paths = _lookup_paths_for_module_spec(module_spec)
+
     for finder in sys.meta_path:
         result = finder.find_spec(module_spec, lookup_paths)
+
         if result is not None and _valid_module_spec(
             module_spec=module_spec, result=result
         ):

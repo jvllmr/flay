@@ -48,18 +48,11 @@ def test_simple_bundle_hello_world(run_bundle_package: RunBundlePackageT) -> Non
 
 
 def test_bundle_c_extension(run_bundle_package: RunBundlePackageT) -> None:
-    source_path, result_path = run_bundle_package("fibunacci", "fibunacci")
-    file_ending = ".pyd" if sys.platform.startswith("win") else ".so"
-    lib_file: str | None = None
-    for root_path in (source_path, result_path):
-        for path, dirs, files in os.walk(str(root_path)):
-            for file in files:
-                if file.endswith(file_ending):
-                    lib_file = file
-                    break
-        assert lib_file is not None
-        assert lib_file.endswith(file_ending)
-        assert lib_file.startswith("fibunacci_c")
+    _, result_path = run_bundle_package("fibunacci", "fibunacci")
+    if sys.platform.startswith("win"):
+        assert len(list(result_path.glob("fibunacci_c.*.pyd"))) == 1
+    else:
+        assert len(list(result_path.glob("fibunacci_c.*.so"))) == 1
 
 
 @pytest.mark.parametrize(["vendor_module_name"], [("_vendor",), ("_bundled_packages",)])

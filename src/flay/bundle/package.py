@@ -32,6 +32,7 @@ def bundle_package(
             collector._process_module(found_module_spec)
 
     files = collector.collected_files
+
     top_level_package = get_top_level_package(module_spec)
 
     vendor_path = destination_path / top_level_package / vendor_module_name
