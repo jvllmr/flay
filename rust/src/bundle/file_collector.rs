@@ -33,11 +33,11 @@ impl FileCollector {
     }
 
     fn _process_module(&mut self, module_spec: &str) {
-        if is_in_std_lib(get_top_level_package(module_spec)).unwrap() {
+        if is_in_std_lib(get_top_level_package(module_spec)) {
             return;
         }
 
-        let key_option = Python::with_gil(|py| -> PyResult<Option<(String, PathBuf)>> {
+        let key_result = Python::with_gil(|py| -> PyResult<Option<(String, PathBuf)>> {
             let flay_common = PyModule::import(py, "flay.common.module_spec")?;
             let module_spec_obj = flay_common
                 .getattr("find_module_path")?
@@ -51,39 +51,43 @@ impl FileCollector {
             let file_path_name: String = module_spec_obj.getattr("name")?.extract()?;
             let file_path_origin = PathBuf::from(origin);
             return Ok(Some((file_path_name, file_path_origin)));
-        })
-        .unwrap();
-        if let Some(key) = key_option {
-            if self.collected_files.contains_key(&key) {
-                return;
-            }
+        });
+        if let Ok(key_option) = key_result {
+            if let Some(key) = key_option {
+                if self.collected_files.contains_key(&key) {
+                    return;
+                }
 
-            let (file_name, file_origin) = key.to_owned();
-            let file_content_option = read_to_string(&file_origin).ok();
-            self.collected_files
-                .insert(key, file_content_option.clone());
-            if file_content_option.is_none() {
-                return;
-            }
-            let mut next_parent_package = get_parent_package(&file_name).to_string();
+                let (module_name, file_origin) = key.to_owned();
 
-            if file_origin.ends_with("__init__.py") || file_origin.ends_with("__main__.py") {
-                next_parent_package = file_name;
-            }
+                if file_origin
+                    .extension()
+                    .is_some_and(|extension| extension == "py")
+                {
+                    if let Ok(file_content) = read_to_string(&file_origin) {
+                        self.collected_files.insert(key, Some(file_content.clone()));
 
-            let mut sub_collector = FileCollector {
-                package: next_parent_package,
-                collected_files: self.collected_files.to_owned(),
-            };
-            let stmts = Suite::parse(
-                &file_content_option.unwrap(),
-                &file_origin.to_str().unwrap(),
-            )
-            .unwrap();
-            for stmt in stmts {
-                sub_collector.visit_stmt(stmt);
+                        let mut next_parent_package = get_parent_package(&module_name).to_string();
+                        if file_origin.file_name().is_some_and(|file_name| {
+                            file_name == "__init__.py" || file_name == "__main__.py"
+                        }) {
+                            next_parent_package = module_name
+                        }
+                        let mut sub_collector = FileCollector {
+                            package: next_parent_package,
+                            collected_files: self.collected_files.to_owned(),
+                        };
+                        let stmts =
+                            Suite::parse(&file_content, &file_origin.to_str().unwrap()).unwrap();
+                        for stmt in stmts {
+                            sub_collector.visit_stmt(stmt);
+                        }
+                        self.collected_files.extend(sub_collector.collected_files);
+                    }
+                } else {
+                    self.collected_files.insert(key, None);
+                }
             }
-            self.collected_files.extend(sub_collector.collected_files);
         }
     }
 }
@@ -100,13 +104,14 @@ impl Visitor for FileCollector {
         {
             self._process_module(&absolute_module_spec);
             // imported name could be a module
-            /* TODO: causes segmentation fault???
+
             for name in &node.names {
                 if name.name.as_str() != "*" {
-                    self._process_module(&format!("{}.{}", absolute_module_spec, name.name));
+                    let potential_module_spec = format!("{}.{}", absolute_module_spec, name.name);
+
+                    self._process_module(&potential_module_spec);
                 }
             }
-            */
         }
     }
 }
