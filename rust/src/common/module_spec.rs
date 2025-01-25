@@ -20,8 +20,8 @@ pub fn get_top_level_package(module_spec: &str) -> &str {
     return module_spec.split(".").next().unwrap();
 }
 
-pub fn is_in_std_lib(module_spec: &str) -> PyResult<bool> {
-    return Python::with_gil(|py| -> PyResult<bool> {
+pub fn is_in_std_lib(module_spec: &str) -> bool {
+    let result = Python::with_gil(|py| -> PyResult<bool> {
         let stdlib_list = PyModule::import(py, "stdlib_list")?;
         let result: bool = stdlib_list
             .getattr("in_stdlib")?
@@ -29,4 +29,9 @@ pub fn is_in_std_lib(module_spec: &str) -> PyResult<bool> {
             .extract()?;
         Ok(result)
     });
+
+    match result {
+        Ok(result_value) => result_value,
+        Err(_) => false,
+    }
 }

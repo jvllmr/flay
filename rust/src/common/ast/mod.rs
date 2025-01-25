@@ -1,11 +1,14 @@
 pub mod full_name;
 pub mod providers;
 pub mod transformer;
+
 use pyo3::{
     exceptions::{PyImportError, PyValueError},
     PyResult,
 };
 use rustpython_ast::StmtImportFrom;
+
+use crate::common::module_spec::get_parent_package;
 
 // does the same as libcst's resolve_name
 fn resolve_name(name: &str, package: &str, level: &usize) -> PyResult<String> {
@@ -47,15 +50,22 @@ pub fn get_import_from_absolute_module_spec(
         return Ok(vec![resolve_name(module, parent_package, &level)?]);
     }
 
-    if node.level.is_some_and(|level| level.to_usize() == 1) {
-        let mut result = vec![parent_package.to_string()];
-        for name in &node.names {
-            let name_str = name.name.to_string();
-            if name_str != "*" {
-                result.push(name_str);
+    if let Some(int_level) = &node.level {
+        let level = int_level.to_usize();
+        if level > 0 {
+            let mut target_package = parent_package.to_string();
+            for _ in 1..level {
+                target_package = get_parent_package(&target_package);
             }
+            let mut result = vec![target_package.clone()];
+            for name in &node.names {
+                let name_str = name.name.to_string();
+                if name_str != "*" {
+                    result.push(format!("{}.{}", target_package, name_str));
+                }
+            }
+            return Ok(result);
         }
-        return Ok(result);
     }
 
     Err(PyValueError::new_err("Don't know how to handle node"))

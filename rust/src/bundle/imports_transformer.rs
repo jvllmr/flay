@@ -39,7 +39,7 @@ impl ImportsTransformer {
         references_need_update: bool,
     ) -> Identifier {
         if module_spec.starts_with(&self.top_level_package)
-            || is_in_std_lib(get_top_level_package(module_spec)).unwrap()
+            || is_in_std_lib(get_top_level_package(module_spec))
         {
             return node.clone();
         }

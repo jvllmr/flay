@@ -121,3 +121,8 @@ def test_bundle_transitive_init_file(run_bundle_package: RunBundlePackageT) -> N
     assert (result_path / "module" / "abc.py").exists()
     assert (result_path / "module" / "def_.py").exists()
     assert (result_path / "module" / "__init__.py").exists()
+
+
+def test_bundle_relative_imports(run_bundle_package: RunBundlePackageT) -> None:
+    _, result_path = run_bundle_package("relative_imports", "relative_imports")
+    assert (result_path / "module" / "hello_world.py").exists()
