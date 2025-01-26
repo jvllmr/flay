@@ -3,10 +3,6 @@ from __future__ import annotations
 from flay._flay_rs import NodesRemover, ReferencesCounter
 
 
-from libcst.metadata import (
-    FullyQualifiedNameProvider,
-    FullRepoManager,
-)
 import os
 from collections import defaultdict
 import typing as t
@@ -41,26 +37,12 @@ def treeshake_package(
                 else:
                     known_module_specs[file_path] = module_spec
 
-    repo_manager = FullRepoManager(
-        source_dir, paths=source_files, providers={FullyQualifiedNameProvider}
+    file_modules: list[str] = sorted(
+        source_files, key=lambda x: 1 if x.endswith("__init__.py") else 0
     )
-    file_modules: list[str] = []
     references_counts: dict[str, int] = defaultdict(int)
     new_references_count = 1
-    for file_path in sorted(
-        source_files, key=lambda x: 1 if x.endswith("__init__.py") else 0
-    ):
-        file_modules.append(file_path)
-        file_module = repo_manager.get_metadata_wrapper_for_path(file_path)
 
-        # __main__.py should be preserved
-        if file_path.endswith("__main__.py"):
-            log.debug("File %s will be preserved", file_path)
-            fqnames = file_module.resolve(FullyQualifiedNameProvider)
-            for fqns in fqnames.values():
-                for fqn in fqns:
-                    references_counts[fqn.name] = references_counts[fqn.name] + 1
-                    new_references_count += 1
     references_counter = ReferencesCounter(references_counts)
     treeshake_iteration = 1
     # count references until no new references get added
