@@ -87,6 +87,16 @@ impl FullyQualifiedNameProvider {
         return result;
     }
 
+    pub fn get_arbitrary_str_fully_qualified_name(&self, str_: &str) -> Vec<String> {
+        let mut result = self.resolve_fully_qualified_name(str_);
+        if self.name_context.len() > 0 {
+            result.extend(
+                self.resolve_fully_qualified_name(&format!("{}.{}", self.name_context, str_)),
+            );
+        }
+        result
+    }
+
     pub fn get_expr_fully_qualified_name(&self, expr: &Expr) -> Vec<String> {
         match self.get_expr_qualified_name(expr) {
             Some(name) => self.resolve_fully_qualified_name(&name),

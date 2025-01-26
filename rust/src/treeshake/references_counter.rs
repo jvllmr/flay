@@ -40,6 +40,43 @@ pub trait ReferencesHolder {
         return references_counts.get(str_).unwrap_or(&(0 as usize)) > &0;
     }
 
+    fn has_references_for_expanded_str(&self, str_: &str) -> bool {
+        let names_provider = self.get_names_provider();
+        for fqn in names_provider.get_arbitrary_str_fully_qualified_name(str_) {
+            if self.has_references_for_str(&fqn) {
+                return true;
+            }
+        }
+
+        false
+    }
+
+    fn _has_references_for_expr(&self, expr: &Expr) -> Option<String> {
+        let names_provider = self.get_names_provider();
+
+        let fqns: Vec<String> = match expr {
+            Expr::Attribute(attr) => match get_full_name_for_expr(&attr.value) {
+                Some(full_name) => {
+                    names_provider.get_arbitrary_str_fully_qualified_name(&full_name)
+                }
+                None => names_provider.get_expr_fully_qualified_name(expr),
+            },
+
+            _ => names_provider.get_expr_fully_qualified_name(expr),
+        };
+
+        for fqn in fqns {
+            if self.has_references_for_str(&fqn) {
+                return Some(fqn);
+            }
+        }
+        None
+    }
+
+    fn has_references_for_expr(&self, expr: &Expr) -> bool {
+        self._has_references_for_expr(expr).is_some()
+    }
+
     fn has_references_for_stmt(&self, stmt: &Stmt) -> bool {
         let names_provider = self.get_names_provider();
 
@@ -325,6 +362,12 @@ impl Visitor for ReferencesCounter {
             Expr::Call(_) => {
                 if self.is_global_scope() && self.module_spec_has_references() {
                     self.maybe_increase_expr(&expr);
+                    self.always_bump_context = true;
+                }
+            }
+            Expr::Attribute(_) => {
+                if let Some(fqn) = self._has_references_for_expr(&expr) {
+                    self.increase(&fqn);
                     self.always_bump_context = true;
                 }
             }
