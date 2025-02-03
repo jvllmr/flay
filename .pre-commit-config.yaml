@@ -5,7 +5,7 @@ ci:
 
 repos:
   - repo: https://github.com/hadialqattan/pycln
-    rev: "v2.4.0"
+    rev: "v2.5.0"
     hooks:
       - id: pycln
         args: [--config=pyproject.toml, --all, --disable-all-dunder-policy]
@@ -15,7 +15,7 @@ repos:
       - id: cargo-fmt
       - id: cargo-fix
   - repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: "v0.9.1"
+    rev: "v0.9.4"
     hooks:
       - id: ruff
         args:
