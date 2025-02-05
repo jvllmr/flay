@@ -92,49 +92,59 @@ impl Transformer for ImportsTransformer {
         Some(node)
     }
 
-    fn visit_expr_attribute(&mut self, node: ExprAttribute<TextRange>) -> Option<ExprAttribute> {
-        let mut full_name = node.attr.to_string();
+    fn visit_expr_attribute(
+        &mut self,
+        attr_expr: ExprAttribute<TextRange>,
+    ) -> Option<ExprAttribute> {
+        if let Some(node) = self.generic_visit_expr_attribute(attr_expr) {
+            let mut full_name = node.attr.to_string();
 
-        let mut deepest_attribute = node.clone();
-        loop {
-            let value_expr = *deepest_attribute.value.clone();
+            let mut deepest_attribute = node.clone();
+            loop {
+                let value_expr = *deepest_attribute.value.clone();
 
-            match value_expr {
-                Expr::Attribute(attr) => {
-                    full_name = format!("{}.{}", attr.attr, full_name);
-                    deepest_attribute = attr;
-                }
-                Expr::Name(name) => {
-                    full_name = format!("{}.{}", name.id, full_name);
-                    break;
-                }
-                _ => {
-                    self.visit_expr(value_expr);
-                    break;
+                match value_expr {
+                    Expr::Attribute(attr) => {
+                        full_name = format!("{}.{}", attr.attr, full_name);
+                        deepest_attribute = attr;
+                    }
+                    Expr::Name(name) => {
+                        full_name = format!("{}.{}", name.id, full_name);
+                        break;
+                    }
+                    _ => {
+                        deepest_attribute.value = Box::new(
+                            self.visit_expr(value_expr)
+                                .expect("Attribute cannot loose value"),
+                        );
+                        break;
+                    }
                 }
             }
-        }
 
-        let name_parts: Vec<&str> = full_name.rsplitn(2, ".").collect();
-        let mut module_part = name_parts[0];
-        if name_parts.len() > 1 {
-            module_part = name_parts[1];
-        }
-        if self.affected_names.contains(module_part) {
-            let new_attribute = ExprAttribute {
-                attr: Identifier::from(full_name),
-                range: node.range,
-                ctx: node.ctx,
-                value: Box::new(Expr::Name(ExprName {
-                    range: deepest_attribute.range,
-                    id: Identifier::from(self.get_vendor_string()),
-                    ctx: deepest_attribute.ctx,
-                })),
-            };
-            return Some(new_attribute);
-        }
+            let name_parts: Vec<&str> = full_name.rsplitn(2, ".").collect();
+            let mut module_part = name_parts[0];
+            if name_parts.len() > 1 {
+                module_part = name_parts[1];
+            }
+            if self.affected_names.contains(module_part) {
+                let new_attribute = ExprAttribute {
+                    attr: Identifier::from(full_name),
+                    range: node.range,
+                    ctx: node.ctx,
+                    value: Box::new(Expr::Name(ExprName {
+                        range: deepest_attribute.range,
+                        id: Identifier::from(self.get_vendor_string()),
+                        ctx: deepest_attribute.ctx,
+                    })),
+                };
+                return Some(new_attribute);
+            }
 
-        Some(node)
+            Some(node)
+        } else {
+            None
+        }
     }
 
     fn visit_expr_name(&mut self, node: ExprName<TextRange>) -> Option<ExprName> {

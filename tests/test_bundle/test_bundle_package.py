@@ -119,3 +119,17 @@ def test_bundle_transitive_init_file(run_bundle_package: RunBundlePackageT) -> N
 def test_bundle_relative_imports(run_bundle_package: RunBundlePackageT) -> None:
     _, result_path = run_bundle_package("relative_imports", "relative_imports")
     assert (result_path / "module" / "hello_world.py").exists()
+
+
+def test_correct_transformer_recursion(run_bundle_package: RunBundlePackageT) -> None:
+    _, result_path = run_bundle_package(
+        "correct_transformer_recursion", "correct_transformer_recursion"
+    )
+
+    init_file = result_path / "__init__.py"
+    init_file_content = init_file.read_text()
+
+    assert (
+        "correct_transformer_recursion._vendor.typer.style('Hello World!', fg=correct_transformer_recursion._vendor.typer.colors.BRIGHT_MAGENTA)"
+        in init_file_content
+    )
