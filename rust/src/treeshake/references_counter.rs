@@ -51,30 +51,33 @@ pub trait ReferencesHolder {
         false
     }
 
-    fn _has_references_for_expr(&self, expr: &Expr) -> Option<String> {
+    fn _has_references_for_expr(&self, expr: &Expr) -> Vec<String> {
         let names_provider = self.get_names_provider();
 
         let fqns: Vec<String> = match expr {
             Expr::Attribute(attr) => match get_full_name_for_expr(&attr.value) {
                 Some(full_name) => {
-                    names_provider.get_arbitrary_str_fully_qualified_name(&full_name)
+                    let mut names = names_provider.get_expr_fully_qualified_name(expr);
+
+                    names.extend(names_provider.get_arbitrary_str_fully_qualified_name(&full_name));
+                    names
                 }
                 None => names_provider.get_expr_fully_qualified_name(expr),
             },
 
             _ => names_provider.get_expr_fully_qualified_name(expr),
         };
-
+        let mut matched_fqns: Vec<String> = Vec::new();
         for fqn in fqns {
             if self.has_references_for_str(&fqn) {
-                return Some(fqn);
+                matched_fqns.push(fqn);
             }
         }
-        None
+        matched_fqns
     }
 
     fn has_references_for_expr(&self, expr: &Expr) -> bool {
-        self._has_references_for_expr(expr).is_some()
+        self._has_references_for_expr(expr).len() > 0
     }
 
     fn has_references_for_stmt(&self, stmt: &Stmt) -> bool {
@@ -366,7 +369,7 @@ impl Visitor for ReferencesCounter {
                 }
             }
             Expr::Attribute(_) => {
-                if let Some(fqn) = self._has_references_for_expr(&expr) {
+                for fqn in self._has_references_for_expr(&expr) {
                     self.increase(&fqn);
                     self.always_bump_context = true;
                 }
