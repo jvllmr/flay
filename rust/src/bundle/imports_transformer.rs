@@ -1,11 +1,11 @@
 use crate::common::module_spec::{get_top_level_package, is_in_std_lib};
 use pyo3::pyfunction;
 use rustpython_ast::{
-    fold::fold_expr, text_size::TextRange, Alias, Expr, ExprAttribute, ExprName, Fold, Identifier,
-    StmtImport, StmtImportFrom, Suite,
+    text_size::TextRange, Alias, Expr, ExprAttribute, ExprName, Identifier, StmtImport,
+    StmtImportFrom, Suite,
 };
 use rustpython_parser::Parse;
-use rustpython_unparser::Unparser;
+use rustpython_unparser::{transformer::Transformer, Unparser};
 use std::collections::HashSet;
 
 struct ImportsTransformer {
@@ -50,13 +50,10 @@ impl ImportsTransformer {
     }
 }
 
-impl Fold<TextRange> for ImportsTransformer {
-    fn fold_stmt_import(
-        &mut self,
-        node: StmtImport<TextRange>,
-    ) -> Result<StmtImport<TextRange>, std::convert::Infallible> {
-        Ok(StmtImport {
-            names: node
+impl Transformer for ImportsTransformer {
+    fn generic_visit_stmt_import(&mut self, stmt: StmtImport) -> Option<StmtImport> {
+        Some(StmtImport {
+            names: stmt
                 .names
                 .iter()
                 .map(|name| Alias {
@@ -69,14 +66,14 @@ impl Fold<TextRange> for ImportsTransformer {
                     asname: name.asname.to_owned(),
                 })
                 .collect(),
-            range: node.range,
+            range: stmt.range,
         })
     }
 
-    fn fold_stmt_import_from(
+    fn visit_stmt_import_from(
         &mut self,
         node: StmtImportFrom<TextRange>,
-    ) -> Result<StmtImportFrom<TextRange>, std::convert::Infallible> {
+    ) -> Option<StmtImportFrom> {
         if node.module.is_some() && node.level.is_none_or(|v| v.to_usize() == 0) {
             let module_node = node.module.unwrap();
             let module_spec = module_node.as_str();
@@ -85,20 +82,17 @@ impl Fold<TextRange> for ImportsTransformer {
                 module_spec,
                 false,
             ));
-            return Ok(StmtImportFrom {
+            return Some(StmtImportFrom {
                 level: node.level,
                 names: node.names,
                 range: node.range,
                 module: new_module,
             });
         }
-        Ok(node)
+        Some(node)
     }
 
-    fn fold_expr_attribute(
-        &mut self,
-        node: ExprAttribute<TextRange>,
-    ) -> Result<ExprAttribute<Self::TargetU>, Self::Error> {
+    fn visit_expr_attribute(&mut self, node: ExprAttribute<TextRange>) -> Option<ExprAttribute> {
         let mut full_name = node.attr.to_string();
 
         let mut deepest_attribute = node.clone();
@@ -115,7 +109,7 @@ impl Fold<TextRange> for ImportsTransformer {
                     break;
                 }
                 _ => {
-                    fold_expr(self, value_expr)?;
+                    self.visit_expr(value_expr);
                     break;
                 }
             }
@@ -137,44 +131,24 @@ impl Fold<TextRange> for ImportsTransformer {
                     ctx: deepest_attribute.ctx,
                 })),
             };
-            return Ok(new_attribute);
+            return Some(new_attribute);
         }
 
-        Ok(node)
+        Some(node)
     }
 
-    fn fold_expr_name(
-        &mut self,
-        node: ExprName<TextRange>,
-    ) -> Result<ExprName<Self::TargetU>, Self::Error> {
+    fn visit_expr_name(&mut self, node: ExprName<TextRange>) -> Option<ExprName> {
         if self.affected_names.contains(node.id.as_str()) {
-            return Ok(ExprName {
+            return Some(ExprName {
                 id: self._prepend_vendor(&node.id),
                 ctx: node.ctx,
                 range: node.range,
             });
         }
-        Ok(node)
-    }
-
-    type TargetU = TextRange;
-
-    type Error = std::convert::Infallible;
-
-    type UserContext = bool;
-
-    fn will_map_user(&mut self, _user: &TextRange) -> Self::UserContext {
-        return false;
-    }
-
-    fn map_user(
-        &mut self,
-        user: TextRange,
-        _context: Self::UserContext,
-    ) -> Result<Self::TargetU, Self::Error> {
-        Ok(user)
+        Some(node)
     }
 }
+
 #[pyfunction]
 pub fn transform_imports(
     source: &str,
@@ -189,7 +163,7 @@ pub fn transform_imports(
         vendor_module_name.to_string(),
     );
     stmts.iter().for_each(|stmt| {
-        let new_stmt = transformer.fold_stmt(stmt.to_owned()).unwrap();
+        let new_stmt = transformer.visit_stmt(stmt.to_owned()).unwrap();
         unparser.unparse_stmt(&new_stmt);
     });
     let new_source = unparser.source;
