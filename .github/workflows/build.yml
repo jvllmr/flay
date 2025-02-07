@@ -8,6 +8,9 @@ on:
 
 jobs:
   linux:
+    permissions:
+      contents: read
+      actions: write
     runs-on: ${{ matrix.platform.runner }}
     strategy:
       matrix:
@@ -26,6 +29,8 @@ jobs:
             target: ppc64le
     steps:
       - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
       - uses: actions/setup-python@v5
         with:
           python-version: 3.x
@@ -43,6 +48,9 @@ jobs:
           path: dist
 
   musllinux:
+    permissions:
+      contents: read
+      actions: write
     runs-on: ${{ matrix.platform.runner }}
     strategy:
       matrix:
@@ -57,6 +65,8 @@ jobs:
             target: armv7
     steps:
       - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
       - uses: actions/setup-python@v5
         with:
           python-version: 3.x
@@ -74,6 +84,9 @@ jobs:
           path: dist
 
   windows:
+    permissions:
+      contents: read
+      actions: write
     runs-on: ${{ matrix.platform.runner }}
     strategy:
       matrix:
@@ -84,6 +97,8 @@ jobs:
             target: x86
     steps:
       - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
       - uses: actions/setup-python@v5
         with:
           python-version: 3.x
@@ -101,6 +116,9 @@ jobs:
           path: dist
 
   macos:
+    permissions:
+      contents: read
+      actions: write
     runs-on: ${{ matrix.platform.runner }}
     strategy:
       matrix:
@@ -111,6 +129,8 @@ jobs:
             target: aarch64
     steps:
       - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
       - uses: actions/setup-python@v5
         with:
           python-version: 3.x
@@ -127,9 +147,14 @@ jobs:
           path: dist
 
   sdist:
+    permissions:
+      contents: read
+      actions: write
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
       - name: Build sdist
         uses: PyO3/maturin-action@v1
         with:
