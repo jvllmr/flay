@@ -121,7 +121,9 @@ def test_bundle_relative_imports(run_bundle_package: RunBundlePackageT) -> None:
     assert (result_path / "module" / "hello_world.py").exists()
 
 
-def test_correct_transformer_recursion(run_bundle_package: RunBundlePackageT) -> None:
+def test_bundle_correct_transformer_recursion(
+    run_bundle_package: RunBundlePackageT,
+) -> None:
     _, result_path = run_bundle_package(
         "correct_transformer_recursion", "correct_transformer_recursion"
     )
@@ -131,5 +133,28 @@ def test_correct_transformer_recursion(run_bundle_package: RunBundlePackageT) ->
 
     assert (
         "correct_transformer_recursion._vendor.typer.style('Hello World!', fg=correct_transformer_recursion._vendor.typer.colors.BRIGHT_MAGENTA)"
+        in init_file_content
+    )
+
+
+def test_bundle_annotation_string_literals(
+    run_bundle_package: RunBundlePackageT,
+) -> None:
+    _, result_path = run_bundle_package(
+        "annotation_string_literals", "annotation_string_literals"
+    )
+
+    init_file = result_path / "__init__.py"
+    init_file_content = init_file.read_text()
+
+    assert "random_literal = 'typer.Typer'" in init_file_content
+
+    assert (
+        "def modify_app(app: 'annotation_string_literals._vendor.typer.Typer') -> 'annotation_string_literals._vendor.typer.Typer':\n    return app"
+        in init_file_content
+    )
+
+    assert (
+        "def modify_app2(app2: 'typerino.Typer') -> 'typerino.Typer':\n    return app2"
         in init_file_content
     )
