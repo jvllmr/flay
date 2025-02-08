@@ -9,10 +9,14 @@ on:
 
 jobs:
   mypy:
+    permissions:
+      contents: read
     name: MyPy
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
       - name: Setup PDM
         uses: pdm-project/setup-pdm@v4
         with:

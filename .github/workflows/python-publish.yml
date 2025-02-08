@@ -7,6 +7,9 @@ on:
 
 jobs:
   linux:
+    permissions:
+      contents: read
+      actions: write
     runs-on: ${{ matrix.platform.runner }}
     strategy:
       matrix:
@@ -25,6 +28,8 @@ jobs:
             target: ppc64le
     steps:
       - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
       - uses: actions/setup-python@v5
         with:
           python-version: 3.x
@@ -42,6 +47,9 @@ jobs:
           path: dist
 
   musllinux:
+    permissions:
+      contents: read
+      actions: write
     runs-on: ${{ matrix.platform.runner }}
     strategy:
       matrix:
@@ -56,6 +64,8 @@ jobs:
             target: armv7
     steps:
       - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
       - uses: actions/setup-python@v5
         with:
           python-version: 3.x
@@ -73,6 +83,9 @@ jobs:
           path: dist
 
   windows:
+    permissions:
+      contents: read
+      actions: write
     runs-on: ${{ matrix.platform.runner }}
     strategy:
       matrix:
@@ -83,6 +96,8 @@ jobs:
             target: x86
     steps:
       - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
       - uses: actions/setup-python@v5
         with:
           python-version: 3.x
@@ -100,6 +115,9 @@ jobs:
           path: dist
 
   macos:
+    permissions:
+      contents: read
+      actions: write
     runs-on: ${{ matrix.platform.runner }}
     strategy:
       matrix:
@@ -110,6 +128,8 @@ jobs:
             target: aarch64
     steps:
       - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
       - uses: actions/setup-python@v5
         with:
           python-version: 3.x
@@ -127,8 +147,13 @@ jobs:
 
   sdist:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      actions: write
     steps:
       - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
       - name: Build sdist
         uses: PyO3/maturin-action@v1
         with:
@@ -154,6 +179,8 @@ jobs:
       attestations: write
     steps:
       - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
       - uses: actions/download-artifact@v4
       - name: Generate artifact attestation
         uses: actions/attest-build-provenance@v2
