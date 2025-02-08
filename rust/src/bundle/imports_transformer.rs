@@ -1,8 +1,8 @@
 use crate::common::module_spec::{get_top_level_package, is_in_std_lib};
 use pyo3::pyfunction;
 use rustpython_ast::{
-    text_size::TextRange, Alias, Expr, ExprAttribute, ExprName, Identifier, StmtImport,
-    StmtImportFrom, Suite,
+    text_size::TextRange, Alias, Constant, Expr, ExprAttribute, ExprConstant, ExprName, Identifier,
+    StmtImport, StmtImportFrom, Suite,
 };
 use rustpython_parser::Parse;
 use rustpython_unparser::{transformer::Transformer, Unparser};
@@ -12,6 +12,7 @@ struct ImportsTransformer {
     top_level_package: String,
     vendor_module_name: String,
     affected_names: HashSet<String>,
+    is_in_annotation: bool,
 }
 
 impl ImportsTransformer {
@@ -20,6 +21,7 @@ impl ImportsTransformer {
             top_level_package,
             vendor_module_name,
             affected_names: HashSet::new(),
+            is_in_annotation: false,
         }
     }
 
@@ -51,7 +53,37 @@ impl ImportsTransformer {
 }
 
 impl Transformer for ImportsTransformer {
-    fn generic_visit_stmt_import(&mut self, stmt: StmtImport) -> Option<StmtImport> {
+    fn on_enter_annotation(&mut self, _: &Expr) {
+        self.is_in_annotation = true;
+    }
+
+    fn on_exit_annotation(&mut self, _: &Option<Expr>) {
+        self.is_in_annotation = false;
+    }
+
+    fn visit_expr_constant(&mut self, mut expr: ExprConstant) -> Option<ExprConstant> {
+        if self.is_in_annotation {
+            match &expr.value {
+                Constant::Str(str_value) => {
+                    if str_value.contains(".") {
+                        let name_parts: Vec<&str> = str_value.splitn(2, ".").collect();
+                        let module_part = name_parts[0];
+                        if self.affected_names.contains(module_part) {
+                            expr.value =
+                                Constant::Str(format!("{}.{}", self.get_vendor_string(), str_value))
+                        }
+                    }
+
+                    Some(expr)
+                }
+                _ => self.generic_visit_expr_constant(expr),
+            }
+        } else {
+            self.generic_visit_expr_constant(expr)
+        }
+    }
+
+    fn visit_stmt_import(&mut self, stmt: StmtImport) -> Option<StmtImport> {
         Some(StmtImport {
             names: stmt
                 .names
