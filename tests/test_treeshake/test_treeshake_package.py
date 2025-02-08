@@ -78,3 +78,39 @@ def test_treeshake_package_preserve_with_decorators(
     init_file_content = init_file.read_text()
     assert "@dataclass\nclass MyClass:\n    pass" in init_file_content
     assert "@contextmanager\ndef my_context_manager() ->" in init_file_content
+
+
+def test_treeshake_package_re_exports(
+    run_treeshake_package: RunTreeshakePackageT,
+) -> None:
+    source_path = TEST_PACKAGES_DIR / "re_exports"
+    result_path = run_treeshake_package(source_path)
+
+    hello_world_init = result_path / "hello_world" / "__init__.py"
+    assert hello_world_init.exists()
+    hello_world_init_content = hello_world_init.read_text()
+    assert "from .inner_hello_world import hello_world" in hello_world_init_content
+    assert (
+        "import re_exports.hello_world.inner_hello_world as inner_hello_world_alias"
+        in hello_world_init_content
+    )
+    assert (
+        "re_exports.hello_world.moin_world as moin_world_alias"
+        not in hello_world_init_content
+    )
+    assert "useless_func" not in hello_world_init_content
+    assert "from .moin_world import moin_world" not in hello_world_init_content
+
+    assert not (result_path / "hello_world" / "moin_world").exists()
+
+    inner_hello_world_init = hello_world_init = (
+        result_path / "hello_world" / "inner_hello_world" / "__init__.py"
+    )
+    assert inner_hello_world_init.exists()
+    inner_hello_world_init_content = inner_hello_world_init.read_text()
+    assert (
+        "def hello_world() -> None:\n    print('Hello World!')"
+        in inner_hello_world_init_content
+    )
+
+    assert "def useless_func() -> None:" not in inner_hello_world_init_content

@@ -153,19 +153,30 @@ impl ReferencesCounter {
         self.names_provider.name_context.len() == 0
     }
 
-    fn maybe_increase_stmt(&mut self, stmt: &Stmt) {
+    fn maybe_increase_stmt_selective<F>(&mut self, stmt: &Stmt, predicate: F)
+    where
+        F: Fn(&str) -> bool,
+    {
         for fqn in self.names_provider.get_stmt_fully_qualified_name(stmt) {
-            self.increase(&fqn);
+            if predicate(&fqn) {
+                self.increase(&fqn);
+            }
         }
 
         // bump for this node because it is a global name that could be imported somewhere else via star import
         if self.import_star_module_specs.len() > 0 {
             for module_spec in self.import_star_module_specs.to_owned() {
                 for full_name in get_full_name_for_stmt(stmt, &self.get_parent_package()) {
-                    self.increase(&format!("{}.{}", module_spec, full_name));
+                    if predicate(&full_name) {
+                        self.increase(&format!("{}.{}", module_spec, full_name));
+                    }
                 }
             }
         }
+    }
+
+    fn maybe_increase_stmt(&mut self, stmt: &Stmt) {
+        self.maybe_increase_stmt_selective(stmt, |_| true);
     }
 
     fn maybe_increase_expr(&mut self, expr: &Expr) {
@@ -283,13 +294,51 @@ impl Visitor for ReferencesCounter {
                     self.always_bump_context = true;
                 }
             }
-            Stmt::ImportFrom(import_from) => {
-                if import_from.names.len() == 1
-                    && import_from.names[0].name.as_str() == "*"
+            Stmt::Import(stmt_import) => {
+                // check if one of the names defined by this import was imported somewhere else
+                // if yes, bump reference of this import
+                for alias in &stmt_import.names {
+                    let defined_name = if let Some(alias_value) = &alias.asname {
+                        alias_value
+                    } else {
+                        &alias.name
+                    };
+                    for fqn in self.names_provider.resolve_fully_qualified_name(
+                        &self.names_provider.resolve_qualified_name(&defined_name),
+                    ) {
+                        if self.has_references_for_str(&fqn) {
+                            self.maybe_increase_stmt_selective(&stmt, |n| n == alias.name.as_str());
+                        }
+                    }
+                }
+            }
+
+            Stmt::ImportFrom(stmt_import_from) => {
+                // check if one of the names defined by this import was imported somewhere else
+                // if yes, bump reference of this import
+                for alias in &stmt_import_from.names {
+                    let defined_name = if let Some(alias_value) = &alias.asname {
+                        alias_value
+                    } else {
+                        &alias.name
+                    };
+                    for fqn in self.names_provider.resolve_fully_qualified_name(
+                        &self.names_provider.resolve_qualified_name(&defined_name),
+                    ) {
+                        if self.has_references_for_str(&fqn) {
+                            self.maybe_increase_stmt_selective(&stmt, |n| {
+                                n.ends_with(alias.name.as_str())
+                            });
+                        }
+                    }
+                }
+
+                if stmt_import_from.names.len() == 1
+                    && stmt_import_from.names[0].name.as_str() == "*"
                     && self.module_spec_has_references()
                 {
                     if let Ok(module_specs) = get_import_from_absolute_module_spec(
-                        &import_from,
+                        &stmt_import_from,
                         &self.get_parent_package(),
                     ) {
                         self.import_star_module_specs.extend(module_specs);

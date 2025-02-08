@@ -31,7 +31,7 @@ impl FullyQualifiedNameProvider {
         }
     }
 
-    fn maybe_format_with_name_context(&self, name: &str) -> String {
+    pub fn resolve_qualified_name(&self, name: &str) -> String {
         if self.name_context.len() > 0 {
             format!("{}.{}", self.name_context, name)
         } else {
@@ -41,7 +41,7 @@ impl FullyQualifiedNameProvider {
 
     fn get_expr_qualified_name(&self, expr: &Expr) -> Option<String> {
         get_full_name_for_expr(expr).map(|name| match expr {
-            Expr::NamedExpr(_) => self.maybe_format_with_name_context(&name),
+            Expr::NamedExpr(_) => self.resolve_qualified_name(&name),
             _ => name,
         })
     }
@@ -58,14 +58,14 @@ impl FullyQualifiedNameProvider {
                 | Stmt::ClassDef(_)
                 | Stmt::FunctionDef(_)
                 | Stmt::AsyncFunctionDef(_) => {
-                    self.maybe_format_with_name_context(name)
+                    self.resolve_qualified_name(name)
                 }
                 _ => name.to_string(),
             })
             .collect()
     }
 
-    fn resolve_fully_qualified_name(&self, qualified_name: &str) -> Vec<String> {
+    pub fn resolve_fully_qualified_name(&self, qualified_name: &str) -> Vec<String> {
         let mut result: Vec<String> = Vec::new();
 
         for (key, value) in &self.imports_provider.active_imports {
