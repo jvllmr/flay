@@ -114,3 +114,16 @@ def test_treeshake_package_re_exports(
     )
 
     assert "def useless_func() -> None:" not in inner_hello_world_init_content
+
+
+def test_treeshake_package_param_default_value(
+    run_treeshake_package: RunTreeshakePackageT,
+) -> None:
+    source_path = TEST_PACKAGES_DIR / "param_default_value"
+    result_path = run_treeshake_package(source_path)
+    init_file = result_path / "__init__.py"
+    init_file_content = init_file.read_text()
+    assert (
+        "def Default(value: t.Any) -> DefaultPlaceholder:\n    return DefaultPlaceholder(value=value)"
+        in init_file_content
+    )

@@ -5,7 +5,9 @@ use std::{
 };
 
 use pyo3::{pyclass, pymethods};
-use rustpython_ast::{Expr, ExprCompare, Stmt, StmtImport, StmtImportFrom, Suite, Visitor};
+use rustpython_ast::{
+    Arg, Arguments, Expr, ExprCompare, Stmt, StmtImport, StmtImportFrom, Suite, Visitor,
+};
 use rustpython_parser::Parse;
 
 use crate::common::{
@@ -13,6 +15,7 @@ use crate::common::{
         full_name::{get_full_name_for_expr, get_full_name_for_stmt},
         get_import_from_absolute_module_spec,
         providers::fully_qualified_name_provider::FullyQualifiedNameProvider,
+        visitor_patch::VisitorPatch,
     },
     module_spec::get_parent_package,
 };
@@ -372,6 +375,13 @@ impl Visitor for ReferencesCounter {
 
         match expr {
             Expr::Call(_) => {
+                if let Some(full_name) = get_full_name_for_expr(&expr) {
+                    println!(
+                        "Default {} {}",
+                        full_name,
+                        self.is_global_scope() && self.module_spec_has_references()
+                    )
+                }
                 if self.is_global_scope() && self.module_spec_has_references() {
                     self.maybe_increase_expr(&expr);
                     self.always_bump_context = true;
@@ -395,4 +405,14 @@ impl Visitor for ReferencesCounter {
         self.names_provider.visit_import_from(&node);
         self.generic_visit_stmt_import_from(node);
     }
+
+    fn generic_visit_arg(&mut self, node: Arg) {
+        self.generic_visit_arg_patch(node);
+    }
+
+    fn generic_visit_arguments(&mut self, node: Arguments) {
+        self.generic_visit_arguments_patch(node);
+    }
 }
+
+impl VisitorPatch for ReferencesCounter {}
