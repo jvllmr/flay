@@ -375,13 +375,6 @@ impl Visitor for ReferencesCounter {
 
         match expr {
             Expr::Call(_) => {
-                if let Some(full_name) = get_full_name_for_expr(&expr) {
-                    println!(
-                        "Default {} {}",
-                        full_name,
-                        self.is_global_scope() && self.module_spec_has_references()
-                    )
-                }
                 if self.is_global_scope() && self.module_spec_has_references() {
                     self.maybe_increase_expr(&expr);
                     self.always_bump_context = true;
