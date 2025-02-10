@@ -53,7 +53,7 @@ test = [
   "wheel>=0.45.1",
 ]
 lint = ["mypy>=1.14.1", "ruff>=0.9.3", "pre-commit>=4.1.0"]
-dev = ["nox>=2024.10.9", "maturin>=1.8.1", "maturin-import-hook>=0.2.0"]
+dev = ["nox>=2025.2.9", "maturin>=1.8.1", "maturin-import-hook>=0.2.0"]
 debug = ["tuna>=0.5.11"]
 types = ["types-setuptools>=75.8.0.20250110"]
 
