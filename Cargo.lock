@@ -497,6 +497,7 @@ checksum = "4cdaf8ee5c1473b993b398c174641d3aa9da847af36e8d5eb8291930b72f31a5"
 dependencies = [
  "is-macro",
  "malachite-bigint",
+ "rustpython-literal",
  "rustpython-parser-core",
  "static_assertions",
 ]
@@ -561,9 +562,9 @@ dependencies = [
 
 [[package]]
 name = "rustpython-unparser"
-version = "0.2.1"
+version = "0.2.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "4166cd69722b55418012d2840b7a9a48f5234741ffa6ea6dbd8c5981776c1c21"
+checksum = "85ac827fd0caeec3a5477654937cf8e4574482fff5bd5a259fb566c33c477fe4"
 dependencies = [
  "rustpython-ast",
  "rustpython-literal",

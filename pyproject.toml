@@ -3,7 +3,7 @@ name = "flay"
 description = "Bundle, treeshake and minify your python projects"
 authors = [{ name = "Jan Vollmer", email = "jan@vllmr.dev" }]
 dependencies = [
-  "stdlib-list>=0.11.0",
+  "stdlib-list>=0.11.1",
   "typer>=0.15.1",
   "rich>=13.9.4",
   "typing-extensions>=4.12.2",
@@ -52,7 +52,7 @@ test = [
   "pip>=25.0.1",
   "wheel>=0.45.1",
 ]
-lint = ["mypy>=1.15.0", "ruff>=0.9.6", "pre-commit>=4.1.0"]
+lint = ["mypy>=1.15.0", "ruff>=0.9.7", "pre-commit>=4.1.0"]
 dev = ["nox>=2025.2.9", "maturin>=1.8.2", "maturin-import-hook>=0.2.0"]
 debug = ["tuna>=0.5.11"]
 types = ["types-setuptools>=75.8.0.20250210"]
