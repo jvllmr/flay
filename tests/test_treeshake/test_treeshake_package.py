@@ -127,3 +127,69 @@ def test_treeshake_package_param_default_value(
         "def Default(value: t.Any) -> DefaultPlaceholder:\n    return DefaultPlaceholder(value=value)"
         in init_file_content
     )
+
+
+def test_transitive_star_import(
+    run_treeshake_package: RunTreeshakePackageT,
+) -> None:
+    source_path = TEST_PACKAGES_DIR / "transitive_star_import"
+    result_path = run_treeshake_package(source_path)
+    init_file = result_path / "__init__.py"
+    init_file_content = init_file.read_text()
+    assert "Loader =" in init_file_content
+
+    imported_init_file = result_path / "imported" / "__init__.py"
+    imported_init_file_content = imported_init_file.read_text()
+    assert "from .import2 import *" in imported_init_file_content
+
+    import2_file = result_path / "imported" / "import2.py"
+    import2_file_content = import2_file.read_text()
+    assert "from .source import *" in import2_file_content
+
+    source_file = result_path / "imported" / "source.py"
+    source_file_content = source_file.read_text()
+    assert "class SafeLoader:\n    pass" in source_file_content
+
+
+def test_reference_in_comp(
+    run_treeshake_package: RunTreeshakePackageT,
+) -> None:
+    source_path = TEST_PACKAGES_DIR / "reference_in_comp"
+    result_path = run_treeshake_package(source_path)
+    init_file = result_path / "__init__.py"
+    init_file_content = init_file.read_text()
+    assert "_meta =" in init_file_content
+
+
+def test_global_assignment(
+    run_treeshake_package: RunTreeshakePackageT,
+) -> None:
+    source_path = TEST_PACKAGES_DIR / "global_assignment"
+    result_path = run_treeshake_package(source_path)
+    init_file = result_path / "__init__.py"
+    init_file_content = init_file.read_text()
+
+    assert "ConditionalOptional.__new__.__defaults__ = (False, )" in init_file_content
+    assert (
+        "ConditionalOptional.check = _get_check_conditional(_check_optional)"
+        in init_file_content
+    )
+    assert (
+        "ConditionalOptional.apply_default = _apply_default_conditional_optional"
+        in init_file_content
+    )
+    assert (
+        "ConditionalOptional.remove_default = _remove_default_conditional_optional"
+        in init_file_content
+    )
+
+
+def test_local_var(
+    run_treeshake_package: RunTreeshakePackageT,
+) -> None:
+    source_path = TEST_PACKAGES_DIR / "local_var"
+    result_path = run_treeshake_package(source_path)
+    init_file = result_path / "__init__.py"
+    init_file_content = init_file.read_text()
+
+    assert "(_, git_version_b, _) =" in init_file_content

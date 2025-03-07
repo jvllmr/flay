@@ -1,0 +1,2 @@
+class SafeLoader:
+    pass

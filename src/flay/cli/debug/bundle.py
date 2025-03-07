@@ -21,9 +21,7 @@ def bundle_collector(
     for path in find_all_files_in_module_spec(module_spec):
         log.debug("Found: %s", path)
         file_module_spec = (
-            module_spec
-            if path.name == "__init__.py"
-            else f"{module_spec}.{path.name}"[:-3]
+            module_spec if path.name == "__init__.py" else f"{module_spec}.{path.stem}"
         )
         collector._process_module(file_module_spec)
 

@@ -103,6 +103,14 @@ impl ReferencesHolder for NodesRemover {
     }
 }
 
+impl NodesRemover {
+    fn fallback_stmt(&mut self, stmt: Stmt) -> Option<Stmt> {
+        match stmt {
+            _ => None,
+        }
+    }
+}
+
 impl Transformer for NodesRemover {
     fn visit_stmt(&mut self, stmt: Stmt) -> Option<Stmt> {
         let cannot_remove_stmt = match stmt {
@@ -121,7 +129,7 @@ impl Transformer for NodesRemover {
         }
 
         if !self.has_references_for_stmt(&stmt) {
-            return None;
+            return self.fallback_stmt(stmt);
         }
         let scope = self.names_provider.enter_scope(&stmt);
         if let Some(new_stmt) = self.generic_visit_stmt(stmt) {
