@@ -85,7 +85,10 @@ def config_from_pydantic(
 
         @functools.wraps(f)
         def wrapped(**kwargs: t.Any) -> _TWrappedReturn:
-            config = model(**kwargs)
+            if "config" in kwargs:
+                config = kwargs["config"]
+            else:
+                config = model(**kwargs)
             return f(config=config)
 
         return wrapped

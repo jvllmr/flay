@@ -35,6 +35,10 @@ class DebugBundleThenTreeshakeConfig(FlayBaseSettings):
 @debug_treeshake_app.command("bundle_then_treeshake_package")
 @config_from_pydantic(DebugBundleThenTreeshakeConfig)
 def debug_bundle_then_treeshake_package(config: DebugBundleThenTreeshakeConfig) -> None:
-    debug_bundle_package(config=DebugBundlePackageConfig.model_validate(config))
+    new_ctx = click.Context(debug_bundle_package)
+    new_ctx.params["config"] = DebugBundlePackageConfig.model_validate(config)
+    debug_bundle_package.invoke(
+        ctx=new_ctx,
+    )
     stats = treeshake_package(str(config.dest_path))
     print(dict(stats))  # noqa: T201
