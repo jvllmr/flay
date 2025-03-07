@@ -22,7 +22,7 @@ pub fn get_top_level_package(module_spec: &str) -> &str {
 
 pub fn is_in_std_lib(module_spec: &str) -> bool {
     let result = Python::with_gil(|py| -> PyResult<bool> {
-        let stdlib_list = PyModule::import(py, "stdlib_list")?;
+        let stdlib_list = PyModule::import(py, "flay.common.module_spec")?;
         let result: bool = stdlib_list
             .getattr("in_stdlib")?
             .call1((module_spec,))?

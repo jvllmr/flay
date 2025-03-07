@@ -123,7 +123,7 @@ def find_all_files_in_module_spec(module_spec: str) -> t.Generator[Path, t.Any, 
 
 
 if sys.version_info < (3, 10):
-    pass
+    from stdlib_list import in_stdlib  # nopycln: import  # type: ignore
 else:
 
     def in_stdlib(module_spec: str) -> bool:
