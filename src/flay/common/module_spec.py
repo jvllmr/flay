@@ -124,7 +124,7 @@ def find_all_files_in_module_spec(module_spec: str) -> t.Generator[Path, t.Any, 
 
 if sys.version_info < (3, 10):
     # nopycln: file
-    from stdlib_list import in_stdlib  # type: ignore[import-not-found]
+    from stdlib_list import in_stdlib  # type: ignore[import-not-found,unused-ignore]
 else:
 
     def in_stdlib(module_spec: str) -> bool:
