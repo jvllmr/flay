@@ -1,7 +1,19 @@
-use rustpython_ast::{Arg, ArgWithDefault, Arguments, Visitor};
+use rustpython_ast::{Arg, ArgWithDefault, Arguments, Comprehension, Keyword, Visitor};
 // patch for missing visits in RustPython visitor
 // https://github.com/RustPython/Parser/issues/133
 pub trait VisitorPatch: Visitor {
+    fn generic_visit_keyword_patch(&mut self, keyword: Keyword) {
+        self.visit_expr(keyword.value);
+    }
+
+    fn generic_visit_comprehension_patch(&mut self, comp: Comprehension) {
+        self.visit_expr(comp.target);
+        self.visit_expr(comp.iter);
+        for if_ in comp.ifs {
+            self.visit_expr(if_);
+        }
+    }
+
     fn generic_visit_arg_patch(&mut self, arg: Arg) {
         if let Some(annotation) = arg.annotation {
             self.visit_expr(*annotation);

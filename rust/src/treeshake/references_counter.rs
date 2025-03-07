@@ -1,18 +1,14 @@
-use std::{
-    collections::{HashMap, HashSet},
-    fs,
-    path::PathBuf,
-};
+use std::{collections::HashMap, fs, path::PathBuf};
 
 use pyo3::{pyclass, pymethods};
 use rustpython_ast::{
-    Arg, Arguments, Expr, ExprCompare, Stmt, StmtImport, StmtImportFrom, Suite, Visitor,
+    Arg, Arguments, Comprehension, Expr, ExprAttribute, ExprCompare, Keyword, Stmt, StmtImport,
+    StmtImportFrom, Suite, Visitor,
 };
 use rustpython_parser::Parse;
 
 use crate::common::{
     ast::{
-        full_name::{get_full_name_for_expr, get_full_name_for_stmt},
         get_import_from_absolute_module_spec,
         providers::fully_qualified_name_provider::FullyQualifiedNameProvider,
         visitor_patch::VisitorPatch,
@@ -41,6 +37,17 @@ pub trait ReferencesHolder {
         let references_counts = self.get_references_counts();
         // TODO: ??? this looks wrong; someone with more rust xp please help
         return references_counts.get(str_).unwrap_or(&(0 as usize)) > &0;
+    }
+
+    fn has_references_for_expr(&self, expr: &Expr) -> bool {
+        let names_provider = self.get_names_provider();
+        let fqns = names_provider.get_expr_fully_qualified_name(expr);
+        for fqn in fqns {
+            if self.has_references_for_str(&fqn) {
+                return true;
+            }
+        }
+        false
     }
 
     fn has_references_for_stmt(&self, stmt: &Stmt) -> bool {
@@ -84,6 +91,10 @@ pub trait ReferencesHolder {
         }
         return get_parent_package(&module_spec);
     }
+
+    fn is_global_scope(&self) -> bool {
+        self.get_names_provider().name_context.len() == 0
+    }
 }
 
 #[pyclass]
@@ -96,7 +107,6 @@ pub struct ReferencesCounter {
     new_references_count: usize,
     always_bump_context: bool,
     source_path: PathBuf,
-    import_star_module_specs: HashSet<String>,
 }
 
 #[pymethods]
@@ -110,7 +120,6 @@ impl ReferencesCounter {
             always_bump_context: false,
             new_references_count: 0,
             source_path: PathBuf::new(),
-            import_star_module_specs: HashSet::new(),
         }
     }
 
@@ -152,9 +161,6 @@ impl ReferencesCounter {
             }
         }
     }
-    fn is_global_scope(&self) -> bool {
-        self.names_provider.name_context.len() == 0
-    }
 
     fn maybe_increase_stmt_selective<F>(&mut self, stmt: &Stmt, predicate: F)
     where
@@ -163,17 +169,6 @@ impl ReferencesCounter {
         for fqn in self.names_provider.get_stmt_fully_qualified_name(stmt) {
             if predicate(&fqn) {
                 self.increase(&fqn);
-            }
-        }
-
-        // bump for this node because it is a global name that could be imported somewhere else via star import
-        if self.import_star_module_specs.len() > 0 {
-            for module_spec in self.import_star_module_specs.to_owned() {
-                for full_name in get_full_name_for_stmt(stmt, &self.get_parent_package()) {
-                    if predicate(&full_name) {
-                        self.increase(&format!("{}.{}", module_spec, full_name));
-                    }
-                }
             }
         }
     }
@@ -186,13 +181,18 @@ impl ReferencesCounter {
         for fqn in self.names_provider.get_expr_fully_qualified_name(expr) {
             self.increase(&fqn);
         }
-        // bump for this node because it is a global name that could be imported somewhere else via star import
-        if self.import_star_module_specs.len() > 0 {
-            if let Some(full_name) = get_full_name_for_expr(expr) {
-                for module_spec in self.import_star_module_specs.to_owned() {
-                    self.increase(&format!("{}.{}", module_spec, full_name));
-                }
-            }
+    }
+
+    fn make_known(&mut self, fqn: &str) {
+        if !self.references_counts.contains_key(fqn) {
+            self.references_counts.insert(fqn.to_owned(), 0);
+            self.new_references_count += 1;
+        }
+    }
+
+    fn make_known_stmt(&mut self, stmt: &Stmt) {
+        for fqn in self.names_provider.get_stmt_fully_qualified_name(stmt) {
+            self.make_known(&fqn);
         }
     }
 }
@@ -264,6 +264,7 @@ impl Visitor for ReferencesCounter {
         if self.always_bump_context {
             self.maybe_increase_stmt(&stmt);
         }
+        self.make_known_stmt(&stmt);
 
         match &stmt {
             Stmt::ClassDef(class_def) => {
@@ -271,30 +272,78 @@ impl Visitor for ReferencesCounter {
                     self.maybe_increase_stmt(&stmt);
                     self.always_bump_context = true;
                 }
+                // visit decorators, bases and keywords before they are prefixed with scope
+                for decorator in class_def.decorator_list.clone() {
+                    self.visit_expr(decorator);
+                }
+                for base in class_def.bases.clone() {
+                    self.visit_expr(base);
+                }
+                for keyword in class_def.keywords.clone() {
+                    self.visit_keyword(keyword);
+                }
             }
 
             Stmt::FunctionDef(func_def) => {
                 if func_def.decorator_list.len() > 0 || self.has_references_for_stmt(&stmt) {
                     self.maybe_increase_stmt(&stmt);
                     self.always_bump_context = true;
+                    // visit decorators before they are prefixed with scope
+                    let decorator_list_clone = func_def.decorator_list.clone();
+                    for decorator in decorator_list_clone {
+                        self.visit_expr(decorator);
+                    }
                 }
             }
             Stmt::AsyncFunctionDef(async_func_def) => {
                 if async_func_def.decorator_list.len() > 0 || self.has_references_for_stmt(&stmt) {
                     self.maybe_increase_stmt(&stmt);
                     self.always_bump_context = true;
+                    // visit decorators before they are prefixed with scope
+                    let decorator_list_clone = async_func_def.decorator_list.clone();
+                    for decorator in decorator_list_clone {
+                        self.visit_expr(decorator);
+                    }
                 }
             }
-            Stmt::AnnAssign(_) | Stmt::Assign(_) | Stmt::AugAssign(_) => {
+            Stmt::Assign(stmt_assign) => {
+                let mut should_bump_stmt_assign = false;
+                if self.is_global_scope() {
+                    for target in &stmt_assign.targets {
+                        let mut search_target = target;
+                        let mut found_deepest_attribute: Option<ExprAttribute> = None;
+                        while let Expr::Attribute(attr) = search_target {
+                            search_target = &attr.value;
+                            found_deepest_attribute = Some(attr.to_owned());
+                        }
+
+                        if let Some(deepest_attribute) = found_deepest_attribute {
+                            if self.has_references_for_expr(&deepest_attribute.value) {
+                                should_bump_stmt_assign = true;
+                            }
+                        }
+                    }
+                }
+                if self.has_references_for_stmt(&stmt) || should_bump_stmt_assign {
+                    self.maybe_increase_stmt(&stmt);
+                    self.always_bump_context = true;
+                }
+            }
+
+            Stmt::AnnAssign(_) | Stmt::AugAssign(_) => {
                 if self.has_references_for_stmt(&stmt) {
                     self.maybe_increase_stmt(&stmt);
                     self.always_bump_context = true;
                 }
             }
             Stmt::If(if_block) => {
-                if is_if_name_main(&if_block.test) {
+                if self.is_global_scope() && is_if_name_main(&if_block.test) {
                     self.maybe_increase_stmt(&stmt);
                     self.always_bump_context = true;
+                } else if self.is_global_scope() {
+                    self.always_bump_context = true;
+                    self.visit_expr(*if_block.test.clone());
+                    self.always_bump_context = false;
                 }
             }
             Stmt::Import(stmt_import) => {
@@ -335,16 +384,48 @@ impl Visitor for ReferencesCounter {
                         }
                     }
                 }
-
-                if stmt_import_from.names.len() == 1
+                // for a top-level star import we find out what names were imported from there
+                // and check if that name has active references
+                // if yes, bump the original name
+                if self.is_global_scope()
+                    && stmt_import_from.names.len() == 1
                     && stmt_import_from.names[0].name.as_str() == "*"
-                    && self.module_spec_has_references()
                 {
                     if let Ok(module_specs) = get_import_from_absolute_module_spec(
                         &stmt_import_from,
                         &self.get_parent_package(),
                     ) {
-                        self.import_star_module_specs.extend(module_specs);
+                        for module_spec in module_specs {
+                            let mut new_names: Vec<String> = Vec::new();
+                            let mut bump_names: Vec<String> = Vec::new();
+                            for (reference, _) in &self.references_counts {
+                                if reference.len() > module_spec.len()
+                                    // && !reference.ends_with("*")
+                                    && reference.starts_with(&module_spec)
+                                {
+                                    let imported_name =
+                                        (&reference[module_spec.len() + 1..]).to_owned();
+                                    let exported_name =
+                                        format!("{}.{}", self.module_spec, imported_name);
+
+                                    if self
+                                        .references_counts
+                                        .get(&exported_name)
+                                        .is_some_and(|n| *n > 0)
+                                    {
+                                        bump_names.push(reference.to_owned());
+                                    }
+                                    new_names.push(exported_name);
+                                }
+                            }
+
+                            for name in new_names {
+                                self.make_known(&name);
+                            }
+                            for name in bump_names {
+                                self.increase(&name);
+                            }
+                        }
                     }
                 }
             }
@@ -399,12 +480,19 @@ impl Visitor for ReferencesCounter {
         self.generic_visit_stmt_import_from(node);
     }
 
+    // visitor patches
     fn generic_visit_arg(&mut self, node: Arg) {
         self.generic_visit_arg_patch(node);
     }
 
     fn generic_visit_arguments(&mut self, node: Arguments) {
         self.generic_visit_arguments_patch(node);
+    }
+    fn generic_visit_keyword(&mut self, node: Keyword) {
+        self.generic_visit_keyword_patch(node);
+    }
+    fn generic_visit_comprehension(&mut self, node: Comprehension) {
+        self.generic_visit_comprehension_patch(node);
     }
 }
 

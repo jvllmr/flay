@@ -1,17 +1,15 @@
-name: Run tests
+name: Run integration tests
 
 on:
-  push:
-    branches:
-      - dev
-  pull_request:
+  schedule:
+    - cron: "* 5 * * *"
   workflow_dispatch:
 
 jobs:
   test:
     permissions:
       contents: read
-    name: Test
+    name: Integration test
     strategy:
       matrix:
         python-version: ["3.10", "3.11", "3.12", "3.13"]
@@ -32,13 +30,4 @@ jobs:
       - name: Run pytest
         env:
           FLAY_INTEGRATION_TEST: 1
-        run: pdm run pytest --cov --cov-report=xml --junitxml=junit.xml -o junit_family=legacy
-      - name: Upload coverage report to Codecov
-        uses: codecov/codecov-action@v5
-        with:
-          token: ${{ secrets.CODECOV_TOKEN }}
-      - name: Upload test results to Codecov
-        if: ${{ !cancelled() }}
-        uses: codecov/test-results-action@v1
-        with:
-          token: ${{ secrets.CODECOV_TOKEN }}
+        run: pdm run pytest
