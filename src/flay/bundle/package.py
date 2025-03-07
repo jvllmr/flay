@@ -107,6 +107,6 @@ def bundle_package(
                 metadata_path = dist_info_path / metadata_file_name
                 break
         else:
-            raise PackageNotFoundError(module_spec)
+            raise PackageNotFoundError(module_spec)  # pragma: no cover
         metadata_path.touch()
         metadata_path.write_text(metadata)
