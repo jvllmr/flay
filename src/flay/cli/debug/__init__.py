@@ -1,14 +1,15 @@
-import typer
-
+import click
 from flay.common.logging import enable_debug_logging
 from .bundle import debug_bundle_app
 from .treeshake import debug_treeshake_app
 
-debug_app = typer.Typer()
-debug_app.add_typer(debug_bundle_app, name="bundle")
-debug_app.add_typer(debug_treeshake_app, name="treeshake")
 
-
-@debug_app.callback()
-def debug_app_main() -> None:
+@click.group()
+def debug_app() -> None:
     enable_debug_logging()
+
+
+debug_app.name = "debug"
+
+debug_app.add_command(debug_bundle_app)
+debug_app.add_command(debug_treeshake_app)

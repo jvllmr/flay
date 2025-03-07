@@ -5,30 +5,31 @@ import platformdirs
 import contextvars
 import typing as t
 from contextlib import contextmanager
-import typer
+import click
 import uuid
 from pathlib import Path
 import hashlib
+
 
 logfile_path_context: contextvars.ContextVar[str] = contextvars.ContextVar(
     "_flay_logfile"
 )
 
 LEVELNAME_FORMAT: dict[str, t.Callable[[str], str]] = {
-    logging.getLevelName(logging.DEBUG): lambda level_name: typer.style(
-        level_name, fg=typer.colors.BLUE
+    logging.getLevelName(logging.DEBUG): lambda level_name: click.style(
+        level_name, fg="blue"
     ),
-    logging.getLevelName(logging.INFO): lambda level_name: typer.style(
-        level_name, fg=typer.colors.GREEN
+    logging.getLevelName(logging.INFO): lambda level_name: click.style(
+        level_name, fg="green"
     ),
-    logging.getLevelName(logging.WARNING): lambda level_name: typer.style(
-        level_name, fg=typer.colors.BRIGHT_YELLOW
+    logging.getLevelName(logging.WARNING): lambda level_name: click.style(
+        level_name, fg="bright_yellow"
     ),
-    logging.getLevelName(logging.ERROR): lambda level_name: typer.style(
-        level_name, fg=typer.colors.BRIGHT_RED
+    logging.getLevelName(logging.ERROR): lambda level_name: click.style(
+        level_name, fg="bright_red"
     ),
-    logging.getLevelName(logging.CRITICAL): lambda level_name: typer.style(
-        level_name, fg=typer.colors.RED, underline=True
+    logging.getLevelName(logging.CRITICAL): lambda level_name: click.style(
+        level_name, fg="red", underline=True
     ),
 }
 
@@ -41,7 +42,7 @@ class FlayFormatter(logging.Formatter):
     def formatTime(self, record: logging.LogRecord, datefmt: str | None = None) -> str:
         formatted = super().formatTime(record, datefmt)
         if self.colored:
-            formatted = typer.style(formatted, fg=typer.colors.BRIGHT_MAGENTA)
+            formatted = click.style(formatted, fg="bright_magenta")
         return formatted
 
     def format(self, record: logging.LogRecord) -> str:

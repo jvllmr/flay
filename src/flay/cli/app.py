@@ -1,7 +1,11 @@
-import typer
-
+import click
 from .debug import debug_app
 
-app = typer.Typer(pretty_exceptions_enable=False)
 
-app.add_typer(debug_app, name="debug")
+@click.group()
+def app() -> None:
+    pass
+
+
+app.name = "flay"
+app.add_command(debug_app)

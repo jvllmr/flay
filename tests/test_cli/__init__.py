@@ -1,4 +1,4 @@
-from typer.testing import CliRunner
+from click.testing import CliRunner
 
 
 runner = CliRunner()

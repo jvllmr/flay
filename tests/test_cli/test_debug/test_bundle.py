@@ -3,8 +3,8 @@ from flay.cli.app import app
 
 
 def test_cli_debug_bundle_collector() -> None:
-    runner.invoke(app, ["debug", "bundle", "collector", "click"])
+    runner.invoke(app, ["debug", "bundle", "collector", "--module-spec", "click"])
 
 
 def test_cli_debug_bundle_package() -> None:
-    runner.invoke(app, ["debug", "bundle", "bundle_package", "click"])
+    runner.invoke(app, ["debug", "bundle", "bundle_package", "--module-spec", "click"])
