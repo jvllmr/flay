@@ -30,6 +30,8 @@ jobs:
       - name: Install dependencies
         run: pdm install --frozen-lock
       - name: Run pytest
+        env:
+          FLAY_INTEGRATION_TEST: 1
         run: pdm run pytest --cov --cov-report=xml --junitxml=junit.xml -o junit_family=legacy
       - name: Upload coverage report to Codecov
         uses: codecov/codecov-action@v5
