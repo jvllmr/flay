@@ -12,6 +12,18 @@ import logging
 log = logging.getLogger(__name__)
 
 
+def _process_modules(
+    references_counter: ReferencesCounter,
+    file_modules: list[str],
+    known_module_specs: dict[str, str],
+) -> None:
+    for file_path in file_modules:
+        module_spec = known_module_specs[file_path]
+
+        log.debug("Start processing references for module %s", module_spec)
+        references_counter.visit_module(module_spec=module_spec, source_path=file_path)
+
+
 def treeshake_package(
     source_dir: str, preserve_packages: t.Collection[str] | None = None
 ) -> dict[str, int]:
@@ -46,7 +58,6 @@ def treeshake_package(
     references_counter = ReferencesCounter(references_counts)
     treeshake_iteration = 1
     # count references until no new references get added
-    # NOTE: maybe follow imports instead? should be taken into consideration for future improvements
     while new_references_count:
         log.debug(
             "Treeshake reference counter iteration %s",
@@ -54,15 +65,17 @@ def treeshake_package(
         )
         treeshake_iteration += 1
         references_counter.reset_counter()
-        for file_path in file_modules:
-            module_spec = known_module_specs[file_path]
-
-            log.debug("Start processing referencs for module %s", module_spec)
-            references_counter.visit_module(
-                module_spec=module_spec, source_path=file_path
-            )
-
+        _process_modules(
+            references_counter=references_counter,
+            file_modules=file_modules,
+            known_module_specs=known_module_specs,
+        )
         new_references_count = references_counter.new_references_count
+    _process_modules(
+        references_counter=references_counter,
+        file_modules=file_modules,
+        known_module_specs=known_module_specs,
+    )
     references_counts |= references_counter.references_counts
 
     # remove nodes without references
@@ -71,24 +84,5 @@ def treeshake_package(
         module_spec = known_module_specs[file_path]
 
         nodes_remover.process_module(module_spec=module_spec, source_path=file_path)
-        """
-        if not new_module.body and not file_path.endswith("__init__.py"):
-            os.remove(file_path)
-            log.debug("Removed file %s", file_path)
-            stats["Module"] += 1
-            safe_remove_empty_dir(file_path)
-        elif (
-            not new_module.body
-            and file_path.endswith("__init__.py")
-            and len(os.listdir(os.path.dirname(file_path))) == 1
-        ):
-            os.remove(file_path)
-            log.debug("Removed file %s", file_path)
-            stats["Module"] += 1
-            safe_remove_empty_dir(file_path)
-        else:
-            with open(file_path, "w") as f:
-                f.write(new_module.code)
-            log.debug("Processed code of %s", file_path)
-        """
+
     return stats
