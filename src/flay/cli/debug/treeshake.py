@@ -25,7 +25,7 @@ class DebugTreeshakeBundleThenTreeshakeCmd(DebugBundlePackageCmd):
     ]
 
     def cli_cmd(self) -> None:
-        DebugBundlePackageCmd.model_validate(self).cli_cmd()
+        DebugBundlePackageCmd.cli_cmd(DebugBundlePackageCmd.model_validate(self))
         stats = treeshake_package(str(self.path))
         print(dict(stats))  # noqa: T201
 

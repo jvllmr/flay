@@ -6,7 +6,7 @@ def test_cli_debug_bundle_then_treeshake_package() -> None:
     CliApp.run(
         Flay,
         [
-            "debug",
+            "debug-app",
             "treeshake",
             "bundle-then-treeshake-package",
             "rich",

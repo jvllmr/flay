@@ -5,7 +5,7 @@
 groups = ["default", "debug", "dev", "lint", "test", "types"]
 strategy = ["inherit_metadata"]
 lock_version = "4.5.0"
-content_hash = "sha256:d4e45afb746e96201ff434e3fc63d08f20e75bc036361bb189b485be2078b831"
+content_hash = "sha256:9f1b6083454edac65a0da342372523137d903fa73ab010e9975f80e80b9c828e"
 
 [[metadata.targets]]
 requires_python = ">=3.9"
@@ -690,6 +690,21 @@ dependencies = [
 files = [
     {file = "pytest-cov-6.0.0.tar.gz", hash = "sha256:fde0b595ca248bb8e2d76f020b465f3b107c9632e6a1d1705f17834c89dcadc0"},
     {file = "pytest_cov-6.0.0-py3-none-any.whl", hash = "sha256:eee6f1b9e61008bd34975a4d5bab25801eb31898b032dd55addc93e96fcaaa35"},
+]
+
+[[package]]
+name = "pytest-env"
+version = "1.1.5"
+requires_python = ">=3.8"
+summary = "pytest plugin that allows you to add environment variables."
+groups = ["test"]
+dependencies = [
+    "pytest>=8.3.3",
+    "tomli>=2.0.1; python_version < \"3.11\"",
+]
+files = [
+    {file = "pytest_env-1.1.5-py3-none-any.whl", hash = "sha256:ce90cf8772878515c24b31cd97c7fa1f4481cd68d588419fd45f10ecaee6bc30"},
+    {file = "pytest_env-1.1.5.tar.gz", hash = "sha256:91209840aa0e43385073ac464a554ad2947cc2fd663a9debf88d03b01e0cc1cf"},
 ]
 
 [[package]]
