@@ -13,5 +13,5 @@ class Flay(FlayBaseSettings):
 
     def cli_cmd(self) -> None:
         if self.debug:
-            enable_debug_logging()
+            enable_debug_logging()  # pragma: no cover
         CliApp.run_subcommand(self)
