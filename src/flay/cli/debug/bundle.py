@@ -2,18 +2,19 @@ from flay._flay_rs import FileCollector
 import typing as t
 from flay.cli.debug.types import DebugModuleSpecT
 from flay.bundle.package import bundle_package
+from flay.common.pydantic import FlayBaseModel
 from ...common.module_spec import find_all_files_in_module_spec
 import logging
 from pathlib import Path
 import shutil
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import Field
 from pydantic_settings import CliSubCommand, CliApp
 
 
 log = logging.getLogger(__name__)
 
 
-class DebugBundleCollectorCmd(BaseModel):
+class DebugBundleCollectorCmd(FlayBaseModel):
     module_spec: DebugModuleSpecT
 
     def cli_cmd(self) -> None:
@@ -30,8 +31,7 @@ class DebugBundleCollectorCmd(BaseModel):
         print({str(k): type(v) for k, v in collector.collected_files.items()})  # noqa: T201
 
 
-class DebugBundlePackageCmd(BaseModel):
-    model_config = ConfigDict(from_attributes=True)
+class DebugBundlePackageCmd(FlayBaseModel):
     module_spec: DebugModuleSpecT
     path: t.Annotated[
         Path,
@@ -47,7 +47,7 @@ class DebugBundlePackageCmd(BaseModel):
         bundle_package(module_spec=self.module_spec, destination_path=self.path)
 
 
-class DebugBundleApp(BaseModel):
+class DebugBundleApp(FlayBaseModel):
     collector: CliSubCommand[DebugBundleCollectorCmd]
     bundle_package: CliSubCommand[DebugBundlePackageCmd]
 

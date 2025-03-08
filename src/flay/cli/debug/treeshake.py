@@ -5,19 +5,17 @@ import typing as t
 
 from pydantic_settings import CliApp, CliSubCommand
 
-from flay.cli.debug.types import DebugModuleSpecT
 
+from flay.common.pydantic import FlayBaseModel
 from flay.treeshake.package import treeshake_package
-
+from .bundle import DebugBundlePackageCmd
 from pydantic import Field
 from pydantic import DirectoryPath
-from pydantic import BaseModel
 
 log = logging.getLogger(__name__)
 
 
-class DebugTreeshakeBundleThenTreeshakeCmd(BaseModel):
-    module_spec: DebugModuleSpecT
+class DebugTreeshakeBundleThenTreeshakeCmd(DebugBundlePackageCmd):
     path: t.Annotated[
         DirectoryPath,
         Field(
@@ -27,14 +25,12 @@ class DebugTreeshakeBundleThenTreeshakeCmd(BaseModel):
     ]
 
     def cli_cmd(self) -> None:
-        from .bundle import DebugBundlePackageCmd
-
         DebugBundlePackageCmd.model_validate(self).cli_cmd()
         stats = treeshake_package(str(self.path))
         print(dict(stats))  # noqa: T201
 
 
-class DebugTreeshakeApp(BaseModel):
+class DebugTreeshakeApp(FlayBaseModel):
     bundle_then_treeshake_package: CliSubCommand[DebugTreeshakeBundleThenTreeshakeCmd]
 
     def cli_cmd(self) -> None:

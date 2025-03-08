@@ -1,4 +1,5 @@
 from __future__ import annotations
+from pydantic import BaseModel, ConfigDict
 from pydantic_settings import (
     BaseSettings,
     PydanticBaseSettingsSource,
@@ -8,6 +9,10 @@ from pydantic_settings import (
     YamlConfigSettingsSource,
     JsonConfigSettingsSource,
 )
+
+
+class FlayBaseModel(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
 
 
 class FlayBaseSettings(BaseSettings):
