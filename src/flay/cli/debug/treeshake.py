@@ -1,27 +1,37 @@
 import logging
 from pathlib import Path
-import typer
-import typing as t
-from .bundle import debug_bundle_package
-from flay.treeshake.package import treeshake_package
 
-debug_treeshake_app = typer.Typer()
+import typing as t
+
+from pydantic_settings import CliApp, CliSubCommand
+
+
+from flay.common.pydantic import FlayBaseModel
+from flay.treeshake.package import treeshake_package
+from .bundle import DebugBundlePackageCmd
+from pydantic import Field
+from pydantic import DirectoryPath
 
 log = logging.getLogger(__name__)
 
 
-@debug_treeshake_app.command("bundle_then_treeshake_package")
-def debug_bundle_then_treeshake_package(
-    module_spec: t.Annotated[str, typer.Argument(help="A module spec to test")],
-    dest_path: t.Annotated[
-        Path,
-        typer.Argument(
+class DebugTreeshakeBundleThenTreeshakeCmd(DebugBundlePackageCmd):
+    path: t.Annotated[
+        DirectoryPath,
+        Field(
             default_factory=lambda: Path("./debug_bundle"),
-            help="Destination path for the completed, treeshaked bundle",
-            resolve_path=True,
+            description="Destination path for the completed, treeshaked bundle",
         ),
-    ],
-) -> None:
-    debug_bundle_package(module_spec, dest_path)
-    stats = treeshake_package(str(dest_path))
-    typer.echo(dict(stats))
+    ]
+
+    def cli_cmd(self) -> None:
+        DebugBundlePackageCmd.cli_cmd(DebugBundlePackageCmd.model_validate(self))
+        stats = treeshake_package(str(self.path))
+        print(dict(stats))  # noqa: T201
+
+
+class DebugTreeshakeApp(FlayBaseModel):
+    bundle_then_treeshake_package: CliSubCommand[DebugTreeshakeBundleThenTreeshakeCmd]
+
+    def cli_cmd(self) -> None:
+        CliApp.run_subcommand(self)

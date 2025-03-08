@@ -1,10 +1,10 @@
-from .app import app
+from .app import Flay
 import typing as t
 from flay.common.logging import logfile_path_context
 import logging
 from flay.common.logging import setup_logger
 import sys
-
+from pydantic_settings import CliApp
 
 __all__ = ("cli",)
 log = logging.getLogger(__name__)
@@ -13,7 +13,7 @@ log = logging.getLogger(__name__)
 def cli() -> t.Any:  # pragma: no cover
     try:
         with setup_logger("_".join(sys.argv[1:])):
-            return app()
+            return CliApp.run(Flay)
     except Exception as e:
         log.exception(
             "Unexpected error occurred. Detailed log can be found at %s",
