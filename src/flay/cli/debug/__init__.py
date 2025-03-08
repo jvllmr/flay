@@ -1,15 +1,14 @@
-import click
 from flay.common.logging import enable_debug_logging
-from .bundle import debug_bundle_app
-from .treeshake import debug_treeshake_app
+from .bundle import DebugBundleApp
+from .treeshake import DebugTreeshakeApp
+from pydantic import BaseModel
+from pydantic_settings import CliApp, CliSubCommand
 
 
-@click.group()
-def debug_app() -> None:
-    enable_debug_logging()
+class DebugApp(BaseModel):
+    bundle: CliSubCommand[DebugBundleApp]
+    treeshake: CliSubCommand[DebugTreeshakeApp]
 
-
-debug_app.name = "debug"
-
-debug_app.add_command(debug_bundle_app)
-debug_app.add_command(debug_treeshake_app)
+    def cli_cmd(self) -> None:
+        enable_debug_logging()
+        CliApp.run_subcommand(self)

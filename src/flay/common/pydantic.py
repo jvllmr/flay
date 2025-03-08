@@ -8,10 +8,6 @@ from pydantic_settings import (
     YamlConfigSettingsSource,
     JsonConfigSettingsSource,
 )
-from pydantic import BaseModel
-import typing as t
-import functools
-from pydanclick.model import convert_to_click
 
 
 class FlayBaseSettings(BaseSettings):
@@ -26,6 +22,12 @@ class FlayBaseSettings(BaseSettings):
         toml_file="flay.toml",
         yaml_file=("flay.yaml", "flay.yml"),
         json_file="flay.json",
+        cli_implicit_flags=True,
+        cli_kebab_case=True,
+        cli_prog_name="flay",
+        cli_use_class_docs_for_groups=True,
+        cli_ignore_unknown_args=True,
+        cli_parse_args=True,
     )
 
     @classmethod
@@ -47,50 +49,3 @@ class FlayBaseSettings(BaseSettings):
             YamlConfigSettingsSource(settings_cls=settings_cls),
             JsonConfigSettingsSource(settings_cls=settings_cls),
         )
-
-
-_TWrappedReturn = t.TypeVar("_TWrappedReturn", covariant=True)
-
-_TBaseModel = t.TypeVar("_TBaseModel", bound=BaseModel)
-_TBaseModelCon = t.TypeVar("_TBaseModelCon", bound=BaseModel, contravariant=True)
-
-
-class _ConfigFromPydanticFunc(t.Protocol[_TBaseModelCon, _TWrappedReturn]):
-    def __call__(self, config: _TBaseModelCon) -> _TWrappedReturn: ...
-
-
-if t.TYPE_CHECKING:
-    TWrapped = functools._Wrapped[
-        [_TBaseModel],
-        _TWrappedReturn,
-        [],
-        _TWrappedReturn,
-    ]
-
-
-def config_from_pydantic(
-    model: type[_TBaseModel],
-) -> t.Callable[
-    [_ConfigFromPydanticFunc[_TBaseModel, _TWrappedReturn]],
-    TWrapped[_TBaseModel, _TWrappedReturn],
-]:
-    options, _ = convert_to_click(model)
-
-    def wrapper(
-        f: _ConfigFromPydanticFunc[_TBaseModel, _TWrappedReturn],
-    ) -> TWrapped[_TBaseModel, _TWrappedReturn]:
-        if not hasattr(f, "__click_params__"):
-            f.__click_params__ = []  # type: ignore[attr-defined]
-        f.__click_params__.extend(reversed(options))  # type: ignore[attr-defined]
-
-        @functools.wraps(f)
-        def wrapped(**kwargs: t.Any) -> _TWrappedReturn:
-            if "config" in kwargs:
-                config = kwargs["config"]
-            else:
-                config = model(**kwargs)
-            return f(config=config)
-
-        return wrapped
-
-    return wrapper

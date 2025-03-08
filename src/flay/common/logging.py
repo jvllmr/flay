@@ -5,31 +5,32 @@ import platformdirs
 import contextvars
 import typing as t
 from contextlib import contextmanager
-import click
+
 import uuid
 from pathlib import Path
 import hashlib
-
+from rich.style import Style
+from flay.common.rich import ansi_style_text
 
 logfile_path_context: contextvars.ContextVar[str] = contextvars.ContextVar(
     "_flay_logfile"
 )
 
 LEVELNAME_FORMAT: dict[str, t.Callable[[str], str]] = {
-    logging.getLevelName(logging.DEBUG): lambda level_name: click.style(
-        level_name, fg="blue"
+    logging.getLevelName(logging.DEBUG): lambda level_name: ansi_style_text(
+        level_name, Style(color="blue")
     ),
-    logging.getLevelName(logging.INFO): lambda level_name: click.style(
-        level_name, fg="green"
+    logging.getLevelName(logging.INFO): lambda level_name: ansi_style_text(
+        level_name, Style(color="green")
     ),
-    logging.getLevelName(logging.WARNING): lambda level_name: click.style(
-        level_name, fg="bright_yellow"
+    logging.getLevelName(logging.WARNING): lambda level_name: ansi_style_text(
+        level_name, Style(color="bright_yellow")
     ),
-    logging.getLevelName(logging.ERROR): lambda level_name: click.style(
-        level_name, fg="bright_red"
+    logging.getLevelName(logging.ERROR): lambda level_name: ansi_style_text(
+        level_name, Style(color="bright_red")
     ),
-    logging.getLevelName(logging.CRITICAL): lambda level_name: click.style(
-        level_name, fg="red", underline=True
+    logging.getLevelName(logging.CRITICAL): lambda level_name: ansi_style_text(
+        level_name, Style(color="red", underline=True)
     ),
 }
 
@@ -42,7 +43,7 @@ class FlayFormatter(logging.Formatter):
     def formatTime(self, record: logging.LogRecord, datefmt: str | None = None) -> str:
         formatted = super().formatTime(record, datefmt)
         if self.colored:
-            formatted = click.style(formatted, fg="bright_magenta")
+            formatted = ansi_style_text(formatted, Style(color="bright_magenta"))
         return formatted
 
     def format(self, record: logging.LogRecord) -> str:

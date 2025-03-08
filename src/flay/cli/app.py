@@ -1,11 +1,10 @@
-import click
-from .debug import debug_app
+from .debug import DebugApp
+from flay.common.pydantic import FlayBaseSettings
+from pydantic_settings import CliApp, CliSubCommand
 
 
-@click.group()
-def app() -> None:
-    pass
+class Flay(FlayBaseSettings):
+    debug: CliSubCommand[DebugApp]
 
-
-app.name = "flay"
-app.add_command(debug_app)
+    def cli_cmd(self) -> None:
+        CliApp.run_subcommand(self)
