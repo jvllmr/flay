@@ -57,6 +57,8 @@ def _lookup_paths_for_module_spec(module_spec: str) -> list[str] | None:
             paths.add(top_level_path)
             for path, dirs, files in os.walk(top_level_path):
                 for file in files:
+                    if "." not in file:
+                        continue
                     file_name, file_extension = file.rsplit(".", 1)
 
                     if _path_can_lead_to_module_spec(
@@ -110,7 +112,7 @@ def find_all_files_in_module_spec(module_spec: str) -> t.Generator[Path, t.Any, 
     found_path = find_module_path(module_spec)
     if found_path is None or found_path.origin is None:
         raise FlayFileNotFoundError(
-            f"Could not find file for module spec '{module_spec}'"
+            f"Could not find file for module spec '{module_spec}'. Found {found_path}."
         )
     module_init_file_path = Path(found_path.origin)
 
@@ -118,3 +120,12 @@ def find_all_files_in_module_spec(module_spec: str) -> t.Generator[Path, t.Any, 
     for file in module_folder_path.iterdir():
         if file.match("*.py"):
             yield module_folder_path / file
+
+
+if sys.version_info < (3, 10):
+    # nopycln: file
+    from stdlib_list import in_stdlib  # type: ignore[import-not-found,unused-ignore]
+else:
+
+    def in_stdlib(module_spec: str) -> bool:
+        return module_spec in sys.stdlib_module_names

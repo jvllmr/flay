@@ -1,6 +1,6 @@
 from __future__ import annotations
 from flay._flay_rs import FileCollector
-
+from importlib.metadata import Distribution, PackageNotFoundError
 from flay.common.module_spec import (
     find_all_files_in_module_spec,
     get_parent_package,
@@ -18,7 +18,10 @@ log = logging.getLogger(__name__)
 
 
 def bundle_package(
-    module_spec: str, destination_path: Path, vendor_module_name: str = "_vendor"
+    module_spec: str,
+    destination_path: Path,
+    vendor_module_name: str = "_vendor",
+    bundle_metadata: bool = False,
 ) -> None:
     collector = FileCollector(package=module_spec)
 
@@ -26,7 +29,7 @@ def bundle_package(
         if path.match("*.py"):
             found_module_spec = (
                 module_spec
-                if path.match("*/__init__.py")
+                if path.name == "__init__.py"
                 else f"{module_spec}.{path.stem}"
             )
             collector._process_module(found_module_spec)
@@ -54,6 +57,7 @@ def bundle_package(
             if new_init_key not in files_keys and "__init__.py" in os.listdir(
                 str(found_path.parent)
             ):
+                # act as if an __init__.py exists
                 files[new_init_key] = ""
 
     for (found_module, _found_path), module_source in files.items():
@@ -92,3 +96,17 @@ def bundle_package(
         else:
             shutil.copy2(str(found_path), str(target_file))
             log.debug("Copied %s to %s", found_path, target_file)
+
+    if bundle_metadata:
+        distribution = Distribution.from_name(top_level_package)
+        version = distribution.version
+        dist_info_path = destination_path / f"{top_level_package}-{version}.dist-info"
+        dist_info_path.mkdir(exist_ok=True)
+        for metadata_file_name in ("METADATA", "PKG-INFO"):
+            if metadata := distribution.read_text(metadata_file_name):
+                metadata_path = dist_info_path / metadata_file_name
+                break
+        else:
+            raise PackageNotFoundError(module_spec)  # pragma: no cover
+        metadata_path.touch()
+        metadata_path.write_text(metadata)

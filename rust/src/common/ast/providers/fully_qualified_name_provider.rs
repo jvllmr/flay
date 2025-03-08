@@ -39,11 +39,17 @@ impl FullyQualifiedNameProvider {
         }
     }
 
-    fn get_expr_qualified_name(&self, expr: &Expr) -> Option<String> {
-        get_full_name_for_expr(expr).map(|name| match expr {
-            Expr::NamedExpr(_) => self.resolve_qualified_name(&name),
-            _ => name,
-        })
+    fn get_expr_qualified_name(&self, expr: &Expr) -> Vec<String> {
+        get_full_name_for_expr(expr)
+            .iter()
+            .flat_map(|name| match expr {
+                Expr::NamedExpr(_) => vec![self.resolve_qualified_name(&name)],
+                Expr::Name(_) | Expr::Attribute(_) => {
+                    vec![self.resolve_qualified_name(&name), name.to_owned()]
+                }
+                _ => vec![name.to_owned()],
+            })
+            .collect()
     }
 
     fn get_stmt_qualified_name(&self, stmt: &Stmt) -> Vec<String> {
@@ -88,9 +94,12 @@ impl FullyQualifiedNameProvider {
     }
 
     pub fn get_expr_fully_qualified_name(&self, expr: &Expr) -> Vec<String> {
-        match self.get_expr_qualified_name(expr) {
-            Some(name) => self.resolve_fully_qualified_name(&name),
-            None => Vec::new(),
+        match expr {
+            _ => self
+                .get_expr_qualified_name(expr)
+                .iter()
+                .flat_map(|name| self.resolve_fully_qualified_name(name))
+                .collect(),
         }
     }
 
@@ -121,7 +130,11 @@ impl FullyQualifiedNameProvider {
                 let mut ret_value: Option<TNameContext> = None;
                 if full_names.len() == 1 {
                     ret_value = Some(self.name_context.clone());
-                    self.name_context = format!("{}.{}", self.name_context, full_names[0]);
+                    if self.name_context.len() > 0 {
+                        self.name_context = format!("{}.{}", self.name_context, full_names[0]);
+                    } else {
+                        self.name_context = full_names[0].clone();
+                    }
                 }
 
                 ret_value

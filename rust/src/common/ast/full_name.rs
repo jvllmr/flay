@@ -1,16 +1,22 @@
 use rustpython_ast::{Expr, Stmt};
 
 use super::get_import_from_absolute_module_spec;
-pub fn get_full_name_for_expr(expr: &Expr) -> Option<String> {
+pub fn get_full_name_for_expr(expr: &Expr) -> Vec<String> {
     match expr {
-        Expr::Name(name) => Some(name.id.to_string()),
-        Expr::Attribute(attr) => {
-            get_full_name_for_expr(&attr.value).map(|value| value + "." + attr.attr.as_str())
-        }
+        Expr::Name(name) => vec![name.id.to_string()],
+        Expr::Attribute(attr) => get_full_name_for_expr(&attr.value)
+            .iter()
+            .flat_map(|value| vec![value.clone(), value.to_owned() + "." + attr.attr.as_str()])
+            .collect(),
         Expr::Call(call) => get_full_name_for_expr(&call.func),
         Expr::Subscript(sub) => get_full_name_for_expr(&sub.value),
         Expr::NamedExpr(named) => get_full_name_for_expr(&named.target),
-        _ => None,
+        Expr::Tuple(tuple) => tuple
+            .elts
+            .iter()
+            .flat_map(|elts_item| get_full_name_for_expr(elts_item))
+            .collect(),
+        _ => Vec::new(),
     }
 }
 
@@ -19,23 +25,14 @@ pub fn get_full_name_for_stmt(stmt: &Stmt, parent_package: &str) -> Vec<String> 
         Stmt::Assign(assign) => assign
             .targets
             .iter()
-            .filter_map(|target| get_full_name_for_expr(target))
+            .flat_map(|target| get_full_name_for_expr(target))
             .collect(),
-        Stmt::AugAssign(aug_assign) => match get_full_name_for_expr(&aug_assign.target) {
-            Some(name) => vec![name],
-            None => Vec::new(),
-        },
-        Stmt::AnnAssign(aug_assign) => match get_full_name_for_expr(&aug_assign.target) {
-            Some(name) => vec![name],
-            None => Vec::new(),
-        },
+        Stmt::AugAssign(aug_assign) => get_full_name_for_expr(&aug_assign.target),
+        Stmt::AnnAssign(aug_assign) => get_full_name_for_expr(&aug_assign.target),
         Stmt::ClassDef(def) => vec![def.name.to_string()],
         Stmt::FunctionDef(def) => vec![def.name.to_string()],
         Stmt::AsyncFunctionDef(def) => vec![def.name.to_string()],
-        Stmt::Expr(expr) => match get_full_name_for_expr(&expr.value) {
-            Some(name) => vec![name],
-            None => Vec::new(),
-        },
+        Stmt::Expr(expr) => get_full_name_for_expr(&expr.value),
         Stmt::Nonlocal(nonlocal) => nonlocal.names.iter().map(|id| id.to_string()).collect(),
         Stmt::Global(global) => global.names.iter().map(|id| id.to_string()).collect(),
         Stmt::Import(import) => import
@@ -56,10 +53,7 @@ pub fn get_full_name_for_stmt(stmt: &Stmt, parent_package: &str) -> Vec<String> 
             }
             return names;
         }
-        Stmt::TypeAlias(type_alias) => match get_full_name_for_expr(&type_alias.name) {
-            Some(name) => vec![name],
-            None => Vec::new(),
-        },
+        Stmt::TypeAlias(type_alias) => get_full_name_for_expr(&type_alias.name),
         _ => Vec::new(),
     }
 }
