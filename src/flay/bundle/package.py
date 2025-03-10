@@ -47,12 +47,11 @@ def bundle_package(
 
     files_keys = set(files.keys())
 
-    for found_module, _found_path in files_keys:
-        found_path = Path(_found_path)
+    for found_module, found_path in files_keys:
         if found_path.match("*.py") and not found_path.match("*/__init__.py"):
             new_init_key = (
                 get_parent_package(found_module),
-                str(found_path.parent / "__init__.py"),
+                found_path.parent / "__init__.py",
             )
             if new_init_key not in files_keys and "__init__.py" in os.listdir(
                 str(found_path.parent)
@@ -60,12 +59,10 @@ def bundle_package(
                 # act as if an __init__.py exists
                 files[new_init_key] = ""
 
-    for (found_module, _found_path), module_source in files.items():
-        found_path = Path(_found_path)
-
+    for (found_module, found_path), module_source in files.items():
         if module_source:
             module_source = transform_imports(
-                module_source, _found_path, top_level_package, vendor_module_name
+                module_source, found_path, top_level_package, vendor_module_name
             )
         module_path_part = Path(os.path.sep.join(found_module.split(".")))
         is_external = get_top_level_package(found_module) != top_level_package
