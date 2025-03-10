@@ -6,7 +6,7 @@ use rustpython_ast::{
 };
 use rustpython_parser::Parse;
 use rustpython_unparser::{transformer::Transformer, Unparser};
-use std::collections::HashSet;
+use std::{collections::HashSet, path::PathBuf};
 
 struct ImportsTransformer {
     top_level_package: String,
@@ -194,11 +194,11 @@ impl Transformer for ImportsTransformer {
 #[pyfunction]
 pub fn transform_imports(
     source: &str,
-    source_path: &str,
+    source_path: PathBuf,
     top_level_package: &str,
     vendor_module_name: &str,
 ) -> String {
-    let stmts = Suite::parse(source, source_path).unwrap();
+    let stmts = Suite::parse(source, source_path.as_os_str().to_str().unwrap()).unwrap();
     let mut unparser = Unparser::new();
     let mut transformer = ImportsTransformer::new(
         top_level_package.to_string(),
