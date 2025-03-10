@@ -192,4 +192,4 @@ def test_local_var(
     init_file = result_path / "__init__.py"
     init_file_content = init_file.read_text()
 
-    assert "(_, git_version_b, _) =" in init_file_content
+    assert "_, git_version_b, _ =" in init_file_content
