@@ -7,7 +7,7 @@ use rustpython_ast::{
 use rustpython_parser::Parse;
 use rustpython_unparser::{Unparser, transformer::Transformer};
 use std::collections::HashSet;
-
+use std::path::PathBuf;
 struct ImportsTransformer {
     top_level_package: String,
     vendor_module_name: String,
