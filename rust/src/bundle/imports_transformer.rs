@@ -1,11 +1,11 @@
 use crate::common::module_spec::{get_top_level_package, is_in_std_lib};
 use pyo3::pyfunction;
 use rustpython_ast::{
-    text_size::TextRange, Alias, Constant, Expr, ExprAttribute, ExprConstant, ExprName, Identifier,
-    StmtImport, StmtImportFrom, Suite,
+    Alias, Constant, Expr, ExprAttribute, ExprConstant, ExprName, Identifier, StmtImport,
+    StmtImportFrom, Suite, text_size::TextRange,
 };
 use rustpython_parser::Parse;
-use rustpython_unparser::{transformer::Transformer, Unparser};
+use rustpython_unparser::{Unparser, transformer::Transformer};
 use std::collections::HashSet;
 
 struct ImportsTransformer {

@@ -2,8 +2,8 @@ pub mod full_name;
 pub mod providers;
 pub mod visitor_patch;
 use pyo3::{
-    exceptions::{PyImportError, PyValueError},
     PyResult,
+    exceptions::{PyImportError, PyValueError},
 };
 use rustpython_ast::StmtImportFrom;
 
