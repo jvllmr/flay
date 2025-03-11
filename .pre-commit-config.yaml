@@ -19,6 +19,7 @@ repos:
     rev: 0.4.0
     hooks:
       - id: cargo-fmt
+        language_version: 1.85.0
       - id: cargo-fix
   - repo: https://github.com/astral-sh/ruff-pre-commit
     rev: "v0.9.9"
