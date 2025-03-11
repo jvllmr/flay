@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from flay._flay_rs import NodesRemover, ReferencesCounter
-
+from pathlib import Path
 
 import os
 from collections import defaultdict
@@ -21,7 +21,9 @@ def _process_modules(
         module_spec = known_module_specs[file_path]
 
         log.debug("Start processing references for module %s", module_spec)
-        references_counter.visit_module(module_spec=module_spec, source_path=file_path)
+        references_counter.visit_module(
+            module_spec=module_spec, source_path=Path(file_path)
+        )
 
 
 def treeshake_package(
