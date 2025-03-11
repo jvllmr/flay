@@ -4,13 +4,12 @@ use std::path::PathBuf;
 
 use pyo3::prelude::*;
 use pyo3::{
-    pyclass,
+    PyResult, Python, pyclass,
     types::{PyAnyMethods, PyModule},
-    PyResult, Python,
 };
-use rustpython_ast::{text_size::TextRange, Visitor};
-use rustpython_parser::ast::Suite;
+use rustpython_ast::{Visitor, text_size::TextRange};
 use rustpython_parser::Parse;
+use rustpython_parser::ast::Suite;
 
 use crate::common::ast::get_import_from_absolute_module_spec;
 use crate::common::module_spec::{get_parent_package, get_top_level_package, is_in_std_lib};

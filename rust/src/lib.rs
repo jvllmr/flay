@@ -13,9 +13,9 @@ mod flay {
     use super::FileCollector;
 
     #[pymodule_export]
-    use super::transform_imports;
-    #[pymodule_export]
     use super::ReferencesCounter;
+    #[pymodule_export]
+    use super::transform_imports;
 
     #[pymodule_export]
     use super::NodesRemover;

@@ -1,6 +1,6 @@
 use pyo3::{
-    types::{PyAnyMethods, PyModule},
     PyResult, Python,
+    types::{PyAnyMethods, PyModule},
 };
 
 pub fn get_parent_package(package: &str) -> String {
