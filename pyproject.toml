@@ -57,7 +57,7 @@ test = [
 lint = ["mypy>=1.15.0", "ruff>=0.11.0", "pre-commit>=4.1.0"]
 dev = ["nox>=2025.2.9", "maturin>=1.8.3", "maturin-import-hook>=0.2.0"]
 debug = ["tuna>=0.5.11"]
-types = ["types-setuptools>=75.8.2.20250305"]
+types = ["types-setuptools>=76.0.0.20250313"]
 
 [tool.mypy]
 python_version = "3.9"
