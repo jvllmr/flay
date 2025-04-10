@@ -14,10 +14,10 @@
       "customType": "regex",
       "fileMatch": ["Cargo.toml"],
       "matchStrings": [
-        "{.*git.*=.*\"(?<depName>https://github.com/.+)\".*,.*tag.*=.*\"(?<currentValue>.*)\".*}",
-        "{.*tag.*=.*\"(?<currentValue>.*)\".*,.*git.*=.*\"(?<depName>https://github.com/.+)\".*}"
+        "{.*git.*=.*\"(?<depName>.+)\".*,.*tag.*=.*\"(?<currentValue>.*)\".*}",
+        "{.*tag.*=.*\"(?<currentValue>.*)\".*,.*git.*=.*\"(?<depName>.+)\".*}"
       ],
-      "datasourceTemplate": "github-tags"
+      "datasourceTemplate": "git-tags"
     }
   ]
 }
