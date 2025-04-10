@@ -202,7 +202,7 @@ pub fn walk_stmt<V: Transformer + ?Sized>(visitor: &mut V, stmt: Stmt) -> Option
                     .expect("Cannot remove value from type alias"),
             );
             if let Some(type_params) = type_alias.type_params {
-                type_alias.type_params = visitor.visit_type_params(type_params);
+                type_alias.type_params = visitor.visit_type_params(*type_params).map(Box::new);
             }
             type_alias.name = Box::new(
                 visitor
