@@ -14,8 +14,8 @@
       "customType": "regex",
       "fileMatch": ["Cargo.toml"],
       "matchStrings": [
-        "{.*git.*=.*\"(?<depName>https://github.com/.+)\".*,.*tag.*=.*\"(?<currentValue>.*)\".*}",
-        "{.*tag.*=.*\"(?<currentValue>.*)\".*,.*git.*=.*\"(?<depName>https://github.com/.+)\".*}"
+        "{.*git.*=.*\"(?<depName>https://github.com/.+)\\.git\".*,.*tag.*=.*\"(?<currentValue>.*)\".*}",
+        "{.*tag.*=.*\"(?<currentValue>.*)\".*,.*git.*=.*\"(?<depName>https://github.com/.+)\\.git\".*}"
       ],
       "datasourceTemplate": "github-tags"
     }
