@@ -49,13 +49,13 @@ def test_treeshake_package_import_star(
     source_content = source_file.read_text()
 
     assert "from .unused_source import *" in source_content
-    assert "def hello_world() -> None:\n    print('Hello world!')" in source_content
+    assert 'def hello_world() -> None:\n    print("Hello world!")' in source_content
 
     unused_source_file = result_path / "unused_source.py"
     unused_source_content = unused_source_file.read_text()
 
     assert "def goodbye() -> None:" not in unused_source_content
-    assert "def moin() -> None:\n    print('Moin Welt!')" in unused_source_content
+    assert 'def moin() -> None:\n    print("Moin Welt!")' in unused_source_content
 
 
 def test_treeshake_package_remove_empty_modules(
@@ -109,7 +109,7 @@ def test_treeshake_package_re_exports(
     assert inner_hello_world_init.exists()
     inner_hello_world_init_content = inner_hello_world_init.read_text()
     assert (
-        "def hello_world() -> None:\n    print('Hello World!')"
+        'def hello_world() -> None:\n    print("Hello World!")'
         in inner_hello_world_init_content
     )
 
@@ -169,7 +169,7 @@ def test_global_assignment(
     init_file = result_path / "__init__.py"
     init_file_content = init_file.read_text()
 
-    assert "ConditionalOptional.__new__.__defaults__ = (False, )" in init_file_content
+    assert "ConditionalOptional.__new__.__defaults__ = False," in init_file_content
     assert (
         "ConditionalOptional.check = _get_check_conditional(_check_optional)"
         in init_file_content

@@ -8,7 +8,7 @@ class FileCollector:
     def _process_module(self, module_spec: str) -> None: ...
 
 def transform_imports(
-    source_code: str, source_path: Path, top_level_package: str, vendor_module_name: str
+    source_code: str, top_level_package: str, vendor_module_name: str
 ) -> str: ...
 
 class ReferencesCounter:

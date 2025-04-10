@@ -1,6 +1,6 @@
 use std::collections::{HashMap, HashSet};
 
-use rustpython_ast::{Stmt, StmtImport, StmtImportFrom};
+use ruff_python_ast::{Stmt, StmtImport, StmtImportFrom};
 
 use crate::common::ast::get_import_from_absolute_module_spec;
 
@@ -29,12 +29,10 @@ impl ImportsTrackingProvider {
 
     pub fn enter_scope(&self, stmt: &Stmt) -> ImportTrackingProviderScope {
         match stmt {
-            Stmt::ClassDef(_) | Stmt::FunctionDef(_) | Stmt::AsyncFunctionDef(_) => {
-                ImportTrackingProviderScope {
-                    active_imports: Some(self.active_imports.clone()),
-                    active_star_imports: Some(self.active_star_imports.clone()),
-                }
-            }
+            Stmt::ClassDef(_) | Stmt::FunctionDef(_) => ImportTrackingProviderScope {
+                active_imports: Some(self.active_imports.clone()),
+                active_star_imports: Some(self.active_star_imports.clone()),
+            },
             _ => ImportTrackingProviderScope {
                 active_imports: None,
                 active_star_imports: None,

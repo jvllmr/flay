@@ -1,4 +1,4 @@
-use rustpython_ast::{Expr, Stmt, StmtImport, StmtImportFrom};
+use ruff_python_ast::{Expr, Stmt, StmtImport, StmtImportFrom};
 
 use crate::common::{
     ast::full_name::{get_full_name_for_expr, get_full_name_for_stmt},
@@ -43,7 +43,7 @@ impl FullyQualifiedNameProvider {
         get_full_name_for_expr(expr)
             .iter()
             .flat_map(|name| match expr {
-                Expr::NamedExpr(_) => vec![self.resolve_qualified_name(&name)],
+                Expr::Named(_) => vec![self.resolve_qualified_name(&name)],
                 Expr::Name(_) | Expr::Attribute(_) => {
                     vec![self.resolve_qualified_name(&name), name.to_owned()]
                 }
@@ -62,8 +62,7 @@ impl FullyQualifiedNameProvider {
                 | Stmt::AnnAssign(_)
                 | Stmt::AugAssign(_)
                 | Stmt::ClassDef(_)
-                | Stmt::FunctionDef(_)
-                | Stmt::AsyncFunctionDef(_) => {
+                | Stmt::FunctionDef(_) => {
                     self.resolve_qualified_name(name)
                 }
                 _ => name.to_string(),
@@ -125,7 +124,7 @@ impl FullyQualifiedNameProvider {
 
     pub fn enter_scope(&mut self, stmt: &Stmt) -> FullyQualifiedNameProviderScope {
         let old_name_context: Option<TNameContext> = match stmt {
-            Stmt::ClassDef(_) | Stmt::FunctionDef(_) | Stmt::AsyncFunctionDef(_) => {
+            Stmt::ClassDef(_) | Stmt::FunctionDef(_) => {
                 let full_names = get_full_name_for_stmt(stmt, &self.parent_package);
                 let mut ret_value: Option<TNameContext> = None;
                 if full_names.len() == 1 {

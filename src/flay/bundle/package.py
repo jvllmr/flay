@@ -62,7 +62,7 @@ def bundle_package(
     for (found_module, found_path), module_source in files.items():
         if module_source:
             module_source = transform_imports(
-                module_source, found_path, top_level_package, vendor_module_name
+                module_source, top_level_package, vendor_module_name
             )
         module_path_part = Path(os.path.sep.join(found_module.split(".")))
         is_external = get_top_level_package(found_module) != top_level_package

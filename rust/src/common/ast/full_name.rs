@@ -1,4 +1,4 @@
-use rustpython_ast::{Expr, Stmt};
+use ruff_python_ast::{Expr, Stmt};
 
 use super::get_import_from_absolute_module_spec;
 pub fn get_full_name_for_expr(expr: &Expr) -> Vec<String> {
@@ -10,7 +10,7 @@ pub fn get_full_name_for_expr(expr: &Expr) -> Vec<String> {
             .collect(),
         Expr::Call(call) => get_full_name_for_expr(&call.func),
         Expr::Subscript(sub) => get_full_name_for_expr(&sub.value),
-        Expr::NamedExpr(named) => get_full_name_for_expr(&named.target),
+        Expr::Named(named) => get_full_name_for_expr(&named.target),
         Expr::Tuple(tuple) => tuple
             .elts
             .iter()
@@ -31,7 +31,7 @@ pub fn get_full_name_for_stmt(stmt: &Stmt, parent_package: &str) -> Vec<String> 
         Stmt::AnnAssign(aug_assign) => get_full_name_for_expr(&aug_assign.target),
         Stmt::ClassDef(def) => vec![def.name.to_string()],
         Stmt::FunctionDef(def) => vec![def.name.to_string()],
-        Stmt::AsyncFunctionDef(def) => vec![def.name.to_string()],
+
         Stmt::Expr(expr) => get_full_name_for_expr(&expr.value),
         Stmt::Nonlocal(nonlocal) => nonlocal.names.iter().map(|id| id.to_string()).collect(),
         Stmt::Global(global) => global.names.iter().map(|id| id.to_string()).collect(),

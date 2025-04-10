@@ -7,11 +7,10 @@ use pyo3::{
     PyResult, Python, pyclass,
     types::{PyAnyMethods, PyModule},
 };
-use rustpython_ast::{Visitor, text_size::TextRange};
-use rustpython_parser::Parse;
-use rustpython_parser::ast::Suite;
+use ruff_python_ast::Stmt;
+use ruff_python_ast::visitor::Visitor;
 
-use crate::common::ast::get_import_from_absolute_module_spec;
+use crate::common::ast::{get_import_from_absolute_module_spec, parse_python_source};
 use crate::common::module_spec::{get_parent_package, get_top_level_package, is_in_std_lib};
 
 #[pyclass]
@@ -81,9 +80,9 @@ impl FileCollector {
                                 package: next_parent_package,
                                 collected_files: self.collected_files.to_owned(),
                             };
-                            let stmts = Suite::parse(&file_content, &file_origin.to_str().unwrap())
-                                .unwrap();
-                            for stmt in stmts {
+                            let module =
+                                parse_python_source(&file_content).unwrap().expect_module();
+                            for stmt in &module.body {
                                 sub_collector.visit_stmt(stmt);
                             }
                             self.collected_files.extend(sub_collector.collected_files);
@@ -97,26 +96,32 @@ impl FileCollector {
     }
 }
 
-impl Visitor for FileCollector {
-    fn visit_stmt_import(&mut self, node: rustpython_ast::StmtImport<TextRange>) {
-        for name in node.names {
-            self._process_module(&name.name);
-        }
-    }
-    fn visit_stmt_import_from(&mut self, node: rustpython_ast::StmtImportFrom<TextRange>) {
-        for absolute_module_spec in
-            get_import_from_absolute_module_spec(&node, &self.package).unwrap()
-        {
-            self._process_module(&absolute_module_spec);
-            // imported name could be a module
-
-            for name in &node.names {
-                if name.name.as_str() != "*" {
-                    let potential_module_spec = format!("{}.{}", absolute_module_spec, name.name);
-
-                    self._process_module(&potential_module_spec);
+impl Visitor<'_> for FileCollector {
+    fn visit_stmt(&mut self, stmt: &'_ ruff_python_ast::Stmt) {
+        match stmt {
+            Stmt::Import(import) => {
+                for name in &import.names {
+                    self._process_module(&name.name);
                 }
             }
+            Stmt::ImportFrom(import_from) => {
+                for absolute_module_spec in
+                    get_import_from_absolute_module_spec(&import_from, &self.package).unwrap()
+                {
+                    self._process_module(&absolute_module_spec);
+                    // imported name could be a module
+
+                    for name in &import_from.names {
+                        if name.name.as_str() != "*" {
+                            let potential_module_spec =
+                                format!("{}.{}", absolute_module_spec, name.name);
+
+                            self._process_module(&potential_module_spec);
+                        }
+                    }
+                }
+            }
+            _ => {}
         }
     }
 }

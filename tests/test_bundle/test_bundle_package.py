@@ -81,7 +81,7 @@ def test_bundle_vendor_bundle(
     assert f"import vendor_bundle.{vendor_module_name}.rich.emoji" in init_file_content
 
     assert (
-        f"heart_emoji = vendor_bundle.{vendor_module_name}.rich.emoji.Emoji('heart')"
+        f'heart_emoji = vendor_bundle.{vendor_module_name}.rich.emoji.Emoji("heart")'
         in init_file_content
     )
     assert (
@@ -93,12 +93,12 @@ def test_bundle_vendor_bundle(
         in init_file_content
     )
     assert (
-        "cst.parse_expression('assert answer_of_universe == 42')" in init_file_content
+        'cst.parse_expression("assert answer_of_universe == 42")' in init_file_content
     )
     assert "tree = ensure_type(" in init_file_content
     assert "except ClickException:" in init_file_content
     assert (
-        f"vendor_bundle.{vendor_module_name}.typer.echo('Something went wrong...')"
+        f'vendor_bundle.{vendor_module_name}.typer.echo("Something went wrong...")'
         in init_file_content
     )
     assert (
@@ -132,7 +132,7 @@ def test_bundle_correct_transformer_recursion(
     init_file_content = init_file.read_text()
 
     assert (
-        "correct_transformer_recursion._vendor.typer.style('Hello World!', fg=correct_transformer_recursion._vendor.typer.colors.BRIGHT_MAGENTA)"
+        'correct_transformer_recursion._vendor.typer.style("Hello World!", fg=correct_transformer_recursion._vendor.typer.colors.BRIGHT_MAGENTA)'
         in init_file_content
     )
 
@@ -147,14 +147,14 @@ def test_bundle_annotation_string_literals(
     init_file = result_path / "__init__.py"
     init_file_content = init_file.read_text()
 
-    assert "random_literal = 'typer.Typer'" in init_file_content
+    assert 'random_literal = "typer.Typer"' in init_file_content
 
     assert (
-        "def modify_app(app: 'annotation_string_literals._vendor.typer.Typer') -> 'annotation_string_literals._vendor.typer.Typer':\n    return app"
+        'def modify_app(app: "annotation_string_literals._vendor.typer.Typer") -> "annotation_string_literals._vendor.typer.Typer":\n    return app'
         in init_file_content
     )
 
     assert (
-        "def modify_app2(app2: 'typerino.Typer') -> 'typerino.Typer':\n    return app2"
+        'def modify_app2(app2: "typerino.Typer") -> "typerino.Typer":\n    return app2'
         in init_file_content
     )
