@@ -8,5 +8,16 @@
     ":automergeMinor"
   ],
   "labels": ["dependencies"],
-  "rangeStrategy": "bump"
+  "rangeStrategy": "bump",
+  "customManagers": [
+    {
+      "customType": "regex",
+      "fileMatch": ["Cargo.toml"],
+      "matchStrings": [
+        "{.*git.*=.*\"(?<depName>https://github.com/.+)\".*,.*tag.*=.*\"(?<currentValue>.*)\".*}",
+        "{.*tag.*=.*\"(?<currentValue>.*)\".*,.*git.*=.*\"(?<depName>https://github.com/.+)\".*}"
+      ],
+      "datasourceTemplate": "github-tags"
+    }
+  ]
 }
