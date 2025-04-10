@@ -35,7 +35,7 @@ jobs:
           persist-credentials: false
       - uses: actions/setup-python@v5
         with:
-          python-version: 3.13.2
+          python-version: 3.13.3
       - name: Build wheels
         uses: PyO3/maturin-action@v1
         with:
@@ -71,7 +71,7 @@ jobs:
           persist-credentials: false
       - uses: actions/setup-python@v5
         with:
-          python-version: 3.13.2
+          python-version: 3.13.3
       - name: Build wheels
         uses: PyO3/maturin-action@v1
         with:
@@ -103,7 +103,7 @@ jobs:
           persist-credentials: false
       - uses: actions/setup-python@v5
         with:
-          python-version: 3.13.2
+          python-version: 3.13.3
           architecture: ${{ matrix.platform.target }}
       - name: Build wheels
         uses: PyO3/maturin-action@v1
@@ -135,7 +135,7 @@ jobs:
           persist-credentials: false
       - uses: actions/setup-python@v5
         with:
-          python-version: 3.13.2
+          python-version: 3.13.3
       - name: Build wheels
         uses: PyO3/maturin-action@v1
         with:

@@ -4,11 +4,11 @@ description = "Bundle, treeshake and minify your python projects"
 authors = [{ name = "Jan Vollmer", email = "jan@vllmr.dev" }]
 dependencies = [
   "stdlib-list>=0.11.1; python_version == '3.9'",
-  "rich>=13.9.4",
+  "rich>=14.0.0",
   "platformdirs>=4.3.7",
-  "pydantic>=2.11.1",
+  "pydantic>=2.11.3",
   "pydantic-settings>=2.8.1",
-  "typing-extensions>=4.13.0",
+  "typing-extensions>=4.13.2",
 
 ]
 requires-python = ">=3.9"
@@ -48,16 +48,16 @@ dev = "maturin develop"
 [dependency-groups]
 test = [
   "pytest>=8.3.5",
-  "pytest-cov>=6.0.0",
-  "setuptools>=76.1.0",
+  "pytest-cov>=6.1.1",
+  "setuptools>=78.1.0",
   "pip>=25.0.1",
   "wheel>=0.45.1",
   "pytest-env>=1.1.5",
 ]
-lint = ["mypy>=1.15.0", "ruff>=0.11.2", "pre-commit>=4.2.0"]
+lint = ["mypy>=1.15.0", "ruff>=0.11.5", "pre-commit>=4.2.0"]
 dev = ["nox>=2025.2.9", "maturin>=1.8.3", "maturin-import-hook>=0.2.0"]
 debug = ["tuna>=0.5.11"]
-types = ["types-setuptools>=76.0.0.20250313"]
+types = ["types-setuptools>=78.1.0.20250329"]
 
 [tool.mypy]
 python_version = "3.9"
