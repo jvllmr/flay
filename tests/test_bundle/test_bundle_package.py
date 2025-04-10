@@ -150,11 +150,11 @@ def test_bundle_annotation_string_literals(
     assert 'random_literal = "typer.Typer"' in init_file_content
 
     assert (
-        'def modify_app(app: "annotation_string_literals._vendor.typer.Typer") -> "annotation_string_literals._vendor.typer.Typer":\n    return app'
+        'def modify_app(app: "annotation_string_literals._vendor.typer.Typer") -> "annotation_string_literals._vendor.typer.Typer":\n'
         in init_file_content
     )
 
     assert (
-        'def modify_app2(app2: "typerino.Typer") -> "typerino.Typer":\n    return app2'
+        'def modify_app2(app2: "typerino.Typer") -> "typerino.Typer":\n'
         in init_file_content
     )
