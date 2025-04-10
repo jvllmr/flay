@@ -156,7 +156,6 @@ impl Transformer for ImportsTransformer {
                         .find(|x| module_part.starts_with(*x))
                         .is_some()
                 {
-                    println!("yay!");
                     attribute.attr = Identifier::new(full_name, attribute.attr.range);
                     attribute.value = Box::new(Expr::Name(ExprName {
                         range: deepest_attribute.range,
