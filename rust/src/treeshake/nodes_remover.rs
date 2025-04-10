@@ -5,14 +5,14 @@ use std::{
 };
 
 use pyo3::{pyclass, pymethods};
-
-use rustpython_ast::{Alias, Stmt, StmtImport, StmtImportFrom, Suite};
-use rustpython_parser::Parse;
-use rustpython_unparser::{Unparser, transformer::Transformer};
+use ruff_python_ast::{Alias, Stmt, StmtImport, StmtImportFrom};
+use ruff_python_codegen::{Generator, Stylist};
+use ruff_python_parser::parse_module;
 
 use crate::common::ast::{
-    get_import_from_absolute_module_spec,
+    generate_source, get_import_from_absolute_module_spec,
     providers::fully_qualified_name_provider::FullyQualifiedNameProvider,
+    transformer::{Transformer, walk_stmt},
 };
 
 use super::references_counter::ReferencesHolder;
@@ -60,15 +60,16 @@ impl NodesRemover {
         self.names_provider =
             FullyQualifiedNameProvider::new(&self.module_spec, &self.get_parent_package());
         let file_content = fs::read_to_string(&self.source_path)?;
-        let stmts = Suite::parse(&file_content, &self.source_path.to_str().unwrap()).unwrap();
-        let new_stmts = self.visit_stmt_vec(stmts);
-        let mut unparser = Unparser::new();
-        for stmt in new_stmts {
-            unparser.unparse_stmt(&stmt);
-        }
-        let new_source = unparser.source;
+        let parsed = parse_module(&file_content).unwrap();
+        let module = parsed.syntax();
+        let new_body = self.visit_body(&module.body);
+
+        let stylist = Stylist::from_tokens(parsed.tokens(), &file_content);
+        let mut generator: Generator = (&stylist).into();
+        generator.unparse_suite(&new_body);
+        let new_source = generate_source(&new_body, parsed, &file_content);
         let dir_path = self.source_path.parent().unwrap();
-        if new_source.len() > 0 {
+        if new_source.len() > 0 && new_body.len() > 0 {
             fs::write(&self.source_path, new_source)?;
         } else if !self.source_path.ends_with("__init__.py") || fs::read_dir(dir_path)?.count() == 1
         {
@@ -104,44 +105,6 @@ impl ReferencesHolder for NodesRemover {
 }
 
 impl NodesRemover {
-    fn fallback_stmt(&mut self, stmt: Stmt) -> Option<Stmt> {
-        match stmt {
-            _ => None,
-        }
-    }
-}
-
-impl Transformer for NodesRemover {
-    fn visit_stmt(&mut self, stmt: Stmt) -> Option<Stmt> {
-        let cannot_remove_stmt = match stmt {
-            Stmt::ClassDef(_)
-            | Stmt::FunctionDef(_)
-            | Stmt::AsyncFunctionDef(_)
-            | Stmt::AnnAssign(_)
-            | Stmt::AugAssign(_)
-            | Stmt::Assign(_)
-            | Stmt::Import(_)
-            | Stmt::ImportFrom(_) => false,
-            _ => true,
-        };
-        if cannot_remove_stmt {
-            return Some(stmt);
-        }
-
-        if !self.has_references_for_stmt(&stmt) {
-            return self.fallback_stmt(stmt);
-        }
-        let scope = self.names_provider.enter_scope(&stmt);
-        if let Some(new_stmt) = self.generic_visit_stmt(stmt) {
-            self.names_provider.exit_scope(scope);
-            return Some(new_stmt);
-        } else {
-            self.names_provider.exit_scope(scope);
-        }
-
-        None
-    }
-
     fn visit_stmt_import(&mut self, mut stmt: StmtImport) -> Option<StmtImport> {
         let mut new_names: Vec<Alias> = Vec::new();
         for name in stmt.names {
@@ -171,5 +134,48 @@ impl Transformer for NodesRemover {
         }
         stmt.names = new_names;
         Some(stmt)
+    }
+    fn fallback_stmt(&mut self, stmt: Stmt) -> Option<Stmt> {
+        match stmt {
+            _ => None,
+        }
+    }
+}
+
+impl Transformer for NodesRemover {
+    fn visit_stmt(&mut self, stmt: ruff_python_ast::Stmt) -> Option<Stmt> {
+        let cannot_remove_stmt = match stmt {
+            Stmt::ClassDef(_)
+            | Stmt::FunctionDef(_)
+            | Stmt::AnnAssign(_)
+            | Stmt::AugAssign(_)
+            | Stmt::Assign(_)
+            | Stmt::Import(_)
+            | Stmt::ImportFrom(_) => false,
+            _ => true,
+        };
+        if cannot_remove_stmt {
+            return Some(stmt);
+        }
+
+        if !self.has_references_for_stmt(&stmt) {
+            return self.fallback_stmt(stmt);
+        }
+        let scope = self.names_provider.enter_scope(&stmt);
+        if let Some(new_stmt) = match stmt {
+            Stmt::Import(import) => self.visit_stmt_import(import).map(Stmt::Import),
+            Stmt::ImportFrom(import_from) => self
+                .visit_stmt_import_from(import_from)
+                .map(Stmt::ImportFrom),
+
+            _ => Some(stmt),
+        } {
+            if let Some(walked_stmt) = walk_stmt(self, new_stmt) {
+                self.names_provider.exit_scope(scope);
+                return Some(walked_stmt);
+            }
+        }
+        self.names_provider.exit_scope(scope);
+        None
     }
 }

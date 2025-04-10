@@ -1,17 +1,15 @@
 use std::{collections::HashMap, fs, path::PathBuf};
 
 use pyo3::{pyclass, pymethods};
-use rustpython_ast::{
-    Arg, Arguments, Comprehension, Expr, ExprAttribute, ExprCompare, Keyword, Stmt, StmtImport,
-    StmtImportFrom, Suite, Visitor,
+use ruff_python_ast::{
+    Expr, ExprAttribute, ExprCompare, Stmt,
+    visitor::{Visitor, walk_expr, walk_stmt},
 };
-use rustpython_parser::Parse;
 
 use crate::common::{
     ast::{
-        get_import_from_absolute_module_spec,
+        get_import_from_absolute_module_spec, parse_python_source,
         providers::fully_qualified_name_provider::FullyQualifiedNameProvider,
-        visitor_patch::VisitorPatch,
     },
     module_spec::get_parent_package,
 };
@@ -139,8 +137,8 @@ impl ReferencesCounter {
             FullyQualifiedNameProvider::new(&self.module_spec, &self.get_parent_package());
 
         let file_content = fs::read_to_string(&self.source_path)?;
-        let stmts = Suite::parse(&file_content, &self.source_path.to_str().unwrap()).unwrap();
-        for stmt in stmts {
+        let module = parse_python_source(&file_content).unwrap().expect_module();
+        for stmt in &module.body {
             self.visit_stmt(stmt);
         }
         Ok(())
@@ -212,19 +210,15 @@ fn is_if_name_main(expr: &Expr) -> bool {
             && ((left
                 .as_name_expr()
                 .is_some_and(|name| name.id.as_str() == "__name__")
-                && comparators[0].as_constant_expr().is_some_and(|c| {
-                    c.value
-                        .as_str()
-                        .is_some_and(|c_value| c_value == "__main__")
-                }))
+                && comparators[0]
+                    .as_string_literal_expr()
+                    .is_some_and(|c| c.value == *"__main__"))
                 || (comparators[0]
                     .as_name_expr()
                     .is_some_and(|name| name.id.as_str() == "__name__")
-                    && left.as_constant_expr().is_some_and(|c| {
-                        c.value
-                            .as_str()
-                            .is_some_and(|c_value| c_value == "__main__")
-                    })))
+                    && left
+                        .as_string_literal_expr()
+                        .is_some_and(|c| c.value == *"__main__")))
         {
             return true;
         }
@@ -250,8 +244,8 @@ impl ReferencesHolder for ReferencesCounter {
     }
 }
 
-impl Visitor for ReferencesCounter {
-    fn visit_stmt(&mut self, stmt: Stmt) {
+impl Visitor<'_> for ReferencesCounter {
+    fn visit_stmt(&mut self, stmt: &ruff_python_ast::Stmt) {
         // everything in __main__.py should be preserved
         if self
             .source_path
@@ -273,13 +267,13 @@ impl Visitor for ReferencesCounter {
                     self.always_bump_context = true;
                 }
                 // visit decorators, bases and keywords before they are prefixed with scope
-                for decorator in class_def.decorator_list.clone() {
-                    self.visit_expr(decorator);
+                for decorator in &class_def.decorator_list {
+                    self.visit_decorator(decorator);
                 }
-                for base in class_def.bases.clone() {
+                for base in class_def.bases() {
                     self.visit_expr(base);
                 }
-                for keyword in class_def.keywords.clone() {
+                for keyword in class_def.keywords() {
                     self.visit_keyword(keyword);
                 }
             }
@@ -289,20 +283,8 @@ impl Visitor for ReferencesCounter {
                     self.maybe_increase_stmt(&stmt);
                     self.always_bump_context = true;
                     // visit decorators before they are prefixed with scope
-                    let decorator_list_clone = func_def.decorator_list.clone();
-                    for decorator in decorator_list_clone {
-                        self.visit_expr(decorator);
-                    }
-                }
-            }
-            Stmt::AsyncFunctionDef(async_func_def) => {
-                if async_func_def.decorator_list.len() > 0 || self.has_references_for_stmt(&stmt) {
-                    self.maybe_increase_stmt(&stmt);
-                    self.always_bump_context = true;
-                    // visit decorators before they are prefixed with scope
-                    let decorator_list_clone = async_func_def.decorator_list.clone();
-                    for decorator in decorator_list_clone {
-                        self.visit_expr(decorator);
+                    for decorator in &func_def.decorator_list {
+                        self.visit_decorator(&decorator);
                     }
                 }
             }
@@ -342,7 +324,7 @@ impl Visitor for ReferencesCounter {
                     self.always_bump_context = true;
                 } else if self.is_global_scope() {
                     self.always_bump_context = true;
-                    self.visit_expr(*if_block.test.clone());
+                    self.visit_expr(&if_block.test);
                     self.always_bump_context = false;
                 }
             }
@@ -433,14 +415,23 @@ impl Visitor for ReferencesCounter {
         };
 
         let scope = self.names_provider.enter_scope(&stmt);
-        self.generic_visit_stmt(stmt);
+        match stmt {
+            Stmt::Import(import) => {
+                self.names_provider.visit_import(import);
+            }
+            Stmt::ImportFrom(import_from) => {
+                self.names_provider.visit_import_from(&import_from);
+            }
+            _ => {}
+        }
+        walk_stmt(self, stmt);
         if can_reset_context {
             self.always_bump_context = false;
         }
         self.names_provider.exit_scope(scope);
     }
 
-    fn visit_expr(&mut self, expr: Expr) {
+    fn visit_expr(&mut self, expr: &ruff_python_ast::Expr) {
         // everything in __main__.py should be preserved
         if self
             .source_path
@@ -463,37 +454,9 @@ impl Visitor for ReferencesCounter {
             }
             _ => {}
         }
-
-        self.generic_visit_expr(expr);
+        walk_expr(self, expr);
         if can_reset_context {
             self.always_bump_context = false;
         }
     }
-
-    fn visit_stmt_import(&mut self, node: StmtImport) {
-        self.names_provider.visit_import(&node);
-        self.generic_visit_stmt_import(node);
-    }
-
-    fn visit_stmt_import_from(&mut self, node: StmtImportFrom) {
-        self.names_provider.visit_import_from(&node);
-        self.generic_visit_stmt_import_from(node);
-    }
-
-    // visitor patches
-    fn generic_visit_arg(&mut self, node: Arg) {
-        self.generic_visit_arg_patch(node);
-    }
-
-    fn generic_visit_arguments(&mut self, node: Arguments) {
-        self.generic_visit_arguments_patch(node);
-    }
-    fn generic_visit_keyword(&mut self, node: Keyword) {
-        self.generic_visit_keyword_patch(node);
-    }
-    fn generic_visit_comprehension(&mut self, node: Comprehension) {
-        self.generic_visit_comprehension_patch(node);
-    }
 }
-
-impl VisitorPatch for ReferencesCounter {}

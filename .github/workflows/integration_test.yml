@@ -1,5 +1,8 @@
 name: Run integration tests
 
+env:
+  CARGO_HOME: ${{ github.workspace }}/.c
+
 on:
   schedule:
     - cron: "* 5 * * *"
