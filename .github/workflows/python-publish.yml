@@ -1,5 +1,8 @@
 name: Upload Python Package
 
+env:
+  CARGO_HOME: ${{ github.workspace }}/.c
+
 on:
   release:
     types: [published]

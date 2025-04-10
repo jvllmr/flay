@@ -1,5 +1,8 @@
 name: Run tests
 
+env:
+  CARGO_HOME: ${{ github.workspace }}/.c
+
 on:
   push:
     branches:
