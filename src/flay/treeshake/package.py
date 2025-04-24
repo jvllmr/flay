@@ -27,7 +27,12 @@ def _process_modules(
 
 
 def treeshake_package(
-    source_dir: str, preserve_packages: t.Collection[str] | None = None
+    source_dir: str,
+    preserve_packages: t.Collection[str] | None = None,
+    found_module_callback: t.Callable[[str], None] = lambda _: None,
+    total_modules_callback: t.Callable[[int], None] = lambda _: None,
+    references_iteration_callback: t.Callable[[int], None] = lambda _: None,
+    nodes_removal_callback: t.Callable[[str], None] = lambda _: None,
 ) -> dict[str, int]:
     stats: dict[str, int] = defaultdict(int)
     source_files: set[str] = set()
@@ -50,10 +55,12 @@ def treeshake_package(
                     known_module_specs[file_path] = module_spec.rsplit(".", 1)[0]
                 else:
                     known_module_specs[file_path] = module_spec
+                found_module_callback(known_module_specs[file_path])
 
     file_modules: list[str] = sorted(
         source_files, key=lambda x: 1 if x.endswith("__init__.py") else 0
     )
+    total_modules_callback(len(file_modules))
     references_counts: dict[str, int] = defaultdict(int)
     new_references_count = 1
 
@@ -65,6 +72,7 @@ def treeshake_package(
             "Treeshake reference counter iteration %s",
             treeshake_iteration,
         )
+        references_iteration_callback(treeshake_iteration)
         treeshake_iteration += 1
         references_counter.reset_counter()
         _process_modules(
@@ -84,7 +92,7 @@ def treeshake_package(
     nodes_remover = NodesRemover(references_counts, set(known_module_specs.values()))
     for file_path in file_modules:
         module_spec = known_module_specs[file_path]
-
+        nodes_removal_callback(module_spec)
         nodes_remover.process_module(module_spec=module_spec, source_path=file_path)
 
     return stats

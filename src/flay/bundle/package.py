@@ -1,6 +1,7 @@
 from __future__ import annotations
 from flay._flay_rs import FileCollector
 from importlib.metadata import Distribution, PackageNotFoundError
+from . import DEFAULT_BUNDLE_METADATA, DEFAULT_VENDOR_MODULE_NAME
 from flay.common.module_spec import (
     find_all_files_in_module_spec,
     get_parent_package,
@@ -9,7 +10,7 @@ from flay.common.module_spec import (
 from pathlib import Path
 import logging
 import os.path
-
+import typing as t
 import shutil
 import sys
 from flay._flay_rs import transform_imports
@@ -20,8 +21,12 @@ log = logging.getLogger(__name__)
 def bundle_package(
     module_spec: str,
     destination_path: Path,
-    vendor_module_name: str = "_vendor",
-    bundle_metadata: bool = False,
+    vendor_module_name: str = DEFAULT_VENDOR_MODULE_NAME,
+    bundle_metadata: bool = DEFAULT_BUNDLE_METADATA,
+    found_module_callback: t.Callable[[str], None] = lambda _: None,
+    found_total_modules_callback: t.Callable[[int], None] = lambda _: None,
+    process_module_callback: t.Callable[[str], None] = lambda _: None,
+    bundled_metadata_callback: t.Callable[[], None] = lambda: None,
 ) -> None:
     collector = FileCollector(package=module_spec)
 
@@ -32,10 +37,11 @@ def bundle_package(
                 if path.name == "__init__.py"
                 else f"{module_spec}.{path.stem}"
             )
+            found_module_callback(found_module_spec)
             collector._process_module(found_module_spec)
 
     files = collector.collected_files
-
+    found_total_modules_callback(len(files))
     top_level_package = get_top_level_package(module_spec)
 
     vendor_path = destination_path / top_level_package / vendor_module_name
@@ -60,6 +66,7 @@ def bundle_package(
                 files[new_init_key] = ""
 
     for (found_module, found_path), module_source in files.items():
+        process_module_callback(found_module)
         if module_source:
             module_source = transform_imports(
                 module_source, top_level_package, vendor_module_name
@@ -107,3 +114,4 @@ def bundle_package(
             raise PackageNotFoundError(module_spec)  # pragma: no cover
         metadata_path.touch()
         metadata_path.write_text(metadata)
+        bundled_metadata_callback()

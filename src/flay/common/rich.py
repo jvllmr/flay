@@ -12,3 +12,6 @@ def ansi_style_text(text: str, style: Style | str = "") -> str:
     with console.capture() as capture:
         console.print(text_obj)
     return capture.get()
+
+
+check = Text("✔", style=Style(color="green"))
