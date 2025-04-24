@@ -2,10 +2,10 @@ from flay.bundle import DEFAULT_BUNDLE_METADATA, DEFAULT_VENDOR_MODULE_NAME
 from flay.common.logging import enable_debug_logging
 from .debug import DebugApp
 from flay.common.pydantic import FlayBaseSettings
-from pydantic_settings import CliApp, CliSubCommand, SettingsError, CliPositionalArg
+from pydantic_settings import CliApp, CliSubCommand, CliPositionalArg
 from .options import DebugFlagT
 import os
-from pydantic import Field, AliasChoices
+from pydantic import BaseModel, Field, AliasChoices
 from pathlib import Path
 import typing as t
 from .bundle import cli_bundle_package
@@ -13,11 +13,10 @@ from .treeshake import cli_treeshake_package
 from flay.common.rich import console, check
 
 
-class Flay(FlayBaseSettings):
-    if not os.getenv("FLAY_DEBUG_APP"):
-        module_spec: CliPositionalArg[
-            t.Annotated[str, Field(description="Module that should be bundled")]
-        ]
+class BundleApp(BaseModel):
+    module_spec: CliPositionalArg[
+        t.Annotated[str, Field(description="Module that should be bundled")]
+    ]
     output_path: t.Annotated[
         Path,
         Field(
@@ -39,15 +38,10 @@ class Flay(FlayBaseSettings):
         bool,
         Field(
             description="Should unused source code be stripped from the bundle?",
-            validation_alias=AliasChoices("t"),
         ),
     ] = True
 
-    debug: DebugFlagT = False
-    if os.getenv("FLAY_DEBUG_APP"):
-        debug_app: CliSubCommand[DebugApp]
-
-    def main(self) -> None:
+    def cli_cmd(self) -> None:
         console.print(f"Starting to bundle module {self.module_spec}...")
         cli_bundle_package(
             self.module_spec,
@@ -61,10 +55,16 @@ class Flay(FlayBaseSettings):
             cli_treeshake_package(str(self.output_path.absolute()))
             console.print(check, "Finished removing unused code")
 
+
+class Flay(FlayBaseSettings):
+    debug: DebugFlagT = False
+
+    bundle: CliSubCommand[BundleApp]
+    if os.getenv("FLAY_DEBUG_APP"):
+        debug_app: CliSubCommand[DebugApp]
+
     def cli_cmd(self) -> None:
         if self.debug:
             enable_debug_logging()  # pragma: no cover
-        try:
-            CliApp.run_subcommand(self, False)
-        except SettingsError:
-            self.main()
+
+        CliApp.run_subcommand(self, False)
