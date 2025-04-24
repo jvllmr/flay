@@ -14,9 +14,10 @@ from flay.common.rich import console, check
 
 
 class Flay(FlayBaseSettings):
-    module_spec: CliPositionalArg[
-        t.Annotated[str, Field(description="Module that should be bundled")]
-    ]
+    if not os.getenv("FLAY_DEBUG_APP"):
+        module_spec: CliPositionalArg[
+            t.Annotated[str, Field(description="Module that should be bundled")]
+        ]
     output_path: t.Annotated[
         Path,
         Field(
