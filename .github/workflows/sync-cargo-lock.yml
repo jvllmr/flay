@@ -7,6 +7,7 @@ on:
 
 jobs:
   update-cargo-lock:
+    if: github.repository == 'jvllmr/flay'
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -14,7 +15,7 @@ jobs:
       - name: Checkout PR branch
         uses: actions/checkout@v4
         with:
-          persist-credentials: false
+          persist-credentials: true
           ref: ${{ github.head_ref }}
           token: ${{ secrets.GITHUB_TOKEN }}
 
