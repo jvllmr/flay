@@ -28,6 +28,12 @@ jobs:
         with:
           python-version: ${{ matrix.python-version }}
           cache: true
+      - name: Set up Rust toolchain
+        uses: actions-rs/toolchain@v1
+        with:
+          toolchain: stable
+      - name: Cargo vendor
+        run: cargo vendor
       - name: Install dependencies
         run: pdm install --frozen-lock
       - name: Run pytest

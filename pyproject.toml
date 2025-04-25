@@ -70,6 +70,7 @@ typeCheckingMode = "off"
 [tool.pytest.ini_options]
 filterwarnings = ["ignore:directory \"/run/secrets\""]
 env = ["FLAY_DEBUG_APP=1"]
+testpaths = ["tests"]
 
 [tool.coverage.paths]
 source = ["/home/runner/work/", "D:\\a\\"]

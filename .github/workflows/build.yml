@@ -106,6 +106,12 @@ jobs:
         with:
           python-version: 3.13.3
           architecture: ${{ matrix.platform.target }}
+      - name: Set up Rust toolchain
+        uses: actions-rs/toolchain@v1
+        with:
+          toolchain: stable
+      - name: Cargo vendor
+        run: cargo vendor
       - name: Build wheels
         uses: PyO3/maturin-action@v1
         with:
