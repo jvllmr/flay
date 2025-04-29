@@ -1,8 +1,9 @@
 name: Sync Cargo.lock on Cargo.toml Change
 
 on:
-  pull_request:
-    paths:
+  push:
+    branches: [dev]
+    paths: 
       - "**/Cargo.toml"
 
 jobs:
@@ -11,30 +12,35 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: write
+      pull-requests: write
     steps:
-      - name: Checkout PR branch
+      - name: Checkout dev branch
         uses: actions/checkout@v4
         with:
           persist-credentials: true
-          ref: ${{ github.head_ref }}
-          token: ${{ secrets.GITHUB_TOKEN }}
-
       - name: Install Rust toolchain
         uses: actions-rs/toolchain@v1
         with:
           toolchain: stable
-
       - name: Update Cargo.lock
         run: cargo generate-lockfile
-
-      - name: Commit and push if Cargo.lock changed
-        run: |
-          if git diff --quiet Cargo.lock; then
-            echo "No changes to Cargo.lock"
-          else
-            git config user.name "github-actions[bot]"
-            git config user.email "github-actions[bot]@users.noreply.github.com"
-            git add Cargo.lock
-            git commit -m "chore: sync Cargo.lock"
-            git push
-          fi
+      - name: Create Pull Request
+        id: cpr
+        uses: peter-evans/create-pull-request@v7
+        with:
+          title: "chore: sync Cargo.lock"
+          commit-message: "chore: sync Cargo.lock"
+          branch: auto/sync-cargo-lock
+          delete-branch: true
+          author: github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>
+          labels: |
+            dependencies
+          body: "This is an automated Pull Request which syncs the Cargo.lock file in the dev branch if it is not in sync with Cargo.toml"
+      - name: Enable auto merge
+        if: ${{ steps.cpr.outputs.pull-request-number }}
+        uses: peter-evans/enable-pull-request-automerge@v3
+        with:
+          pull-request-number: ${{ steps.cpr.outputs.pull-request-number }}
+          merge-method: squash
+          
+          
