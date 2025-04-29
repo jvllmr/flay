@@ -1,6 +1,7 @@
 name: Sync Cargo.lock on Cargo.toml Change
 
 on:
+  workflow_dispatch:
   push:
     branches: [dev]
     paths:
