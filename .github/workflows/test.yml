@@ -35,7 +35,7 @@ jobs:
         with:
           toolchain: stable
       - name: Enable git longpaths
-        run: git config --system core.longpaths true
+        run: git config --global core.longpaths true
       - name: Cargo vendor
         run: cargo vendor
       - name: Install dependencies
