@@ -110,6 +110,8 @@ jobs:
         uses: actions-rs/toolchain@v1
         with:
           toolchain: stable
+      - name: Enable git longpaths
+        run: git config --global core.longpaths true
       - name: Cargo vendor
         run: cargo vendor
       - name: Build wheels
