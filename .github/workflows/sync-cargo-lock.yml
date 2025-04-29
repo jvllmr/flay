@@ -33,6 +33,7 @@ jobs:
           branch: auto/sync-cargo-lock
           delete-branch: true
           author: github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>
+          sign-commits: true
           labels: |
             dependencies
           body: "This is an automated Pull Request which syncs the Cargo.lock file in the dev branch if it is not in sync with Cargo.toml"
