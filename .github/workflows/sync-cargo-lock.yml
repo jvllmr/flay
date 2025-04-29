@@ -3,7 +3,7 @@ name: Sync Cargo.lock on Cargo.toml Change
 on:
   push:
     branches: [dev]
-    paths: 
+    paths:
       - "**/Cargo.toml"
 
 jobs:
@@ -42,5 +42,3 @@ jobs:
         with:
           pull-request-number: ${{ steps.cpr.outputs.pull-request-number }}
           merge-method: squash
-          
-          
