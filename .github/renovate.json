@@ -24,14 +24,14 @@
   "packageRules": [
     {
       "description": "Group all rust `minor` and `patch` dependency updates",
-      "groupName": ["all rust non-major dependencies"],
+      "groupName": "all rust non-major dependencies",
       "groupSlug": "rust-minor-patch",
       "matchManagers": ["cargo"],
       "matchUpdateTypes": ["minor", "patch"]
     },
     {
       "description": "Group all python `minor` and `patch` dependency updates",
-      "groupName": ["all python non-major dependencies"],
+      "groupName": "all python non-major dependencies",
       "groupSlug": "python-minor-patch",
       "matchManagers": ["pep621"],
       "matchUpdateTypes": ["minor", "patch"]
