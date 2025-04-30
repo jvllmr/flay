@@ -23,6 +23,11 @@
   ],
   "packageRules": [
     {
+      "description": "Do not update required python version",
+      "matchDepTypes": ["requires-python"],
+      "enabled": false
+    },
+    {
       "description": "Group all rust `minor` and `patch` dependency updates",
       "groupName": "all rust non-major dependencies",
       "groupSlug": "rust-minor-patch",
