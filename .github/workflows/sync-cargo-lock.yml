@@ -2,16 +2,13 @@ name: Sync Cargo.lock on Cargo.toml Change
 
 on:
   workflow_dispatch:
-  push:
-    branches: [dev]
-    paths:
-      - "**/Cargo.toml"
+  schedule:
+    - cron: "0 * * * *"
 
 jobs:
   update-cargo-lock:
     if: github.repository == 'jvllmr/flay'
     runs-on: ubuntu-latest
-    environment: pr-on-dev-branch
     permissions:
       contents: read
     steps:
@@ -19,6 +16,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           persist-credentials: true
+          ref: dev
       - name: Install Rust toolchain
         uses: actions-rs/toolchain@v1
         with:
@@ -29,7 +27,6 @@ jobs:
         id: cpr
         uses: peter-evans/create-pull-request@v7
         with:
-          token: ${{ secrets.CREATE_PR_TOKEN }}
           title: "chore: sync Cargo.lock"
           commit-message: "chore: sync Cargo.lock"
           branch: auto/sync-cargo-lock
@@ -43,6 +40,5 @@ jobs:
         if: ${{ steps.cpr.outputs.pull-request-number }}
         uses: peter-evans/enable-pull-request-automerge@v3
         with:
-          token: ${{ secrets.CREATE_PR_TOKEN }}
           pull-request-number: ${{ steps.cpr.outputs.pull-request-number }}
           merge-method: squash
