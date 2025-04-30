@@ -5,7 +5,7 @@ ci:
 
 repos:
   - repo: https://github.com/woodruffw/zizmor-pre-commit
-    rev: v1.4.1
+    rev: v1.6.0
     hooks:
       - id: zizmor
   - repo: https://github.com/hadialqattan/pycln
@@ -21,7 +21,7 @@ repos:
       - id: cargo-fmt
       - id: cargo-fix
   - repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: "v0.9.9"
+    rev: "v0.11.7"
     hooks:
       - id: ruff
         args:
