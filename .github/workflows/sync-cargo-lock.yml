@@ -13,19 +13,19 @@ jobs:
       contents: read
     steps:
       - name: Checkout dev branch
-        uses: actions/checkout@v4
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4
         with:
           persist-credentials: true
           ref: dev
       - name: Install Rust toolchain
-        uses: actions-rs/toolchain@v1
+        uses: actions-rs/toolchain@16499b5e05bf2e26879000db0c1d13f7e13fa3af # v1
         with:
           toolchain: stable
       - name: Update Cargo.lock
         run: cargo generate-lockfile
       - name: Create Pull Request
         id: cpr
-        uses: peter-evans/create-pull-request@v7
+        uses: peter-evans/create-pull-request@271a8d0340265f705b14b6d32b9829c1cb33d45e # v7
         with:
           title: "chore: sync Cargo.lock"
           commit-message: "chore: sync Cargo.lock"
@@ -38,7 +38,7 @@ jobs:
           body: "This is an automated Pull Request which syncs the Cargo.lock file in the dev branch if it is not in sync with Cargo.toml"
       - name: Enable auto merge
         if: ${{ steps.cpr.outputs.pull-request-number }}
-        uses: peter-evans/enable-pull-request-automerge@v3
+        uses: peter-evans/enable-pull-request-automerge@a660677d5469627102a1c1e11409dd063606628d # v3
         with:
           pull-request-number: ${{ steps.cpr.outputs.pull-request-number }}
           merge-method: squash
