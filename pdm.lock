@@ -5,7 +5,7 @@
 groups = ["default", "debug", "dev", "lint", "test", "types"]
 strategy = ["inherit_metadata"]
 lock_version = "4.5.0"
-content_hash = "sha256:b6d4bbb89b5445122b7ce1caaa3c517a705ec2b5e4d272259a3c34d189c4916b"
+content_hash = "sha256:b05c8872edd19847c2f8f1050b7be7a83ccc6bdccd13358493f48e1ca9e082d4"
 
 [[metadata.targets]]
 requires_python = ">=3.9"
@@ -911,7 +911,7 @@ files = [
 
 [[package]]
 name = "types-setuptools"
-version = "78.1.0.20250329"
+version = "80.0.0.20250429"
 requires_python = ">=3.9"
 summary = "Typing stubs for setuptools"
 groups = ["types"]
@@ -919,8 +919,8 @@ dependencies = [
     "setuptools",
 ]
 files = [
-    {file = "types_setuptools-78.1.0.20250329-py3-none-any.whl", hash = "sha256:ea47eab891afb506f470eee581dcde44d64dc99796665da794da6f83f50f6776"},
-    {file = "types_setuptools-78.1.0.20250329.tar.gz", hash = "sha256:31e62950c38b8cc1c5114b077504e36426860a064287cac11b9666ab3a483234"},
+    {file = "types_setuptools-80.0.0.20250429-py3-none-any.whl", hash = "sha256:9bbcdcea88d1fda4b0f1371488333f606c78a8b10154a42530ed926ecf3242cb"},
+    {file = "types_setuptools-80.0.0.20250429.tar.gz", hash = "sha256:a4de44f1110f531e7f9453d72999437a1caa6052609e2c7c859dd6613ab0d593"},
 ]
 
 [[package]]
