@@ -49,12 +49,12 @@ dev = "maturin develop"
 test = [
   "pytest>=8.3.5",
   "pytest-cov>=6.1.1",
-  "setuptools>=78.1.1",
-  "pip>=25.0.1",
+  "setuptools>=80.0.0",
+  "pip>=25.1",
   "wheel>=0.45.1",
   "pytest-env>=1.1.5",
 ]
-lint = ["mypy>=1.15.0", "ruff>=0.11.6", "pre-commit>=4.2.0"]
+lint = ["mypy>=1.15.0", "ruff>=0.11.7", "pre-commit>=4.2.0"]
 dev = ["nox>=2025.2.9", "maturin>=1.8.3", "maturin-import-hook>=0.2.0"]
 debug = ["tuna>=0.5.11"]
 types = ["types-setuptools>=78.1.0.20250329"]
@@ -70,6 +70,7 @@ typeCheckingMode = "off"
 [tool.pytest.ini_options]
 filterwarnings = ["ignore:directory \"/run/secrets\""]
 env = ["FLAY_DEBUG_APP=1"]
+testpaths = ["tests"]
 
 [tool.coverage.paths]
 source = ["/home/runner/work/", "D:\\a\\"]

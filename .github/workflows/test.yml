@@ -18,18 +18,26 @@ jobs:
     strategy:
       matrix:
         python-version: ["3.9", "3.10", "3.11", "3.12", "3.13"]
-        os: ["windows-latest", "ubuntu-latest", "macos-latest"]
+        os: ["windows-2025", "ubuntu-latest", "macos-latest"]
     runs-on: ${{ matrix.os }}
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4
         with:
           persist-credentials: false
       - name: Setup PDM
-        uses: pdm-project/setup-pdm@v4
+        uses: pdm-project/setup-pdm@94a823180e06fcde4ad29308721954a521c96ed0 # v4
         with:
           python-version: ${{ matrix.python-version }}
           cache: true
+      - name: Set up Rust toolchain
+        uses: actions-rs/toolchain@16499b5e05bf2e26879000db0c1d13f7e13fa3af # v1
+        with:
+          toolchain: stable
+      - name: Enable git longpaths
+        run: git config --global core.longpaths true
+      - name: Cargo vendor
+        run: cargo vendor
       - name: Install dependencies
         run: pdm install --frozen-lock
       - name: Run pytest
@@ -37,11 +45,11 @@ jobs:
           FLAY_INTEGRATION_TEST: 1
         run: pdm run pytest --cov --cov-report=xml --junitxml=junit.xml -o junit_family=legacy
       - name: Upload coverage report to Codecov
-        uses: codecov/codecov-action@v5
+        uses: codecov/codecov-action@ad3126e916f78f00edff4ed0317cf185271ccc2d # v5
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
       - name: Upload test results to Codecov
         if: ${{ !cancelled() }}
-        uses: codecov/test-results-action@v1
+        uses: codecov/test-results-action@f2dba722c67b86c6caa034178c6e4d35335f6706 # v1
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
