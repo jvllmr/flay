@@ -49,15 +49,15 @@ dev = "maturin develop"
 test = [
   "pytest>=8.3.5",
   "pytest-cov>=6.1.1",
-  "setuptools>=80.1.0",
-  "pip>=25.1",
+  "setuptools>=80.3.1",
+  "pip>=25.1.1",
   "wheel>=0.45.1",
   "pytest-env>=1.1.5",
 ]
-lint = ["mypy>=1.15.0", "ruff>=0.11.7", "pre-commit>=4.2.0"]
-dev = ["nox>=2025.2.9", "maturin>=1.8.3", "maturin-import-hook>=0.2.0"]
+lint = ["mypy>=1.15.0", "ruff>=0.11.8", "pre-commit>=4.2.0"]
+dev = ["nox>=2025.5.1", "maturin>=1.8.3", "maturin-import-hook>=0.2.0"]
 debug = ["tuna>=0.5.11"]
-types = ["types-setuptools>=80.0.0.20250429"]
+types = ["types-setuptools>=80.3.0.20250505"]
 
 [tool.mypy]
 python_version = "3.9"
