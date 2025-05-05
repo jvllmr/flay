@@ -1,4 +1,4 @@
-name: Upload Python Package
+name: Build & Deploy
 
 env:
   CARGO_HOME: ${{ github.workspace }}/.c
