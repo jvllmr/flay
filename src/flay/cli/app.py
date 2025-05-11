@@ -53,6 +53,7 @@ class FlayMainSettings(FlayBaseSettings):
         Field(
             description="Name of the module where external packages should be",
             alias="vendor-module-name",
+            validation_alias=AliasChoices("vendor-module-name", "vendor_module_name"),
         ),
     ] = DEFAULT_VENDOR_MODULE_NAME
     bundle_metadata: t.Annotated[
@@ -61,6 +62,7 @@ class FlayMainSettings(FlayBaseSettings):
         Field(
             description="Whether package metadata should be collocated with the generated bundle",
             alias="bundle-metadata",
+            validation_alias=AliasChoices("bundle-metadata", "bundle_metadata"),
         ),
     ] = DEFAULT_BUNDLE_METADATA
 
