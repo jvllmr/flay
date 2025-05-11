@@ -33,7 +33,9 @@ def flay(debug_setting: DebugSetting) -> None:
 class FlayMainSettings(FlayBaseSettings):
     module_spec: CliPositionalArg[
         t.Annotated[
-            str, CliArgument(), Field(description="Module that should be bundled")
+            str,
+            CliArgument(),
+            Field(description="Module that should be bundled"),
         ]
     ]
     output_path: t.Annotated[
@@ -41,19 +43,24 @@ class FlayMainSettings(FlayBaseSettings):
         CliOption(),
         Field(
             description="Target path for the generated bundle",
+            alias="output-path",
             validation_alias=AliasChoices("output", "o"),
         ),
     ] = Path("flayed")
     vendor_module_name: t.Annotated[
         str,
         CliOption(),
-        Field(description="Name of the module where external packages should be"),
+        Field(
+            description="Name of the module where external packages should be",
+            alias="vendor-module-name",
+        ),
     ] = DEFAULT_VENDOR_MODULE_NAME
     bundle_metadata: t.Annotated[
         bool,
         CliOption(),
         Field(
-            description="Whether package metadata should be collocated with the generated bundle"
+            description="Whether package metadata should be collocated with the generated bundle",
+            alias="bundle-metadata",
         ),
     ] = DEFAULT_BUNDLE_METADATA
 
