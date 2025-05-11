@@ -3,19 +3,28 @@ from pathlib import Path
 
 import typing as t
 
-from pydantic_settings import CliApp, CliSubCommand
 
-
-from flay.common.pydantic import FlayBaseModel
+from flay.common.logging import enable_debug_logging
+from flay.common.pydantic import FlayBaseSettings
 from flay.treeshake.package import treeshake_package
-from .bundle import DebugBundlePackageCmd
+from .types import DebugModuleSpecT
 from pydantic import Field
 from pydantic import DirectoryPath
+from click.testing import CliRunner
+from clonf import clonf_click
+import click
+
 
 log = logging.getLogger(__name__)
 
 
-class DebugTreeshakeBundleThenTreeshakeCmd(DebugBundlePackageCmd):
+@click.group(name="treeshake")
+def debug_treeshake_app() -> None:
+    enable_debug_logging()
+
+
+class DebugTreeshakeBundleThenTreeshakeSettings(FlayBaseSettings):
+    module_spec: DebugModuleSpecT
     path: t.Annotated[
         DirectoryPath,
         Field(
@@ -24,14 +33,17 @@ class DebugTreeshakeBundleThenTreeshakeCmd(DebugBundlePackageCmd):
         ),
     ]
 
-    def cli_cmd(self) -> None:
-        DebugBundlePackageCmd.cli_cmd(DebugBundlePackageCmd.model_validate(self))
-        stats = treeshake_package(str(self.path))
-        print(dict(stats))  # noqa: T201
 
+@debug_treeshake_app.command(name="bundle_then_treeshake_package")
+@clonf_click
+def bundle_then_treeshake_cmd(
+    settings: DebugTreeshakeBundleThenTreeshakeSettings,
+) -> None:
+    from .bundle import debug_bundle_package_cmd
 
-class DebugTreeshakeApp(FlayBaseModel):
-    bundle_then_treeshake_package: CliSubCommand[DebugTreeshakeBundleThenTreeshakeCmd]
-
-    def cli_cmd(self) -> None:
-        CliApp.run_subcommand(self)
+    runner = CliRunner()
+    runner.invoke(
+        debug_bundle_package_cmd, [settings.module_spec, "--path", str(settings.path)]
+    )
+    stats = treeshake_package(str(settings.path))
+    print(dict(stats))  # noqa: T201

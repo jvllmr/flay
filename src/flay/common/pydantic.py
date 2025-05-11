@@ -27,12 +27,6 @@ class FlayBaseSettings(BaseSettings):
         toml_file="flay.toml",
         yaml_file=("flay.yaml", "flay.yml"),
         json_file="flay.json",
-        cli_implicit_flags=False,
-        cli_kebab_case=True,
-        cli_prog_name="flay",
-        cli_use_class_docs_for_groups=True,
-        cli_ignore_unknown_args=True,
-        cli_parse_args=True,
     )
 
     @classmethod

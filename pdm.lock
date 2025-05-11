@@ -5,7 +5,7 @@
 groups = ["default", "debug", "dev", "lint", "test", "types"]
 strategy = ["inherit_metadata"]
 lock_version = "4.5.0"
-content_hash = "sha256:83410d5419e801c72df4dce9555380c74dc6fb434a54a482b1267699911234f1"
+content_hash = "sha256:d949c7c8161199ab4e31139ab564bebe706222c71508dd9bf44db9b7042adca9"
 
 [[metadata.targets]]
 requires_python = ">=3.9"
@@ -58,12 +58,59 @@ files = [
 ]
 
 [[package]]
+name = "click"
+version = "8.1.8"
+requires_python = ">=3.7"
+summary = "Composable command line interface toolkit"
+groups = ["default"]
+dependencies = [
+    "colorama; platform_system == \"Windows\"",
+    "importlib-metadata; python_version < \"3.8\"",
+]
+files = [
+    {file = "click-8.1.8-py3-none-any.whl", hash = "sha256:63c132bbbed01578a06712a2d1f497bb62d9c1c0d329b7903a866228027263b2"},
+    {file = "click-8.1.8.tar.gz", hash = "sha256:ed53c9d8990d83c2a27deae68e4ee337473f6330c040a31d4225c9574d16096a"},
+]
+
+[[package]]
+name = "clonf"
+version = "0.1.1"
+requires_python = ">=3.9"
+summary = "Declaratively connect cli and config definition using pydantic"
+groups = ["default"]
+dependencies = [
+    "pydantic>=2.11.4",
+    "typing-extensions>=4.13.2",
+]
+files = [
+    {file = "clonf-0.1.1-py3-none-any.whl", hash = "sha256:41be59b5d7ca81549510ab1cfe748ab7e3c09a25f0dfa843fe162d76142db77c"},
+    {file = "clonf-0.1.1.tar.gz", hash = "sha256:dbb563b525bbc241199b90e35582ac239e5d89f0ce934b495ee9193df63b993d"},
+]
+
+[[package]]
+name = "clonf"
+version = "0.1.1"
+extras = ["click", "settings"]
+requires_python = ">=3.9"
+summary = "Declaratively connect cli and config definition using pydantic"
+groups = ["default"]
+dependencies = [
+    "click>=8.1.8",
+    "clonf==0.1.1",
+    "pydantic-settings>=2.9.1",
+]
+files = [
+    {file = "clonf-0.1.1-py3-none-any.whl", hash = "sha256:41be59b5d7ca81549510ab1cfe748ab7e3c09a25f0dfa843fe162d76142db77c"},
+    {file = "clonf-0.1.1.tar.gz", hash = "sha256:dbb563b525bbc241199b90e35582ac239e5d89f0ce934b495ee9193df63b993d"},
+]
+
+[[package]]
 name = "colorama"
 version = "0.4.6"
 requires_python = "!=3.0.*,!=3.1.*,!=3.2.*,!=3.3.*,!=3.4.*,!=3.5.*,!=3.6.*,>=2.7"
 summary = "Cross-platform colored terminal text."
-groups = ["dev", "test"]
-marker = "sys_platform == \"win32\""
+groups = ["default", "dev", "test"]
+marker = "sys_platform == \"win32\" or platform_system == \"Windows\""
 files = [
     {file = "colorama-0.4.6-py2.py3-none-any.whl", hash = "sha256:4f1d9991f5acc0ca119f9d443620b77f9d6b33703e51011c16baf57afb285fc6"},
     {file = "colorama-0.4.6.tar.gz", hash = "sha256:08695f5cb7ed6e0531a20572697297273c47b8cae5a63ffc6d6ed5c201be6e44"},

@@ -1,11 +1,12 @@
-from pydantic_settings import CliApp
+from click.testing import CliRunner
+from flay.cli.app import flay
 
-from flay.cli.app import Flay
+runner = CliRunner()
 
 
 def test_cli_debug_bundle_collector() -> None:
-    CliApp.run(Flay, ["debug-app", "bundle", "collector", "rich"])
+    runner.invoke(flay, ["debug", "bundle", "collector", "rich"])
 
 
 def test_cli_debug_bundle_package() -> None:
-    CliApp.run(Flay, ["debug-app", "bundle", "bundle-package", "rich"])
+    runner.invoke(flay, ["debug", "bundle", "bundle_package", "rich"])
