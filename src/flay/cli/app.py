@@ -26,7 +26,7 @@ class DebugSetting(FlayBaseSettings):
 @click.group()
 @clonf_click
 def flay(debug_setting: DebugSetting) -> None:
-    if debug_setting.debug:
+    if debug_setting.debug:  # pragma: no cover
         enable_debug_logging()
 
 
