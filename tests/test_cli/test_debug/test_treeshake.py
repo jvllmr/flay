@@ -1,14 +1,16 @@
-from pydantic_settings import CliApp
-from flay.cli.app import Flay
+from flay.cli.app import flay
+from click.testing import CliRunner
+
+runner = CliRunner()
 
 
 def test_cli_debug_bundle_then_treeshake_package() -> None:
-    CliApp.run(
-        Flay,
+    runner.invoke(
+        flay,
         [
-            "debug-app",
+            "debug",
             "treeshake",
-            "bundle-then-treeshake-package",
+            "bundle_then_treeshake_package",
             "rich",
         ],
     )

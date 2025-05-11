@@ -9,7 +9,7 @@
       "type": "debugpy",
       "request": "launch",
       "module": "flay",
-      "args": ["debug-app", "bundle", "collector", "flay"],
+      "args": ["debug", "bundle", "collector", "flay"],
       "env": { "FLAY_DEBUG_APP": "1" }
     },
     {
@@ -17,7 +17,7 @@
       "type": "debugpy",
       "request": "launch",
       "module": "flay",
-      "args": ["debug-app", "bundle", "bundle-package", "flay"],
+      "args": ["debug", "bundle", "bundle_package", "flay"],
       "env": { "FLAY_DEBUG_APP": "1" }
     },
     {
@@ -25,12 +25,7 @@
       "type": "debugpy",
       "request": "launch",
       "module": "flay",
-      "args": [
-        "debug-app",
-        "treeshake",
-        "bundle-then-treeshake-package",
-        "flay"
-      ],
+      "args": ["debug", "treeshake", "bundle_then_treeshake_package", "flay"],
       "env": { "FLAY_DEBUG_APP": "1" }
     }
   ]
