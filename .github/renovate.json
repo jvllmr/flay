@@ -12,7 +12,7 @@
   "customManagers": [
     {
       "customType": "regex",
-      "fileMatch": ["Cargo.toml"],
+      "managerFilePatterns": ["/Cargo.toml/"],
       "matchStrings": [
         "{.*git.*=.*\"(?<depName>.+)\".*,.*tag.*=.*\"(?<currentValue>.*)\".*}",
         "{.*tag.*=.*\"(?<currentValue>.*)\".*,.*git.*=.*\"(?<depName>.+)\".*}"
