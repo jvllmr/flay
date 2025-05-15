@@ -23,6 +23,8 @@ pub struct NodesRemover {
     module_spec: String,
     source_path: PathBuf,
     names_provider: FullyQualifiedNameProvider,
+    #[pyo3(get)]
+    statements_removed: u32,
 }
 #[pymethods]
 impl NodesRemover {
@@ -47,6 +49,7 @@ impl NodesRemover {
             names_provider: FullyQualifiedNameProvider::new("", ""),
             source_path: PathBuf::new(),
             module_spec: String::new(),
+            statements_removed: 0,
         }
     }
 
@@ -159,7 +162,11 @@ impl Transformer for NodesRemover {
         }
 
         if !self.has_references_for_stmt(&stmt) {
-            return self.fallback_stmt(stmt);
+            let fallback = self.fallback_stmt(stmt);
+            if fallback.is_none() {
+                self.statements_removed += 1;
+            }
+            return fallback;
         }
         let scope = self.names_provider.enter_scope(&stmt);
         if let Some(new_stmt) = match stmt {
@@ -176,6 +183,7 @@ impl Transformer for NodesRemover {
             }
         }
         self.names_provider.exit_scope(scope);
+        self.statements_removed += 1;
         None
     }
 }

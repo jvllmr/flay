@@ -23,6 +23,7 @@ class ReferencesCounter:
     new_references_count: int
 
 class NodesRemover:
+    statements_removed: int
     def __init__(
         self, references_counts: dict[str, int], known_modules: set[str]
     ) -> None: ...
