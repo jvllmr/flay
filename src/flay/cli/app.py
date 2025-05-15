@@ -88,8 +88,13 @@ def flay_main(settings: FlayMainSettings) -> None:
     console.print(check, f"Finished bundling {settings.module_spec}")
     if settings.treeshake:
         console.print("Start removing unused code...")
-        cli_treeshake_package(str(settings.output_path.absolute()))
-        console.print(check, "Finished removing unused code")
+        removed_stmts_count = cli_treeshake_package(
+            str(settings.output_path.absolute())
+        )
+        console.print(
+            check,
+            f"Finished removing unused code. Removed {removed_stmts_count} statements in total",
+        )
 
 
 if os.getenv("FLAY_DEBUG_APP"):

@@ -33,8 +33,7 @@ def treeshake_package(
     total_modules_callback: t.Callable[[int], None] = lambda _: None,
     references_iteration_callback: t.Callable[[int], None] = lambda _: None,
     nodes_removal_callback: t.Callable[[str], None] = lambda _: None,
-) -> dict[str, int]:
-    stats: dict[str, int] = defaultdict(int)
+) -> int:
     source_files: set[str] = set()
     known_module_specs: dict[str, str] = {}
     for path, dirs, files in os.walk(source_dir):
@@ -95,4 +94,4 @@ def treeshake_package(
         nodes_removal_callback(module_spec)
         nodes_remover.process_module(module_spec=module_spec, source_path=file_path)
 
-    return stats
+    return nodes_remover.statements_removed

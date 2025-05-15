@@ -74,9 +74,9 @@ class TreeshakePackageCliIO:
         self.end_progress()
 
 
-def cli_treeshake_package(source_dir: str) -> None:
+def cli_treeshake_package(source_dir: str) -> int:
     with TreeshakePackageCliIO() as io:
-        treeshake_package(
+        return treeshake_package(
             source_dir=source_dir,
             found_module_callback=io.on_found_module,
             total_modules_callback=io.on_total_modules,

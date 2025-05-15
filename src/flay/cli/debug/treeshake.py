@@ -46,4 +46,4 @@ def bundle_then_treeshake_cmd(
         debug_bundle_package_cmd, [settings.module_spec, "--path", str(settings.path)]
     )
     stats = treeshake_package(str(settings.path))
-    print(dict(stats))  # noqa: T201
+    print("Removed statements count:", stats)  # noqa: T201
