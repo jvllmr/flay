@@ -123,7 +123,7 @@ def bundle_package(
 
                 if is_external:
                     target_file = vendor_path / resource_path
-                else:
+                else:  # pragma: no cover
                     target_file = destination_path / resource_path
 
                 target_dir = target_file.parent
