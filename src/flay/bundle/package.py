@@ -19,7 +19,7 @@ import typing as t
 import shutil
 import sys
 from flay._flay_rs import transform_imports
-
+import fnmatch
 
 log = logging.getLogger(__name__)
 
@@ -116,9 +116,11 @@ def bundle_package(
         )
         if available_resources:
             for resource in available_resources:
-                if not resource.full_match(glob_pattern):  # type: ignore[attr-defined]
-                    continue
                 resource_path = str(resource)
+
+                if not fnmatch.fnmatch(resource_path, glob_pattern):
+                    continue
+
                 if is_external:
                     target_file = vendor_path / resource_path
                 else:
