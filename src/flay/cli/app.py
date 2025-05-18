@@ -73,6 +73,14 @@ class FlayMainSettings(FlayBaseSettings):
             description="Should unused source code be stripped from the bundle?",
         ),
     ] = True
+    resources: t.Annotated[
+        dict[str, str],
+        CliOption(),
+        Field(
+            description="Resources that should be bundled. Accepts a module spec mapped to a glob pattern",
+            default_factory=dict,
+        ),
+    ]
 
 
 @flay.command(name="bundle")
@@ -84,6 +92,7 @@ def flay_main(settings: FlayMainSettings) -> None:
         settings.output_path,
         settings.vendor_module_name,
         settings.bundle_metadata,
+        settings.resources,
     )
     console.print(check, f"Finished bundling {settings.module_spec}")
     if settings.treeshake:

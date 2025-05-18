@@ -1,4 +1,6 @@
 from __future__ import annotations
+import importlib.metadata
+import importlib.resources
 from flay._flay_rs import FileCollector
 from importlib.metadata import Distribution, PackageNotFoundError
 from . import DEFAULT_BUNDLE_METADATA, DEFAULT_VENDOR_MODULE_NAME
@@ -14,6 +16,8 @@ import typing as t
 import shutil
 import sys
 from flay._flay_rs import transform_imports
+import importlib
+from importlib.metadata import Distribution
 
 log = logging.getLogger(__name__)
 
@@ -23,11 +27,13 @@ def bundle_package(
     destination_path: Path,
     vendor_module_name: str = DEFAULT_VENDOR_MODULE_NAME,
     bundle_metadata: bool = DEFAULT_BUNDLE_METADATA,
+    resources: dict[str, str] | None = None,
     found_module_callback: t.Callable[[str], None] = lambda _: None,
     found_total_modules_callback: t.Callable[[int], None] = lambda _: None,
     process_module_callback: t.Callable[[str], None] = lambda _: None,
     bundled_metadata_callback: t.Callable[[], None] = lambda: None,
 ) -> None:
+    resources = resources or {}
     collector = FileCollector(package=module_spec)
 
     for path in find_all_files_in_module_spec(module_spec):
@@ -100,6 +106,27 @@ def bundle_package(
         else:
             shutil.copy2(str(found_path), str(target_file))
             log.debug("Copied %s to %s", found_path, target_file)
+
+    for module_spec, glob_pattern in resources.items():
+        available_resources = importlib.metadata.files(module_spec)
+        is_external = (
+            get_top_level_package(module_spec=module_spec) != top_level_package
+        )
+        if available_resources:
+            for resource in available_resources:
+                if not resource.full_match(glob_pattern):  # type: ignore[attr-defined]
+                    continue
+                resource_path = str(resource)
+                if is_external:
+                    target_file = vendor_path / resource_path
+                else:
+                    target_file = destination_path / resource_path
+
+                target_dir = target_file.parent
+                if not target_dir.exists():
+                    target_dir.mkdir(parents=True)
+                shutil.copy2(str(resource.locate()), str(target_file))
+                log.debug("Copied %s to %s", found_path, target_file)
 
     if bundle_metadata:
         distribution = Distribution.from_name(top_level_package)
