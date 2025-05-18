@@ -1,8 +1,11 @@
 from __future__ import annotations
-import importlib.metadata
-import importlib.resources
+
 from flay._flay_rs import FileCollector
-from importlib.metadata import Distribution, PackageNotFoundError
+from importlib.metadata import (
+    Distribution,
+    PackageNotFoundError,
+    files as package_metadata_files,
+)
 from . import DEFAULT_BUNDLE_METADATA, DEFAULT_VENDOR_MODULE_NAME
 from flay.common.module_spec import (
     find_all_files_in_module_spec,
@@ -16,8 +19,7 @@ import typing as t
 import shutil
 import sys
 from flay._flay_rs import transform_imports
-import importlib
-from importlib.metadata import Distribution
+
 
 log = logging.getLogger(__name__)
 
@@ -108,7 +110,7 @@ def bundle_package(
             log.debug("Copied %s to %s", found_path, target_file)
 
     for module_spec, glob_pattern in resources.items():
-        available_resources = importlib.metadata.files(module_spec)
+        available_resources = package_metadata_files(module_spec)
         is_external = (
             get_top_level_package(module_spec=module_spec) != top_level_package
         )
