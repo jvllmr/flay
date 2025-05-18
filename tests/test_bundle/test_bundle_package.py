@@ -158,3 +158,19 @@ def test_bundle_annotation_string_literals(
         'def modify_app2(app2: "typerino.Typer") -> "typerino.Typer":\n'
         in init_file_content
     )
+
+
+def test_bundle_package_resources(
+    run_bundle_package: RunBundlePackageT,
+) -> None:
+    _, result_path = run_bundle_package(
+        "bundle_resources",
+        "bundle_resources",
+        resources={"pre_commit": "pre_commit/resources/*"},
+    )
+    assert (
+        result_path / "_vendor/pre_commit/resources/empty_template_main.go"
+    ).exists() is True
+    assert (
+        result_path / "_vendor/pre_commit/resources/empty_template_go.mod"
+    ).exists() is True

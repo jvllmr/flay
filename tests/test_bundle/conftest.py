@@ -1,3 +1,4 @@
+from __future__ import annotations
 import pytest
 from pathlib import Path
 import typing as t
@@ -10,7 +11,11 @@ import subprocess
 
 class RunBundlePackageT(t.Protocol):
     def __call__(
-        self, package_name: str, module_spec: str, vendor_module_name: str = "_vendor"
+        self,
+        package_name: str,
+        module_spec: str,
+        vendor_module_name: str = "_vendor",
+        resources: dict[str, str] | None = None,
     ) -> tuple[Path, Path]: ...
 
 
@@ -20,7 +25,10 @@ PACKAGES_PATH = Path() / "tests" / "test_bundle" / "packages"
 @pytest.fixture
 def run_bundle_package(tmp_path: Path) -> RunBundlePackageT:
     def _run_bundle_package(
-        package_name: str, module_spec: str, vendor_module_name: str = "_vendor"
+        package_name: str,
+        module_spec: str,
+        vendor_module_name: str = "_vendor",
+        resources: dict[str, str] | None = None,
     ) -> tuple[Path, Path]:
         pre_bundle_path = tmp_path / "pre_bundle"
         bundled_path = tmp_path / "bundled"
@@ -51,6 +59,7 @@ def run_bundle_package(tmp_path: Path) -> RunBundlePackageT:
                 module_spec=module_spec,
                 destination_path=bundled_path,
                 vendor_module_name=vendor_module_name,
+                resources=resources or {},
             )
         finally:
             if build_before:

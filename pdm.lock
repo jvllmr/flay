@@ -74,7 +74,7 @@ files = [
 
 [[package]]
 name = "clonf"
-version = "0.1.3"
+version = "0.1.4"
 requires_python = ">=3.9"
 summary = "Declaratively connect cli and config definition using pydantic"
 groups = ["default"]
@@ -83,25 +83,25 @@ dependencies = [
     "typing-extensions>=4.13.2",
 ]
 files = [
-    {file = "clonf-0.1.3-py3-none-any.whl", hash = "sha256:1f556367cac16cf5ea2b73cb96dfc80f0928bd0ad62d9955cbc6902d40cffd87"},
-    {file = "clonf-0.1.3.tar.gz", hash = "sha256:52d80b0b6d3f8adabcd110ccfe821580193345fcae715ee03cef9fa720d51c22"},
+    {file = "clonf-0.1.4-py3-none-any.whl", hash = "sha256:c9eb35d0a601dcae6a001a486ec2b0694706996f47ddf3ded068652e2eb28660"},
+    {file = "clonf-0.1.4.tar.gz", hash = "sha256:ffa194e82f413bf81ebf6ef800f10fbed4c96d7fc054f5f6b56eb414477bc8de"},
 ]
 
 [[package]]
 name = "clonf"
-version = "0.1.3"
+version = "0.1.4"
 extras = ["click", "settings"]
 requires_python = ">=3.9"
 summary = "Declaratively connect cli and config definition using pydantic"
 groups = ["default"]
 dependencies = [
     "click>=8.1.8",
-    "clonf==0.1.3",
+    "clonf==0.1.4",
     "pydantic-settings>=2.9.1",
 ]
 files = [
-    {file = "clonf-0.1.3-py3-none-any.whl", hash = "sha256:1f556367cac16cf5ea2b73cb96dfc80f0928bd0ad62d9955cbc6902d40cffd87"},
-    {file = "clonf-0.1.3.tar.gz", hash = "sha256:52d80b0b6d3f8adabcd110ccfe821580193345fcae715ee03cef9fa720d51c22"},
+    {file = "clonf-0.1.4-py3-none-any.whl", hash = "sha256:c9eb35d0a601dcae6a001a486ec2b0694706996f47ddf3ded068652e2eb28660"},
+    {file = "clonf-0.1.4.tar.gz", hash = "sha256:ffa194e82f413bf81ebf6ef800f10fbed4c96d7fc054f5f6b56eb414477bc8de"},
 ]
 
 [[package]]

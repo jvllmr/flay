@@ -31,7 +31,9 @@ def setup_logger(command: str) -> t.Generator[None, t.Any, None]:
 
     logging_root_dir = platformdirs.user_log_dir("flay", ensure_exists=True)
     unique_id = hashlib.sha256(uuid.uuid4().bytes).hexdigest()[:8]
-    logging_file_path = str(Path(logging_root_dir) / f"flay-{command}-{unique_id}.log")
+    logging_file_path = str(
+        Path(logging_root_dir) / f"flay-{command.replace('/', '-')}-{unique_id}.log"
+    )
     logfile_path_context.set(logging_file_path)
     file_handler = logging.FileHandler(logging_file_path)
     file_handler.setFormatter(FORMATTER)
