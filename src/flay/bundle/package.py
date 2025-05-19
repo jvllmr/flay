@@ -136,8 +136,8 @@ def bundle_package(
     if bundle_metadata:
         package_dists = packages_distributions()
         # TODO: must not always true, but works in most cases for editable installs
-        if top_level_package not in package_dists:  # type: ignore[index,unused-ignore]
-            package_dists[top_level_package] = [top_level_package]
+        if top_level_package not in package_dists:
+            package_dists[top_level_package] = [top_level_package]  # type: ignore[index,unused-ignore]
         all_packages = {
             get_top_level_package(found_module) for (found_module, _) in files_keys
         }
