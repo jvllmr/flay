@@ -7,7 +7,7 @@ import sys
 from flay.common.exc import FlayFileNotFoundError
 from flay.bundle.package import bundle_package
 import ast
-from importlib.metadata import Distribution, requires, PathDistribution
+from importlib.metadata import Distribution, requires
 from packaging.requirements import Requirement
 
 if t.TYPE_CHECKING:
@@ -189,5 +189,5 @@ def test_bundle_package_bundle_metadata(tmp_path: Path) -> None:
         if req.marker is not None:
             continue
         dist = Distribution.from_name(req.name)
-        assert isinstance(dist, PathDistribution)
+        assert hasattr(dist, "_path")
         assert (tmp_path / Path(str(dist._path)).name).exists()
