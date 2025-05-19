@@ -5,7 +5,7 @@
 groups = ["default", "debug", "dev", "lint", "test", "types"]
 strategy = ["inherit_metadata"]
 lock_version = "4.5.0"
-content_hash = "sha256:62c36b6bf0ea9a7fc9cbcf6b6732e5a93d023c54538a56f0bf37f8f158b6c32a"
+content_hash = "sha256:f235d8795902eb39d053351493bf8eb9e74165e90b6a7271c4307640db453cc3"
 
 [[metadata.targets]]
 requires_python = ">=3.9"
@@ -347,7 +347,6 @@ version = "8.7.0"
 requires_python = ">=3.9"
 summary = "Read metadata from Python packages"
 groups = ["default"]
-marker = "python_version == \"3.9\""
 dependencies = [
     "typing-extensions>=3.6.4; python_version < \"3.8\"",
     "zipp>=3.20",
@@ -1045,7 +1044,6 @@ version = "3.21.0"
 requires_python = ">=3.9"
 summary = "Backport of pathlib-compatible object wrapper for zip files"
 groups = ["default"]
-marker = "python_version == \"3.9\""
 files = [
     {file = "zipp-3.21.0-py3-none-any.whl", hash = "sha256:ac1bbe05fd2991f160ebce24ffbac5f6d11d83dc90891255885223d42b3cd931"},
     {file = "zipp-3.21.0.tar.gz", hash = "sha256:2c9958f6430a2040341a52eb608ed6dd93ef4392e02ffe219417c1b28b5dd1f4"},
