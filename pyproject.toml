@@ -4,6 +4,7 @@ description = "Bundle, treeshake and minify your python projects"
 authors = [{ name = "Jan Vollmer", email = "jan@vllmr.dev" }]
 dependencies = [
   "stdlib-list>=0.11.1; python_version == '3.9'",
+  "importlib-metadata>=8.7.0; python_version == '3.9'",
   "rich>=14.0.0",
   "platformdirs>=4.3.8",
   "typing-extensions>=4.13.2",
@@ -51,6 +52,7 @@ test = [
   "pip>=25.1.1",
   "wheel>=0.45.1",
   "pytest-env>=1.1.5",
+  "packaging>=25.0",
 ]
 lint = ["mypy>=1.15.0", "ruff>=0.11.10", "pre-commit>=4.2.0"]
 dev = ["nox>=2025.5.1", "maturin>=1.8.6", "maturin-import-hook>=0.2.0"]

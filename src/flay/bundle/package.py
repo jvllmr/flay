@@ -6,6 +6,7 @@ from importlib.metadata import (
     PackageNotFoundError,
     files as package_metadata_files,
 )
+from flay.common.compat import packages_distributions
 from . import DEFAULT_BUNDLE_METADATA, DEFAULT_VENDOR_MODULE_NAME
 from flay.common.module_spec import (
     find_all_files_in_module_spec,
@@ -133,16 +134,28 @@ def bundle_package(
                 log.debug("Copied %s to %s", found_path, target_file)
 
     if bundle_metadata:
-        distribution = Distribution.from_name(top_level_package)
-        version = distribution.version
-        dist_info_path = destination_path / f"{top_level_package}-{version}.dist-info"
-        dist_info_path.mkdir(exist_ok=True)
-        for metadata_file_name in ("METADATA", "PKG-INFO"):
-            if metadata := distribution.read_text(metadata_file_name):
-                metadata_path = dist_info_path / metadata_file_name
-                break
-        else:
-            raise PackageNotFoundError(module_spec)  # pragma: no cover
-        metadata_path.touch()
-        metadata_path.write_text(metadata)
+        package_dists = packages_distributions()
+        # TODO: must not always true, but works in most cases for editable installs
+        if top_level_package not in package_dists:
+            package_dists[top_level_package] = [top_level_package]
+        all_packages = {
+            get_top_level_package(found_module) for (found_module, _) in files_keys
+        }
+        for package in all_packages:
+            if package not in package_dists:
+                continue
+
+            for dist_name in package_dists[package]:
+                distribution = Distribution.from_name(dist_name)
+                version = distribution.version
+                dist_info_path = destination_path / f"{package}-{version}.dist-info"
+                dist_info_path.mkdir(exist_ok=True)
+                for metadata_file_name in ("METADATA", "PKG-INFO"):
+                    if metadata := distribution.read_text(metadata_file_name):
+                        metadata_path = dist_info_path / metadata_file_name
+                        break
+                else:
+                    raise PackageNotFoundError(module_spec)  # pragma: no cover
+                metadata_path.touch()
+                metadata_path.write_text(metadata)
         bundled_metadata_callback()
