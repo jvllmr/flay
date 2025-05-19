@@ -136,7 +136,7 @@ def bundle_package(
     if bundle_metadata:
         package_dists = packages_distributions()
         # TODO: must not always true, but works in most cases for editable installs
-        if top_level_package not in package_dists:
+        if top_level_package not in package_dists:  # type: ignore[index,unused-ignore]
             package_dists[top_level_package] = [top_level_package]
         all_packages = {
             get_top_level_package(found_module) for (found_module, _) in files_keys
@@ -154,8 +154,8 @@ def bundle_package(
                     if metadata := distribution.read_text(metadata_file_name):
                         metadata_path = dist_info_path / metadata_file_name
                         break
-                else:
-                    raise PackageNotFoundError(module_spec)  # pragma: no cover
+                else:  # pragma: no cover
+                    raise PackageNotFoundError(module_spec)
                 metadata_path.touch()
                 metadata_path.write_text(metadata)
         bundled_metadata_callback()
