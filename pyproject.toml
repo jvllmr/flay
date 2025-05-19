@@ -7,7 +7,7 @@ dependencies = [
   "rich>=14.0.0",
   "platformdirs>=4.3.8",
   "typing-extensions>=4.13.2",
-  "clonf[click,settings]>=0.1.3",
+  "clonf[click,settings]>=0.1.4",
 ]
 requires-python = ">=3.9"
 readme = "README.md"
@@ -55,7 +55,7 @@ test = [
 lint = ["mypy>=1.15.0", "ruff>=0.11.10", "pre-commit>=4.2.0"]
 dev = ["nox>=2025.5.1", "maturin>=1.8.6", "maturin-import-hook>=0.2.0"]
 debug = ["tuna>=0.5.11"]
-types = ["types-setuptools>=80.4.0.20250511"]
+types = ["types-setuptools>=80.7.0.20250516"]
 
 [tool.mypy]
 python_version = "3.9"
