@@ -135,18 +135,20 @@ def bundle_package(
 
     if bundle_metadata:
         package_dists = packages_distributions()
-        # TODO: must not always true, but works in most cases for editable installs
-        if top_level_package not in package_dists:
-            package_dists[top_level_package] = [top_level_package]  # type: ignore[index,unused-ignore]
+
         all_packages = {
             get_top_level_package(found_module) for (found_module, _) in files_keys
         }
         for package in all_packages:
-            if package not in package_dists:
-                continue
-
-            for dist_name in package_dists[package]:
-                distribution = Distribution.from_name(dist_name)
+            if package in package_dists:
+                dist_names = package_dists[package]
+            else:
+                dist_names = [package]
+            for dist_name in dist_names:
+                try:
+                    distribution = Distribution.from_name(dist_name)
+                except PackageNotFoundError:
+                    continue
                 version = distribution.version
                 dist_info_path = destination_path / f"{package}-{version}.dist-info"
                 dist_info_path.mkdir(exist_ok=True)
