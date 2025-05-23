@@ -7,7 +7,7 @@ import sys
 from flay.common.exc import FlayFileNotFoundError
 from flay.bundle.package import bundle_package
 import ast
-from importlib_metadata import Distribution, requires
+from importlib.metadata import Distribution, requires
 from packaging.requirements import Requirement
 
 if t.TYPE_CHECKING:
