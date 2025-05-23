@@ -1,13 +1,12 @@
 from __future__ import annotations
 
 from flay._flay_rs import FileCollector
-from importlib_metadata import (
+from importlib.metadata import (
     Distribution,
     PackageNotFoundError,
     files as package_metadata_files,
-    packages_distributions,
 )
-
+from flay.common.compat import packages_distributions
 from . import DEFAULT_BUNDLE_METADATA, DEFAULT_VENDOR_MODULE_NAME
 from flay.common.module_spec import (
     find_all_files_in_module_spec,

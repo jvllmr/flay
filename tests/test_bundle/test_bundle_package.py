@@ -186,8 +186,8 @@ def test_bundle_package_bundle_metadata(tmp_path: Path) -> None:
     assert reqs is not None
     for req_ in reqs:
         req = Requirement(req_)
-        if req.marker is not None:
+        if req.marker is not None and not req.marker.evaluate():
             continue
         dist = Distribution.from_name(req.name)
         assert hasattr(dist, "_path")
-        assert (tmp_path / Path(str(dist._path)).name).exists()
+        assert (tmp_path / Path(dist._path).name).exists(), os.listdir(tmp_path)
