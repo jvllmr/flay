@@ -1,6 +1,8 @@
 from flay.cli.app import flay
 from click.testing import CliRunner
 from pathlib import Path
+import os
+from importlib.metadata import Distribution
 
 runner = CliRunner()
 
@@ -12,5 +14,6 @@ def test_cli_bundle_treeshake_flay() -> None:
 def test_cli_bundle_treeshake_flay_with_metadata() -> None:
     runner.invoke(flay, ["bundle", "flay", "--bundle-metadata", "True"])
     result_path = Path("flayed")
+    dist = Distribution.from_name("flay")
     assert result_path.exists()
-    assert len(list(result_path.glob("flay-*.dist-info"))) > 0
+    assert f"flay-{dist.version}.dist-info" in os.listdir(result_path)
