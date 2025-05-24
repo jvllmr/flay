@@ -1,5 +1,5 @@
 from __future__ import annotations
-
+from flay.common.compat import FLAY_STANDARD_ENCODING
 from flay._flay_rs import FileCollector
 from importlib.metadata import (
     Distribution,
@@ -18,7 +18,6 @@ import logging
 import os.path
 import typing as t
 import shutil
-import sys
 from flay._flay_rs import transform_imports
 import fnmatch
 
@@ -99,7 +98,7 @@ def bundle_package(
         if module_source is not None:
             target_file.write_text(
                 module_source,
-                encoding="utf-8" if sys.platform.startswith("win") else None,
+                encoding=FLAY_STANDARD_ENCODING,
             )
             log.debug(
                 "Written new source of %s to %s",
@@ -159,5 +158,5 @@ def bundle_package(
                 else:  # pragma: no cover
                     raise PackageNotFoundError(module_spec)
                 metadata_path.touch()
-                metadata_path.write_text(metadata)
+                metadata_path.write_text(metadata, encoding=FLAY_STANDARD_ENCODING)
         bundled_metadata_callback()

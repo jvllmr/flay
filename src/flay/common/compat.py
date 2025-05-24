@@ -1,5 +1,6 @@
 import sys
 
+FLAY_STANDARD_ENCODING = "utf-8" if sys.platform.startswith("win") else None
 
 if sys.version_info < (3, 11):
     # packages_distributions is available, but does not work as expected with cpython@3.10 (rich was not discovered)
