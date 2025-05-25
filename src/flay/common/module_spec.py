@@ -120,6 +120,3 @@ def find_all_files_in_module_spec(module_spec: str) -> t.Generator[Path, t.Any, 
     for file in module_folder_path.iterdir():
         if file.match("*.py"):
             yield module_folder_path / file
-
-
-
