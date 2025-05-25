@@ -1,7 +1,3 @@
-use pyo3::{
-    PyResult, Python,
-    types::{PyAnyMethods, PyModule},
-};
 use ruff_python_stdlib::sys::{is_builtin_module, is_known_standard_library};
 
 use crate::constants::PYTHON_MINOR_VERSION;
