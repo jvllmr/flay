@@ -120,12 +120,3 @@ def find_all_files_in_module_spec(module_spec: str) -> t.Generator[Path, t.Any, 
     for file in module_folder_path.iterdir():
         if file.match("*.py"):
             yield module_folder_path / file
-
-
-if sys.version_info < (3, 10):
-    # nopycln: file
-    from stdlib_list import in_stdlib  # type: ignore[import-not-found,unused-ignore]
-else:
-
-    def in_stdlib(module_spec: str) -> bool:
-        return module_spec in sys.stdlib_module_names

@@ -5,7 +5,7 @@
 groups = ["default", "debug", "dev", "lint", "test", "types"]
 strategy = ["inherit_metadata"]
 lock_version = "4.5.0"
-content_hash = "sha256:3b565ec0c739d4a2d59a8fc57252629c0216ccd77db34bb71979fa1e4b3f8140"
+content_hash = "sha256:9b9da84b35b9e3f86921195111b1afbba2557bf0850797fc6fe1e3c39bbaa05d"
 
 [[metadata.targets]]
 requires_python = ">=3.9"
@@ -905,18 +905,6 @@ groups = ["test"]
 files = [
     {file = "setuptools-80.8.0-py3-none-any.whl", hash = "sha256:95a60484590d24103af13b686121328cc2736bee85de8936383111e421b9edc0"},
     {file = "setuptools-80.8.0.tar.gz", hash = "sha256:49f7af965996f26d43c8ae34539c8d99c5042fbff34302ea151eaa9c207cd257"},
-]
-
-[[package]]
-name = "stdlib-list"
-version = "0.11.1"
-requires_python = ">=3.9"
-summary = "A list of Python Standard Libraries (2.7 through 3.13)."
-groups = ["default"]
-marker = "python_version < \"3.10\""
-files = [
-    {file = "stdlib_list-0.11.1-py3-none-any.whl", hash = "sha256:9029ea5e3dfde8cd4294cfd4d1797be56a67fc4693c606181730148c3fd1da29"},
-    {file = "stdlib_list-0.11.1.tar.gz", hash = "sha256:95ebd1d73da9333bba03ccc097f5bac05e3aa03e6822a0c0290f87e1047f1857"},
 ]
 
 [[package]]

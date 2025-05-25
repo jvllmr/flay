@@ -1,0 +1,1 @@
+pub const PYTHON_MINOR_VERSION: u8 = 14;
