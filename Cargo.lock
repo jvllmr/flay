@@ -77,6 +77,7 @@ dependencies = [
  "ruff_python_ast",
  "ruff_python_codegen",
  "ruff_python_parser",
+ "ruff_python_stdlib",
  "ruff_text_size",
 ]
 
@@ -404,6 +405,15 @@ dependencies = [
  "unicode-ident",
  "unicode-normalization",
  "unicode_names2",
+]
+
+[[package]]
+name = "ruff_python_stdlib"
+version = "0.0.0"
+source = "git+https://github.com/astral-sh/ruff.git?tag=0.11.10#b35bf8ae073a47e12a98eea3eb4818d3695ff302"
+dependencies = [
+ "bitflags",
+ "unicode-ident",
 ]
 
 [[package]]

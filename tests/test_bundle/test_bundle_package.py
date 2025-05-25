@@ -184,6 +184,8 @@ def test_bundle_package_bundle_metadata(tmp_path: Path) -> None:
     assert (tmp_path / f"flay-{root_dist.version}.dist-info").exists()
     reqs = requires("flay")
     assert reqs is not None
+    for pathname in os.listdir(tmp_path):
+        assert not pathname.startswith("__future__")
     for req_ in reqs:
         req = Requirement(req_)
         if req.marker is not None and not req.marker.evaluate():

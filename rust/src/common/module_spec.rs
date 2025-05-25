@@ -2,6 +2,9 @@ use pyo3::{
     PyResult, Python,
     types::{PyAnyMethods, PyModule},
 };
+use ruff_python_stdlib::sys::{is_builtin_module, is_known_standard_library};
+
+use crate::constants::PYTHON_MINOR_VERSION;
 
 pub fn get_parent_package(package: &str) -> String {
     if !package.contains(".") {
@@ -21,17 +24,8 @@ pub fn get_top_level_package(module_spec: &str) -> &str {
 }
 
 pub fn is_in_std_lib(module_spec: &str) -> bool {
-    let result = Python::with_gil(|py| -> PyResult<bool> {
-        let stdlib_list = PyModule::import(py, "flay.common.module_spec")?;
-        let result: bool = stdlib_list
-            .getattr("in_stdlib")?
-            .call1((module_spec,))?
-            .extract()?;
-        Ok(result)
-    });
-
-    match result {
-        Ok(result_value) => result_value,
-        Err(_) => false,
-    }
+    let top_level = get_top_level_package(module_spec);
+    return is_known_standard_library(PYTHON_MINOR_VERSION, top_level)
+        || is_builtin_module(PYTHON_MINOR_VERSION, top_level)
+        || top_level == "__future__";
 }
