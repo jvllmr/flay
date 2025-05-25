@@ -1,8 +1,5 @@
 name: Run tests
 
-env:
-  CARGO_HOME: ${{ github.workspace }}/.c
-
 on:
   push:
     branches:
@@ -36,8 +33,9 @@ jobs:
           toolchain: stable
       - name: Enable git longpaths
         run: git config --global core.longpaths true
-      - name: Cargo vendor
-        run: cargo vendor
+      - uses: Swatinem/rust-cache@9d47c6ad4b02e050fd481d890b2ea34778fd09d6 # v2
+        with:
+          cache-targets: false
       - name: Install dependencies
         run: pdm install --frozen-lock
       - name: Run pytest
