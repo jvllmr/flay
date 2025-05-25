@@ -146,8 +146,8 @@ def bundle_package(
             for dist_name in dist_names:
                 try:
                     distribution = Distribution.from_name(dist_name)
-                except PackageNotFoundError:
-                    continue
+                except PackageNotFoundError:  # pragma: no cover
+                    log.warning("Could not locate dist-info for %s", dist_name)
                 version = distribution.version
                 dist_info_path = destination_path / f"{package}-{version}.dist-info"
                 dist_info_path.mkdir(exist_ok=True)
