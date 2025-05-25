@@ -18,9 +18,9 @@ from clonf import CliArgument, CliOption
 
 
 class DebugSetting(FlayBaseSettings):
-    debug: t.Annotated[bool, CliOption(), Field(description="Enable debug logging")] = (
-        False
-    )
+    debug: t.Annotated[
+        bool, CliOption(is_flag=True), Field(description="Enable debug logging")
+    ] = False
 
 
 @click.group()
@@ -58,10 +58,10 @@ class FlayMainSettings(FlayBaseSettings):
     ] = DEFAULT_VENDOR_MODULE_NAME
     bundle_metadata: t.Annotated[
         bool,
-        CliOption(),
+        CliOption(is_flag=True),
         Field(
             description="Whether package metadata should be collocated with the generated bundle",
-            alias="bundle-metadata",
+            alias="bundle-metadata/--no-bundle-metadata",
             validation_alias=AliasChoices("bundle-metadata", "bundle_metadata"),
         ),
     ] = DEFAULT_BUNDLE_METADATA

@@ -60,6 +60,7 @@ def run_bundle_package(tmp_path: Path) -> RunBundlePackageT:
                 destination_path=bundled_path,
                 vendor_module_name=vendor_module_name,
                 resources=resources or {},
+                bundle_metadata=False,
             )
         finally:
             if build_before:

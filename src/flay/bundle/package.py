@@ -1,11 +1,12 @@
 from __future__ import annotations
-
+from flay.common.compat import FLAY_STANDARD_ENCODING
 from flay._flay_rs import FileCollector
 from importlib.metadata import (
     Distribution,
     PackageNotFoundError,
     files as package_metadata_files,
 )
+from flay.common.compat import packages_distributions
 from . import DEFAULT_BUNDLE_METADATA, DEFAULT_VENDOR_MODULE_NAME
 from flay.common.module_spec import (
     find_all_files_in_module_spec,
@@ -17,7 +18,6 @@ import logging
 import os.path
 import typing as t
 import shutil
-import sys
 from flay._flay_rs import transform_imports
 import fnmatch
 
@@ -98,7 +98,7 @@ def bundle_package(
         if module_source is not None:
             target_file.write_text(
                 module_source,
-                encoding="utf-8" if sys.platform.startswith("win") else None,
+                encoding=FLAY_STANDARD_ENCODING,
             )
             log.debug(
                 "Written new source of %s to %s",
@@ -133,16 +133,30 @@ def bundle_package(
                 log.debug("Copied %s to %s", found_path, target_file)
 
     if bundle_metadata:
-        distribution = Distribution.from_name(top_level_package)
-        version = distribution.version
-        dist_info_path = destination_path / f"{top_level_package}-{version}.dist-info"
-        dist_info_path.mkdir(exist_ok=True)
-        for metadata_file_name in ("METADATA", "PKG-INFO"):
-            if metadata := distribution.read_text(metadata_file_name):
-                metadata_path = dist_info_path / metadata_file_name
-                break
-        else:
-            raise PackageNotFoundError(module_spec)  # pragma: no cover
-        metadata_path.touch()
-        metadata_path.write_text(metadata)
+        package_dists = packages_distributions()
+
+        all_packages = {
+            get_top_level_package(found_module) for (found_module, _) in files_keys
+        }
+        for package in all_packages:
+            if package in package_dists:
+                dist_names = package_dists[package]
+            else:
+                dist_names = [package]
+            for dist_name in dist_names:
+                try:
+                    distribution = Distribution.from_name(dist_name)
+                except PackageNotFoundError:  # pragma: no cover
+                    log.warning("Could not locate dist-info for %s", dist_name)
+                version = distribution.version
+                dist_info_path = destination_path / f"{package}-{version}.dist-info"
+                dist_info_path.mkdir(exist_ok=True)
+                for metadata_file_name in ("METADATA", "PKG-INFO"):
+                    if metadata := distribution.read_text(metadata_file_name):
+                        metadata_path = dist_info_path / metadata_file_name
+                        break
+                else:  # pragma: no cover
+                    raise PackageNotFoundError(module_spec)
+                metadata_path.touch()
+                metadata_path.write_text(metadata, encoding=FLAY_STANDARD_ENCODING)
         bundled_metadata_callback()

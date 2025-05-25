@@ -7,6 +7,8 @@ import sys
 from flay.common.exc import FlayFileNotFoundError
 from flay.bundle.package import bundle_package
 import ast
+from importlib.metadata import Distribution, requires
+from packaging.requirements import Requirement
 
 if t.TYPE_CHECKING:
     from .conftest import RunBundlePackageT
@@ -174,3 +176,18 @@ def test_bundle_package_resources(
     assert (
         result_path / "_vendor/pre_commit/resources/empty_template_go.mod"
     ).exists() is True
+
+
+def test_bundle_package_bundle_metadata(tmp_path: Path) -> None:
+    bundle_package("flay", tmp_path, bundle_metadata=True)
+    root_dist = Distribution.from_name("flay")
+    assert (tmp_path / f"flay-{root_dist.version}.dist-info").exists()
+    reqs = requires("flay")
+    assert reqs is not None
+    for req_ in reqs:
+        req = Requirement(req_)
+        if req.marker is not None and not req.marker.evaluate():
+            continue
+        dist = Distribution.from_name(req.name)
+        assert hasattr(dist, "_path")
+        assert (tmp_path / Path(dist._path).name).exists(), os.listdir(tmp_path)
