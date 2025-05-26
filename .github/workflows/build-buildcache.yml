@@ -2,6 +2,8 @@ name: Build builders
 
 on:
   workflow_dispatch:
+  pull_request:
+    paths: [Containerfile.buildcache]
 
 jobs:
   build-and-push:
@@ -19,7 +21,7 @@ jobs:
         with:
           platforms: linux/amd64,linux/386,linux/arm64,linux/arm/v7,linux/s390x,linux/ppc64le
           image: ghcr.io/jvllmr/flay
-          tags: buildcache
+          tags: ${{ github.event_name == 'pull_request' && format('buildcache-{0}',github.event.pull_request.number) || 'buildcache' }}
           containerfiles: ./Containerfile.buildcache
       - name: Push container
         id: push
