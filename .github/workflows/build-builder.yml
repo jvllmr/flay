@@ -23,7 +23,7 @@ jobs:
           images: |
             ghcr.io/jvllmr/flay
           tags: |
-            type=ref,event=pr,prefix=builder
+            type=ref,event=pr,prefix=builder-pr-
             type=raw,value=builder,enable=${{ github.event_name != 'pull_request'}}
           flavor: |
             latest=false
