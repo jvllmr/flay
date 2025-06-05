@@ -15,20 +15,31 @@ jobs:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4
         with:
           persist-credentials: false
+
+      - name: Get docker tags
+        id: metadata
+        uses: docker/metadata-action@902fa8ec7d6ecbf8d84d538b9b233a880e428804 # v5.7.0
+        with:
+          images: |
+            ghcr.io/jvllmr/flay
+          tags: |
+            type=ref,event=pr
+            type=raw,value=buildcache,enable=${{ github.event_name != 'pull_request'}}
+          flavor: |
+            latest=false
+            prefix=buildcache
       - name: Build container
         id: build_image
         uses: redhat-actions/buildah-build@7a95fa7ee0f02d552a32753e7414641a04307056 # v2
         with:
           platforms: linux/amd64,linux/386,linux/arm64,linux/arm/v7,linux/s390x,linux/ppc64le
-          image: flay
-          tags: ${{ github.event_name == 'pull_request' && format('buildcache-{0}',github.event.pull_request.number) || 'buildcache' }}
+          tags: ${{ steps.metadata.outputs.tags }}
+          labels: ${{ steps.metadata.outputs.labels }}
           containerfiles: ./Containerfile.buildcache
       - name: Push container
         id: push
         uses: redhat-actions/push-to-registry@5ed88d269cf581ea9ef6dd6806d01562096bee9c # v2
         with:
-          image: ${{ steps.build_image.outputs.image }}
           tags: ${{ steps.build_image.outputs.tags }}
-          registry: ghcr.io/jvllmr
           username: ${{ github.actor }}
           password: ${{ github.token }}
