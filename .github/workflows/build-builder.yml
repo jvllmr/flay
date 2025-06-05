@@ -3,7 +3,7 @@ name: Build builder
 on:
   workflow_dispatch:
   pull_request:
-    paths: [Containerfile.buildcache]
+    paths: [Containerfile.buildcache, .github/workflows/build-builder.yml]
 
 jobs:
   build-and-push:
