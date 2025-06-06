@@ -20,6 +20,7 @@ on:
 
 jobs:
   container:
+    name: container image
     permissions:
       contents: read
       packages: write
@@ -38,9 +39,9 @@ jobs:
           tags: |
             type=ref,event=pr
             type=ref,event=branch
-            type=pep440,pattern={{major}}
-            type=pep440,pattern={{major}}.{{minor}}
-            type=pep440
+            type=pep440,pattern=v{{major}}
+            type=pep440,pattern=v{{major}}.{{minor}}
+            type=pep440,pattern=v{{version}}
 
       - name: Login to GitHub Container Registry
         uses: docker/login-action@74a5d142397b4f367a81961eba4e8cd7edddf772 # v3.4.0
