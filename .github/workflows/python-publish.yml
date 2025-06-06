@@ -19,6 +19,49 @@ on:
       - main
 
 jobs:
+  container:
+    permissions:
+      contents: read
+      packages: write
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4
+        with:
+          persist-credentials: false
+      - uses: docker/setup-buildx-action@b5ca514318bd6ebac0fb2aedd5d36ec1b5c232a2 # v3.10.0
+      - name: Get docker tags
+        id: metadata
+        uses: docker/metadata-action@902fa8ec7d6ecbf8d84d538b9b233a880e428804 # v5.7.0
+        with:
+          images: |
+            ghcr.io/jvllmr/flay
+          tags: |
+            type=ref,event=pr
+            type=ref,event=branch
+            type=pep440,pattern={{major}}
+            type=pep440,pattern={{major}}.{{minor}}
+            type=pep440
+
+      - name: Login to GitHub Container Registry
+        uses: docker/login-action@74a5d142397b4f367a81961eba4e8cd7edddf772 # v3.4.0
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Build and push
+        uses: docker/build-push-action@263435318d21b8e681c14492fe198d362a7d2c83 # v6.18.0
+        with:
+          context: .
+          file: ./Containerfile
+          platforms: linux/amd64,linux/386,linux/arm64,linux/arm/v7,linux/s390x,linux/ppc64le,linux/riscv64
+          push: true
+          tags: ${{ steps.metadata.outputs.tags }}
+          labels: ${{ steps.metadata.outputs.labels }}
+          annotations: ${{ steps.metadata.outputs.annotations }}
+          # https://github.com/docker/build-push-action/blob/master/docs/advanced/cache.md#registry-cache
+          cache-from: type=registry,ref=ghcr.io/jvllmr/flay:buildcache
+          cache-to: type=registry,ref=ghcr.io/jvllmr/flay:buildcache,mode=max
+
   linux:
     permissions:
       contents: read
@@ -29,16 +72,22 @@ jobs:
         platform:
           - runner: ubuntu-22.04
             target: x86_64
+            container_platform: linux/amd64
           - runner: ubuntu-22.04
             target: x86
+            container_platform: linux/386
           - runner: ubuntu-22.04
             target: aarch64
+            container_platform: linux/arm64
           - runner: ubuntu-22.04
             target: armv7
+            container_platform: linux/arm/v7
           - runner: ubuntu-22.04
             target: s390x
+            container_platform: linux/s390x
           - runner: ubuntu-22.04
             target: ppc64le
+            container_platform: linux/ppc64le
     steps:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4
         with:
@@ -61,6 +110,10 @@ jobs:
         with:
           name: wheels-linux-${{ matrix.platform.target }}
           path: dist
+      - name: Build container
+        uses: redhat-actions/buildah-build@7a95fa7ee0f02d552a32753e7414641a04307056 # v2
+        with:
+          platforms: ${{ matrix.platform.container_platform }}
 
   musllinux:
     permissions:
@@ -72,12 +125,16 @@ jobs:
         platform:
           - runner: ubuntu-22.04
             target: x86_64
+            container_platform: linux/amd64
           - runner: ubuntu-22.04
             target: x86
+            container_platform: linux/386
           - runner: ubuntu-22.04
             target: aarch64
+            container_platform: linux/arm64
           - runner: ubuntu-22.04
             target: armv7
+            container_platform: linux/arm/v7
     steps:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4
         with:
