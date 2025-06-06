@@ -111,10 +111,6 @@ jobs:
         with:
           name: wheels-linux-${{ matrix.platform.target }}
           path: dist
-      - name: Build container
-        uses: redhat-actions/buildah-build@7a95fa7ee0f02d552a32753e7414641a04307056 # v2
-        with:
-          platforms: ${{ matrix.platform.container_platform }}
 
   musllinux:
     permissions:
