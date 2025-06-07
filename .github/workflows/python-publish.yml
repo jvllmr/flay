@@ -73,22 +73,16 @@ jobs:
         platform:
           - runner: ubuntu-22.04
             target: x86_64
-            container_platform: linux/amd64
           - runner: ubuntu-22.04
             target: x86
-            container_platform: linux/386
           - runner: ubuntu-22.04
             target: aarch64
-            container_platform: linux/arm64
           - runner: ubuntu-22.04
             target: armv7
-            container_platform: linux/arm/v7
           - runner: ubuntu-22.04
             target: s390x
-            container_platform: linux/s390x
           - runner: ubuntu-22.04
             target: ppc64le
-            container_platform: linux/ppc64le
     steps:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4
         with:
