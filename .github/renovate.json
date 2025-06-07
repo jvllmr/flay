@@ -5,21 +5,11 @@
     "schedule:weekly",
     ":automergeMinor",
     ":semanticCommitTypeAll(chore)",
-    "helpers:pinGitHubActionDigests"
+    "helpers:pinGitHubActionDigests",
+    ":maintainLockFilesMonthly"
   ],
   "labels": ["dependencies"],
   "rangeStrategy": "bump",
-  "customManagers": [
-    {
-      "customType": "regex",
-      "managerFilePatterns": ["/Cargo.toml/"],
-      "matchStrings": [
-        "{.*git.*=.*\"(?<depName>.+)\".*,.*tag.*=.*\"(?<currentValue>.*)\".*}",
-        "{.*tag.*=.*\"(?<currentValue>.*)\".*,.*git.*=.*\"(?<depName>.+)\".*}"
-      ],
-      "datasourceTemplate": "git-tags"
-    }
-  ],
   "packageRules": [
     {
       "description": "Do not update required python version",
@@ -46,9 +36,5 @@
       "groupSlug": "ruff-git",
       "matchDepNames": ["https://github.com/astral-sh/ruff.git"]
     }
-  ],
-  "lockFileMaintenance": {
-    "enabled": true,
-    "schedule": ["* 4-6 * * 1"]
-  }
+  ]
 }
