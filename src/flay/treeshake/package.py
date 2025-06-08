@@ -86,7 +86,7 @@ def treeshake_package(
         known_module_specs=known_module_specs,
     )
     references_counts |= references_counter.references_counts
-
+    log.debug("Counted references: %s", references_counts)
     # remove nodes without references
     nodes_remover = NodesRemover(references_counts, set(known_module_specs.values()))
     for file_path in file_modules:

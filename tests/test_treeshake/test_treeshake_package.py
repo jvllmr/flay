@@ -161,7 +161,7 @@ def test_reference_in_comp(
     assert "_meta =" in init_file_content
 
 
-def test_global_assignment(
+def test_treeshake_package_global_assignment(
     run_treeshake_package: RunTreeshakePackageT,
 ) -> None:
     source_path = TEST_PACKAGES_DIR / "global_assignment"
@@ -184,7 +184,7 @@ def test_global_assignment(
     )
 
 
-def test_local_var(
+def test_treeshake_package_local_var(
     run_treeshake_package: RunTreeshakePackageT,
 ) -> None:
     source_path = TEST_PACKAGES_DIR / "local_var"
@@ -193,3 +193,22 @@ def test_local_var(
     init_file_content = init_file.read_text()
 
     assert "_, git_version_b, _ =" in init_file_content
+
+
+def test_treeshake_package_module_import_as_value(
+    run_treeshake_package: RunTreeshakePackageT,
+) -> None:
+    source_path = TEST_PACKAGES_DIR / "module_import_as_value"
+    result_path = run_treeshake_package(source_path)
+    class_builder_content = (result_path / "class_builder.py").read_text()
+    assert "class ClassBuilder" in class_builder_content
+    assert '_DEFAULT_ON_SETATTR = setters.pipe("Hallo Welt!")' in class_builder_content
+
+    example_file_content = (result_path / "submodule/example.py").read_text()
+    assert "def example_func() -> None:" in example_file_content
+
+    setters_file_content = (result_path / "setters.py").read_text()
+    assert "def pipe(value: str) -> str:" in setters_file_content
+
+    example2_file_content = (result_path / "example2.py").read_text()
+    assert "def example_func2() -> None:" in example2_file_content

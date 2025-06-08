@@ -65,10 +65,22 @@ impl ImportsTrackingProvider {
                     self.active_imports
                         .insert(asname.to_string(), format!("{}.{}", module_spec, name.name));
                 } else {
-                    self.active_imports.insert(
-                        name.name.to_string(),
-                        format!("{}.{}", module_spec, name.name),
-                    );
+                    // we probably imported a module here because the imported name was appended
+                    // to the generated module_spec already
+                    if module_spec.ends_with(name.name.as_str())
+                        && import_from
+                            .module
+                            .as_ref()
+                            .is_none_or(|x| !x.ends_with(name.name.as_str()))
+                    {
+                        self.active_imports
+                            .insert(name.name.to_string(), module_spec.to_owned());
+                    } else {
+                        self.active_imports.insert(
+                            name.name.to_string(),
+                            format!("{}.{}", module_spec, name.name),
+                        );
+                    }
                 }
             }
         }
