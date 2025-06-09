@@ -6,7 +6,7 @@ dependencies = [
   "importlib-metadata>=8.7.0; python_version < '3.11'",
   "rich>=14.0.0",
   "platformdirs>=4.3.8",
-  "typing-extensions>=4.13.2",
+  "typing-extensions>=4.14.0",
   "clonf[click,settings]>=0.1.5",
 ]
 requires-python = ">=3.9"
@@ -45,7 +45,7 @@ dev = "maturin develop"
 
 [dependency-groups]
 test = [
-  "pytest>=8.3.5",
+  "pytest>=8.4.0",
   "pytest-cov>=6.1.1",
   "setuptools>=80.9.0",
   "pip>=25.1.1",
@@ -53,8 +53,8 @@ test = [
   "pytest-env>=1.1.5",
   "packaging>=25.0",
 ]
-lint = ["mypy>=1.16.0", "ruff>=0.11.12", "pre-commit>=4.2.0"]
-dev = ["nox>=2025.5.1", "maturin>=1.8.6", "maturin-import-hook>=0.2.0"]
+lint = ["mypy>=1.16.0", "ruff>=0.11.13", "pre-commit>=4.2.0"]
+dev = ["nox>=2025.5.1", "maturin>=1.8.6", "maturin-import-hook>=0.3.0"]
 debug = ["tuna>=0.5.11"]
 types = ["types-setuptools>=80.9.0.20250529"]
 
