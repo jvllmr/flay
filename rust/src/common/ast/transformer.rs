@@ -163,6 +163,7 @@ pub fn walk_stmt<V: Transformer + ?Sized>(visitor: &mut V, stmt: Stmt) -> Option
                     .visit_parameters(*func_def.parameters)
                     .expect("Cannot remove parameters from func def"),
             );
+            func_def.body = visitor.visit_body(&func_def.body);
             if let Some(expr) = func_def.returns {
                 func_def.returns = box_expr_option(visitor.visit_annotation(*expr));
             }
