@@ -287,6 +287,15 @@ impl Visitor<'_> for ReferencesCounter {
                         self.visit_decorator(&decorator);
                     }
                 }
+                // respect pep562 by preserving __getattr__ and __dir__ on module level
+                if self.is_global_scope()
+                    && self.module_spec_has_references()
+                    && (func_def.name.as_str() == "__dir__"
+                        || func_def.name.as_str() == "__getattr__")
+                {
+                    self.maybe_increase_stmt(&stmt);
+                    self.always_bump_context = true;
+                }
             }
             Stmt::Assign(stmt_assign) => {
                 let mut should_bump_stmt_assign = false;
