@@ -1,9 +1,10 @@
 use ruff_python_ast::{
     self as ast, Alias, Arguments, BoolOp, BytesLiteral, BytesLiteralValue, CmpOp, Comprehension,
-    Decorator, DictItem, ElifElseClause, ExceptHandler, Expr, ExprContext, FString, FStringElement,
-    FStringElements, FStringPart, FStringValue, Keyword, MatchCase, Operator, Parameter,
-    ParameterWithDefault, Parameters, Pattern, PatternArguments, PatternKeyword, Stmt,
-    StringLiteral, StringLiteralValue, TypeParam, TypeParams, UnaryOp, WithItem,
+    Decorator, DictItem, ElifElseClause, ExceptHandler, Expr, ExprContext, FString, FStringPart,
+    FStringValue, InterpolatedStringElement, InterpolatedStringElements, Keyword, MatchCase,
+    Operator, Parameter, ParameterWithDefault, Parameters, Pattern, PatternArguments,
+    PatternKeyword, Stmt, StringLiteral, StringLiteralValue, TString, TStringPart, TStringValue,
+    TypeParam, TypeParams, UnaryOp, WithItem,
 };
 
 fn box_expr_option(expr: Option<Expr>) -> Option<Box<Expr>> {
@@ -104,12 +105,17 @@ pub trait Transformer {
     fn visit_f_string(&mut self, mut f_string: FString) -> Option<FString> {
         Some(walk_f_string(self, f_string))
     }
-    fn visit_f_string_element(
+    fn visit_interpolated_string_element(
         &mut self,
-        mut f_string_element: FStringElement,
-    ) -> Option<FStringElement> {
-        Some(walk_f_string_element(self, f_string_element))
+        mut f_string_element: InterpolatedStringElement,
+    ) -> Option<InterpolatedStringElement> {
+        Some(walk_interpolated_string_element(self, f_string_element))
     }
+
+    fn visit_t_string(&mut self, mut t_string: TString) -> Option<TString> {
+        Some(walk_t_string(self, t_string))
+    }
+
     fn visit_string_literal(&mut self, mut string_literal: StringLiteral) -> Option<StringLiteral> {
         Some(walk_string_literal(self, string_literal))
     }
@@ -664,6 +670,37 @@ pub fn walk_expr<V: Transformer + ?Sized>(visitor: &mut V, expr: Expr) -> Option
             }
             Some(Expr::FString(f_string))
         }
+        Expr::TString(mut t_string) => {
+            let mut new_t_string_parts: Vec<TStringPart> = Vec::new();
+            for t_string_part in t_string.value.iter() {
+                if let Some(new_t_string_part) = match t_string_part {
+                    ast::TStringPart::Literal(string_literal) => visitor
+                        .visit_string_literal(string_literal.to_owned())
+                        .map(ast::TStringPart::Literal),
+
+                    ast::TStringPart::TString(t_string) => visitor
+                        .visit_t_string(t_string.to_owned())
+                        .map(ast::TStringPart::TString),
+                    ast::TStringPart::FString(f_string) => visitor
+                        .visit_f_string(f_string.to_owned())
+                        .map(ast::TStringPart::FString),
+                } {
+                    new_t_string_parts.push(new_t_string_part);
+                }
+            }
+            if new_t_string_parts.len() > 1 {
+                t_string.value = TStringValue::concatenated(new_t_string_parts);
+            } else if new_t_string_parts.len() == 1 {
+                t_string.value = TStringValue::single(
+                    new_t_string_parts[0]
+                        .as_t_string()
+                        .expect("Expected t-string")
+                        .to_owned(),
+                );
+            }
+            Some(Expr::TString(t_string))
+        }
+
         Expr::StringLiteral(mut string_literal) => {
             let mut new_string_literals: Vec<StringLiteral> = Vec::new();
             for string_literal in string_literal.value.iter() {
@@ -1091,42 +1128,55 @@ pub fn walk_pattern_keyword<V: Transformer + ?Sized>(
 }
 
 pub fn walk_f_string<V: Transformer + ?Sized>(visitor: &mut V, mut f_string: FString) -> FString {
-    let mut new_elements: Vec<FStringElement> = Vec::new();
+    let mut new_elements: Vec<InterpolatedStringElement> = Vec::new();
     for element in &f_string.elements {
-        if let Some(new_element) = visitor.visit_f_string_element(element.to_owned()) {
+        if let Some(new_element) = visitor.visit_interpolated_string_element(element.to_owned()) {
             new_elements.push(new_element)
         };
     }
-    f_string.elements = FStringElements::from(new_elements);
+    f_string.elements = InterpolatedStringElements::from(new_elements);
     f_string
 }
 
-pub fn walk_f_string_element<V: Transformer + ?Sized>(
+pub fn walk_interpolated_string_element<V: Transformer + ?Sized>(
     visitor: &mut V,
-    f_string_element: FStringElement,
-) -> FStringElement {
-    if let ast::FStringElement::Expression(mut expression) = f_string_element {
-        expression.expression = Box::new(
+    interpolated_string_element: InterpolatedStringElement,
+) -> InterpolatedStringElement {
+    if let ast::InterpolatedStringElement::Interpolation(mut interpolation) =
+        interpolated_string_element
+    {
+        interpolation.expression = Box::new(
             visitor
-                .visit_expr(*expression.expression)
+                .visit_expr(*interpolation.expression)
                 .expect("Cannot remove expression from f-string element expression"),
         );
-        if let Some(mut format_spec) = expression.format_spec {
-            let mut new_spec_elements: Vec<FStringElement> = Vec::new();
+        if let Some(mut format_spec) = interpolation.format_spec {
+            let mut new_spec_elements: Vec<InterpolatedStringElement> = Vec::new();
             for spec_element in &format_spec.elements {
                 if let Some(new_spec_element) =
-                    visitor.visit_f_string_element(spec_element.to_owned())
+                    visitor.visit_interpolated_string_element(spec_element.to_owned())
                 {
                     new_spec_elements.push(new_spec_element);
                 }
             }
-            format_spec.elements = FStringElements::from(new_spec_elements);
-            expression.format_spec = Some(format_spec)
+            format_spec.elements = InterpolatedStringElements::from(new_spec_elements);
+            interpolation.format_spec = Some(format_spec)
         }
-        return ast::FStringElement::Expression(expression);
+        return ast::InterpolatedStringElement::Interpolation(interpolation);
     }
 
-    f_string_element
+    interpolated_string_element
+}
+
+pub fn walk_t_string<V: Transformer + ?Sized>(visitor: &mut V, mut t_string: TString) -> TString {
+    let mut new_elements: Vec<InterpolatedStringElement> = Vec::new();
+    for element in &t_string.elements {
+        if let Some(new_element) = visitor.visit_interpolated_string_element(element.to_owned()) {
+            new_elements.push(new_element)
+        };
+    }
+    t_string.elements = InterpolatedStringElements::from(new_elements);
+    t_string
 }
 
 pub fn walk_expr_context<V: Transformer + ?Sized>(
