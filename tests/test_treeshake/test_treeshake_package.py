@@ -212,3 +212,17 @@ def test_treeshake_package_module_import_as_value(
 
     example2_file_content = (result_path / "example2.py").read_text()
     assert "def example_func2() -> None:" in example2_file_content
+
+
+def test_treeshake_package_pep562(
+    run_treeshake_package: RunTreeshakePackageT,
+) -> None:
+    source_path = TEST_PACKAGES_DIR / "pep562"
+    result_path = run_treeshake_package(source_path)
+
+    dynamic_file_content = (result_path / "dynamic.py").read_text()
+    assert "def __dir__() -> list[str]:" in dynamic_file_content
+    assert "def __getattr__(name: str) -> t.Any:" in dynamic_file_content
+
+    main_file_content = (result_path / "main.py").read_text()
+    assert "class BaseModel:" in main_file_content
