@@ -14,20 +14,15 @@ jobs:
     name: Test musl
     runs-on: ubuntu-latest
     container:
-      image: docker.io/alpine:3.22
+      image: docker.io/rust:1-alpine3.22
     steps:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4
         with:
           persist-credentials: false
-      - name: Setup PDM
-        uses: pdm-project/setup-pdm@94a823180e06fcde4ad29308721954a521c96ed0 # v4
-        with:
-          python-version: 3.12
-          cache: true
-      - name: Set up Rust toolchain
-        uses: actions-rs/toolchain@16499b5e05bf2e26879000db0c1d13f7e13fa3af # v1
-        with:
-          toolchain: stable
+      - name: Install dependencies
+        run: |
+          apk add python3 python3-dev py3-pip
+          pip install pdm maturin --break-system-packages
       - name: Enable git longpaths
         run: git config --global core.longpaths true
       - uses: Swatinem/rust-cache@9d47c6ad4b02e050fd481d890b2ea34778fd09d6 # v2
