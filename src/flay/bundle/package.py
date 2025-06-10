@@ -120,7 +120,12 @@ def bundle_package(
                         if dir_ == f"{so_top_level_package}.libs":
                             shutil.copytree(
                                 f"{sys_path}/{dir_}",
-                                destination_path / dir_,
+                                destination_path
+                                / top_level_package
+                                / vendor_module_name
+                                / dir_
+                                if is_external
+                                else destination_path / dir_,
                                 dirs_exist_ok=True,
                             )
 

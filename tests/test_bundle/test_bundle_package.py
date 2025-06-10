@@ -193,3 +193,15 @@ def test_bundle_package_bundle_metadata(tmp_path: Path) -> None:
         dist = Distribution.from_name(req.name)
         assert hasattr(dist, "_path")
         assert (tmp_path / Path(dist._path).name).exists(), os.listdir(tmp_path)
+
+
+@pytest.mark.skipif("alpine" not in Path("/etc/os-release").read_text().lower())
+def test_bundle_package_so_libs(tmp_path: Path) -> None:
+    bundle_package("pydantic-core", tmp_path)
+    assert (tmp_path / "pydantic_core.libs").exists()
+
+
+@pytest.mark.skipif("alpine" not in Path("/etc/os-release").read_text().lower())
+def test_bundle_package_so_libs_external(tmp_path: Path) -> None:
+    bundle_package("flay", tmp_path)
+    assert (tmp_path / "flay/_vendor/pydantic_core.libs").exists()
