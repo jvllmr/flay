@@ -12,6 +12,8 @@ from packaging.requirements import Requirement
 
 if t.TYPE_CHECKING:
     from .conftest import RunBundlePackageT
+OS_RELEASE_FILE = Path("/etc/os-release")
+IS_ALPINE = OS_RELEASE_FILE.exists() and "alpine" in OS_RELEASE_FILE.read_text().lower()
 
 
 def test_bundle_non_existing() -> None:
@@ -193,3 +195,15 @@ def test_bundle_package_bundle_metadata(tmp_path: Path) -> None:
         dist = Distribution.from_name(req.name)
         assert hasattr(dist, "_path")
         assert (tmp_path / Path(dist._path).name).exists(), os.listdir(tmp_path)
+
+
+@pytest.mark.skipif(not IS_ALPINE, reason="libs only present on musllinux")
+def test_bundle_package_so_libs(tmp_path: Path) -> None:
+    bundle_package("pydantic_core", tmp_path)
+    assert (tmp_path / "pydantic_core.libs").exists()
+
+
+@pytest.mark.skipif(not IS_ALPINE, reason="libs only present on musllinux")
+def test_bundle_package_so_libs_external(tmp_path: Path) -> None:
+    bundle_package("flay", tmp_path)
+    assert (tmp_path / "flay/_vendor/pydantic_core.libs").exists()

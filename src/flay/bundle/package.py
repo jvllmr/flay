@@ -20,6 +20,7 @@ import typing as t
 import shutil
 from flay._flay_rs import transform_imports
 import fnmatch
+import sys
 
 log = logging.getLogger(__name__)
 
@@ -108,6 +109,25 @@ def bundle_package(
         else:
             shutil.copy2(str(found_path), str(target_file))
             log.debug("Copied %s to %s", found_path, target_file)
+
+        # look for {so_top_level_package}.libs dir and bundle it
+        # i.e. the musllinux build of pydantic-core needs this
+        if found_path.name.endswith(".so"):
+            so_top_level_package = get_top_level_package(found_module)
+            for sys_path in sys.path:
+                if os.path.exists(sys_path) and os.path.isdir(sys_path):
+                    for dir_ in os.listdir(sys_path):
+                        if dir_ == f"{so_top_level_package}.libs":
+                            shutil.copytree(
+                                f"{sys_path}/{dir_}",
+                                destination_path
+                                / top_level_package
+                                / vendor_module_name
+                                / dir_
+                                if is_external
+                                else destination_path / dir_,
+                                dirs_exist_ok=True,
+                            )
 
     for module_spec, glob_pattern in resources.items():
         available_resources = package_metadata_files(module_spec)
