@@ -8,6 +8,46 @@ on:
   workflow_dispatch:
 
 jobs:
+  test-alpine:
+    permissions:
+      contents: read
+    name: Test musl
+    runs-on: ubuntu-latest
+    container:
+      image: docker.io/alpine:3.22
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4
+        with:
+          persist-credentials: false
+      - name: Setup PDM
+        uses: pdm-project/setup-pdm@94a823180e06fcde4ad29308721954a521c96ed0 # v4
+        with:
+          python-version: 3.12
+          cache: true
+      - name: Set up Rust toolchain
+        uses: actions-rs/toolchain@16499b5e05bf2e26879000db0c1d13f7e13fa3af # v1
+        with:
+          toolchain: stable
+      - name: Enable git longpaths
+        run: git config --global core.longpaths true
+      - uses: Swatinem/rust-cache@9d47c6ad4b02e050fd481d890b2ea34778fd09d6 # v2
+        with:
+          cache-targets: false
+      - name: Install dependencies
+        run: pdm install --frozen-lock
+      - name: Run pytest
+        env:
+          FLAY_INTEGRATION_TEST: 1
+        run: pdm run pytest --cov --cov-report=xml --junitxml=junit.xml -o junit_family=legacy
+      - name: Upload coverage report to Codecov
+        uses: codecov/codecov-action@18283e04ce6e62d37312384ff67231eb8fd56d24 # v5
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+      - name: Upload test results to Codecov
+        if: ${{ !cancelled() }}
+        uses: codecov/test-results-action@47f89e9acb64b76debcd5ea40642d25a4adced9f # v1
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
   test:
     permissions:
       contents: read
