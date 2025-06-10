@@ -73,7 +73,7 @@ def bundle_package(
             ):
                 # act as if an __init__.py exists
                 files[new_init_key] = ""
-    has_shared_object = False
+
     for (found_module, found_path), module_source in files.items():
         process_module_callback(found_module)
         if module_source:
@@ -110,16 +110,15 @@ def bundle_package(
             shutil.copy2(str(found_path), str(target_file))
             log.debug("Copied %s to %s", found_path, target_file)
 
+        # look for {so_top_level_package}.libs dir and bundle it
+        # i.e. the musllinux build of pydantic-core needs this
         if found_path.name.endswith(".so"):
-            has_shared_object = True
-
-    # look for {top_level_package}.libs dir and bundle it
-    # i.e. the musllinux build of pydantic-core needs this
-    for sys_path in sys.path:
-        if os.path.exists(sys_path) and os.path.isdir(sys_path):
-            for dir_ in os.listdir(sys_path):
-                if dir_ == f"{top_level_package}.libs":
-                    shutil.copy(f"{sys_path}/{dir_}", destination_path / dir_)
+            so_top_level_package = get_top_level_package(found_module)
+            for sys_path in sys.path:
+                if os.path.exists(sys_path) and os.path.isdir(sys_path):
+                    for dir_ in os.listdir(sys_path):
+                        if dir_ == f"{so_top_level_package}.libs":
+                            shutil.copy(f"{sys_path}/{dir_}", destination_path / dir_)
 
     for module_spec, glob_pattern in resources.items():
         available_resources = package_metadata_files(module_spec)
