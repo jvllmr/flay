@@ -71,6 +71,9 @@ filterwarnings = ["ignore:directory \"/run/secrets\""]
 env = ["FLAY_DEBUG_APP=1"]
 testpaths = ["tests"]
 
+[tool.coverage.run]
+source_dirs = ["src", "tests"]
+
 [tool.coverage.paths]
 source = ["/home/runner/work/", "D:\\a\\"]
 
