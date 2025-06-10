@@ -19,7 +19,7 @@
 
 #RUN apt install python3 python3-dev python3-pip python3-venv -y
 
-FROM docker.io/rust:1-alpine AS builder
+FROM docker.io/rust:1-alpine3.22 AS builder
 RUN apk add python3 python3-dev py3-pip build-base musl-dev
 
 
@@ -35,7 +35,7 @@ RUN --mount=type=cache,target=/root/.cache/pip \
     --mount=type=cache,target=/root/.cargo/registry \
      maturin develop --release --locked
 RUN pdm run flay bundle flay
-FROM docker.io/python:3.13-alpine AS runner
+FROM docker.io/python:3.12-alpine AS runner
 WORKDIR /app
 COPY --from=builder /app/flayed/flay ./flay
 
