@@ -197,13 +197,13 @@ def test_bundle_package_bundle_metadata(tmp_path: Path) -> None:
         assert (tmp_path / Path(dist._path).name).exists(), os.listdir(tmp_path)
 
 
-@pytest.mark.skipif(IS_ALPINE)
+@pytest.mark.skipif(not IS_ALPINE, reason="libs only present on musllinux")
 def test_bundle_package_so_libs(tmp_path: Path) -> None:
     bundle_package("pydantic-core", tmp_path)
     assert (tmp_path / "pydantic_core.libs").exists()
 
 
-@pytest.mark.skipif(IS_ALPINE)
+@pytest.mark.skipif(not IS_ALPINE, reason="libs only present on musllinux")
 def test_bundle_package_so_libs_external(tmp_path: Path) -> None:
     bundle_package("flay", tmp_path)
     assert (tmp_path / "flay/_vendor/pydantic_core.libs").exists()
