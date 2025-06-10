@@ -118,7 +118,11 @@ def bundle_package(
                 if os.path.exists(sys_path) and os.path.isdir(sys_path):
                     for dir_ in os.listdir(sys_path):
                         if dir_ == f"{so_top_level_package}.libs":
-                            shutil.copy(f"{sys_path}/{dir_}", destination_path / dir_)
+                            shutil.copytree(
+                                f"{sys_path}/{dir_}",
+                                destination_path / dir_,
+                                dirs_exist_ok=True,
+                            )
 
     for module_spec, glob_pattern in resources.items():
         available_resources = package_metadata_files(module_spec)
