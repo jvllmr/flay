@@ -199,7 +199,7 @@ def test_bundle_package_bundle_metadata(tmp_path: Path) -> None:
 
 @pytest.mark.skipif(not IS_ALPINE, reason="libs only present on musllinux")
 def test_bundle_package_so_libs(tmp_path: Path) -> None:
-    bundle_package("pydantic-core", tmp_path)
+    bundle_package("pydantic_core", tmp_path)
     assert (tmp_path / "pydantic_core.libs").exists()
 
 
