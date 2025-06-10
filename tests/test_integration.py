@@ -19,9 +19,6 @@ def bundle_and_treeshake(
     test_name: str = request.function.__name__
     package_name = test_name.split("_", 2)[-1]
     target_path = tmp_path
-    if not target_path.exists():
-        target_path.mkdir()
-        (target_path / ".gitignore").write_bytes(b"*")
 
     bundle_package(package_name, target_path, bundle_metadata=True)
     treeshake_package(str(target_path))
