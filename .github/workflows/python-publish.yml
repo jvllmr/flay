@@ -24,8 +24,20 @@ jobs:
     permissions:
       contents: read
       packages: write
+      pull-requests: write
     runs-on: ubuntu-24.04
     steps:
+      - name: Comment PR
+        if: github.repository == 'jvllmr/flay' && github.event_name == 'pull_request'
+        uses: mshick/add-pr-comment@b8f338c590a895d50bcbfa6c5859251edc8952fc # v2.8.2
+        with:
+          message: |
+            🔄 Building container image `ghcr.io/jvllmr/flay:pr-${{ github.event.pull_request.number }}` on commit `${{ github.event.pull_request.head.sha }}`
+          message-success: |
+            ✅ Successfully built and pushed container image `ghcr.io/jvllmr/flay:pr-${{ github.event.pull_request.number }}` on commit `${{ github.event.pull_request.head.sha }}`.
+               You can try it out now
+          message-failure: |
+            ❌ Failed to build container image `ghcr.io/jvllmr/flay:pr-${{ github.event.pull_request.number }}` on commit `${{ github.event.pull_request.head.sha }}`
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4
         with:
           persist-credentials: false
