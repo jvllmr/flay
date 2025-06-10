@@ -116,9 +116,10 @@ def bundle_package(
     # look for {top_level_package}.libs dir and bundle it
     # i.e. the musllinux build of pydantic-core needs this
     for sys_path in sys.path:
-        for dir_ in os.listdir(sys_path):
-            if dir_ == f"{top_level_package}.libs":
-                shutil.copy(f"{sys_path}/{dir_}", destination_path / dir_)
+        if os.path.exists(sys_path):
+            for dir_ in os.listdir(sys_path):
+                if dir_ == f"{top_level_package}.libs":
+                    shutil.copy(f"{sys_path}/{dir_}", destination_path / dir_)
 
     for module_spec, glob_pattern in resources.items():
         available_resources = package_metadata_files(module_spec)
