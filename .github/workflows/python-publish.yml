@@ -14,6 +14,15 @@ on:
           - "true"
           - "false"
   pull_request:
+    paths:
+      - "src/**"
+      - "rust/**"
+      - "pdm.lock"
+      - "pyproject.toml"
+      - "Cargo.lock"
+      - "Cargo.toml"
+      - "Containerfile"
+      - ".github/workflows/python-publish.yml"
   push:
     branches:
       - main
