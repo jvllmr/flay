@@ -261,38 +261,8 @@ impl Visitor<'_> for ReferencesCounter {
         self.make_known_stmt(&stmt);
 
         match &stmt {
-            Stmt::ClassDef(class_def) => {
-                if class_def.decorator_list.len() > 0 || self.has_references_for_stmt(&stmt) {
-                    self.maybe_increase_stmt(&stmt);
-                    self.always_bump_context = true;
-                }
-                // visit decorators, bases and keywords before they are prefixed with scope
-                for decorator in &class_def.decorator_list {
-                    self.visit_decorator(decorator);
-                }
-                for base in class_def.bases() {
-                    self.visit_expr(base);
-                }
-                for keyword in class_def.keywords() {
-                    self.visit_keyword(keyword);
-                }
-            }
-
-            Stmt::FunctionDef(func_def) => {
-                if func_def.decorator_list.len() > 0 || self.has_references_for_stmt(&stmt) {
-                    self.maybe_increase_stmt(&stmt);
-                    self.always_bump_context = true;
-                    // visit decorators before they are prefixed with scope
-                    for decorator in &func_def.decorator_list {
-                        self.visit_decorator(&decorator);
-                    }
-                }
-                // respect pep562 by preserving __getattr__ and __dir__ on module level
-                if self.is_global_scope()
-                    && self.module_spec_has_references()
-                    && (func_def.name.as_str() == "__dir__"
-                        || func_def.name.as_str() == "__getattr__")
-                {
+            Stmt::AnnAssign(_) | Stmt::AugAssign(_) => {
+                if self.has_references_for_stmt(&stmt) {
                     self.maybe_increase_stmt(&stmt);
                     self.always_bump_context = true;
                 }
@@ -320,13 +290,47 @@ impl Visitor<'_> for ReferencesCounter {
                     self.always_bump_context = true;
                 }
             }
-
-            Stmt::AnnAssign(_) | Stmt::AugAssign(_) => {
-                if self.has_references_for_stmt(&stmt) {
+            Stmt::ClassDef(class_def) => {
+                if class_def.decorator_list.len() > 0 || self.has_references_for_stmt(&stmt) {
+                    self.maybe_increase_stmt(&stmt);
+                    self.always_bump_context = true;
+                }
+                // visit decorators, bases and keywords before they are prefixed with scope
+                for decorator in &class_def.decorator_list {
+                    self.visit_decorator(decorator);
+                }
+                for base in class_def.bases() {
+                    self.visit_expr(base);
+                }
+                for keyword in class_def.keywords() {
+                    self.visit_keyword(keyword);
+                }
+            }
+            Stmt::For(_) => {
+                if self.is_global_scope() {
+                    self.always_bump_context = true;
+                }
+            }
+            Stmt::FunctionDef(func_def) => {
+                if func_def.decorator_list.len() > 0 || self.has_references_for_stmt(&stmt) {
+                    self.maybe_increase_stmt(&stmt);
+                    self.always_bump_context = true;
+                    // visit decorators before they are prefixed with scope
+                    for decorator in &func_def.decorator_list {
+                        self.visit_decorator(&decorator);
+                    }
+                }
+                // respect pep562 by preserving __getattr__ and __dir__ on module level
+                if self.is_global_scope()
+                    && self.module_spec_has_references()
+                    && (func_def.name.as_str() == "__dir__"
+                        || func_def.name.as_str() == "__getattr__")
+                {
                     self.maybe_increase_stmt(&stmt);
                     self.always_bump_context = true;
                 }
             }
+
             Stmt::If(if_block) => {
                 if self.is_global_scope() && is_if_name_main(&if_block.test) {
                     self.maybe_increase_stmt(&stmt);
