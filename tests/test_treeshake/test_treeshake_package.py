@@ -226,3 +226,14 @@ def test_treeshake_package_pep562(
 
     main_file_content = (result_path / "main.py").read_text()
     assert "class BaseModel:" in main_file_content
+
+
+def test_treeshake_package_global_for_loop(
+    run_treeshake_package: RunTreeshakePackageT,
+) -> None:
+    source_path = TEST_PACKAGES_DIR / "global_for_loop"
+    result_path = run_treeshake_package(source_path)
+
+    init_file_content = (result_path / "__init__.py").read_text()
+    assert "GLOBAL_LIST: list[str] = []" in init_file_content
+    assert 'for char in "hello world":' in init_file_content
