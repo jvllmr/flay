@@ -12,7 +12,7 @@ use ruff_python_ast::visitor::Visitor;
 use ruff_python_ast::visitor::walk_stmt;
 
 use crate::common::ast::{get_import_from_absolute_module_spec, parse_python_source};
-use crate::common::module_spec::{get_parent_package, get_top_level_package, is_in_std_lib};
+use crate::common::module_spec::{get_parent_package, is_in_std_lib};
 
 #[pyclass]
 pub struct FileCollector {
@@ -32,7 +32,7 @@ impl FileCollector {
     }
 
     fn _process_module(&mut self, module_spec: &str) {
-        if is_in_std_lib(get_top_level_package(module_spec)) {
+        if is_in_std_lib(module_spec) {
             return;
         }
 

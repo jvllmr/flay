@@ -1,6 +1,6 @@
 use crate::common::ast::generate_source;
 use crate::common::ast::transformer::{Transformer, walk_annotation, walk_expr, walk_stmt};
-use crate::common::module_spec::{get_top_level_package, is_in_std_lib};
+use crate::common::module_spec::is_in_std_lib;
 use pyo3::pyfunction;
 
 use ruff_python_ast::name::Name;
@@ -40,9 +40,7 @@ impl ImportsTransformer {
         module_spec: &str,
         references_need_update: bool,
     ) -> Identifier {
-        if module_spec.starts_with(&self.top_level_package)
-            || is_in_std_lib(get_top_level_package(module_spec))
-        {
+        if module_spec.starts_with(&self.top_level_package) || is_in_std_lib(module_spec) {
             return node.clone();
         }
         if references_need_update {

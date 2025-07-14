@@ -237,3 +237,15 @@ def test_treeshake_package_global_for_loop(
     init_file_content = (result_path / "__init__.py").read_text()
     assert "GLOBAL_LIST: list[str] = []" in init_file_content
     assert 'for char in "hello world":' in init_file_content
+
+
+def test_treeshake_package_class_bases(
+    run_treeshake_package: RunTreeshakePackageT,
+) -> None:
+    source_path = TEST_PACKAGES_DIR / "class_bases"
+    result_path = run_treeshake_package(source_path)
+
+    init_file_content = (result_path / "__init__.py").read_text()
+    assert "from collections import ChainMap" in init_file_content
+    assert "KT = TypeVar('KT')" in init_file_content
+    assert "VT = TypeVar('VT')" in init_file_content
