@@ -4,7 +4,7 @@ use crate::common::module_spec::{get_top_level_package, is_in_std_lib};
 use pyo3::pyfunction;
 
 use ruff_python_ast::name::Name;
-use ruff_python_ast::{Alias, Expr, ExprName, Identifier, Stmt, StringLiteral};
+use ruff_python_ast::{Alias, AtomicNodeIndex, Expr, ExprName, Identifier, Stmt, StringLiteral};
 use ruff_python_parser::parse_module;
 
 use std::collections::HashSet;
@@ -93,6 +93,7 @@ impl Transformer for ImportsTransformer {
                             name.asname.is_none(),
                         ),
                         asname: name.asname.to_owned(),
+                        node_index: AtomicNodeIndex::dummy(),
                     })
                     .collect();
                 Some(Stmt::Import(import))
@@ -161,6 +162,7 @@ impl Transformer for ImportsTransformer {
                         range: deepest_attribute.range,
                         id: Name::new(self.get_vendor_string()),
                         ctx: deepest_attribute.ctx,
+                        node_index: AtomicNodeIndex::dummy(),
                     }));
                 }
                 Some(Expr::Attribute(attribute))
