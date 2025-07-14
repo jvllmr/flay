@@ -24,7 +24,7 @@ RUN apk add python3 python3-dev py3-pip build-base musl-dev
 
 
 RUN --mount=type=cache,target=/root/.cache/pip pip install pdm maturin --break-system-packages
-WORKDIR /app
+WORKDIR /opt/flay
 COPY README.md Cargo.toml Cargo.lock pyproject.toml pdm.lock ./
 COPY rust ./rust
 COPY src ./src
@@ -36,7 +36,7 @@ RUN --mount=type=cache,target=/root/.cache/pip \
      maturin develop --release --locked
 RUN pdm run flay bundle flay
 FROM docker.io/python:3.12-alpine3.22 AS runner
-WORKDIR /app
-COPY --from=builder /app/flayed/flay ./flay
+WORKDIR /opt/flay
+COPY --from=builder /opt/flay/flayed/flay ./flay
 
 ENTRYPOINT [ "python3", "-m", "flay" ]
