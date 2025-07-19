@@ -1,6 +1,7 @@
 from flay.bundle import DEFAULT_BUNDLE_METADATA, DEFAULT_VENDOR_MODULE_NAME
 from flay.common.logging import enable_debug_logging
 
+from flay.common.module_spec import get_top_level_package
 from flay.common.pydantic import FlayBaseSettings
 from pydantic_settings import CliPositionalArg
 
@@ -97,8 +98,9 @@ def flay_main(settings: FlayMainSettings) -> None:
     console.print(check, f"Finished bundling {settings.module_spec}")
     if settings.treeshake:
         console.print("Start removing unused code...")
+        vendor_prefix = f"{get_top_level_package(settings.module_spec)}.{settings.vendor_module_name}"
         removed_stmts_count = cli_treeshake_package(
-            str(settings.output_path.absolute())
+            str(settings.output_path.absolute()), vendor_prefix=vendor_prefix
         )
         console.print(
             check,

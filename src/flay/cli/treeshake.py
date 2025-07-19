@@ -1,3 +1,4 @@
+from __future__ import annotations
 from flay.treeshake.package import treeshake_package
 from rich.progress import Progress
 import typing as t
@@ -74,10 +75,11 @@ class TreeshakePackageCliIO:
         self.end_progress()
 
 
-def cli_treeshake_package(source_dir: str) -> int:
+def cli_treeshake_package(source_dir: str, vendor_prefix: str | None = None) -> int:
     with TreeshakePackageCliIO() as io:
         return treeshake_package(
             source_dir=source_dir,
+            vendor_prefix=vendor_prefix,
             found_module_callback=io.on_found_module,
             total_modules_callback=io.on_total_modules,
             nodes_removal_callback=io.on_nodes_removal,
