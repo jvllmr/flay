@@ -5,7 +5,6 @@ import typing as t
 from pathlib import Path
 from .exc import FlayFileNotFoundError
 import os
-
 from functools import cache
 
 
@@ -70,7 +69,8 @@ def _lookup_paths_for_module_spec(module_spec: str) -> list[str] | None:
                         )
                     ):
                         paths.add(path)
-    return list(paths)
+
+    return sorted(paths, key=lambda x: -len(x))
 
 
 def _valid_module_spec(module_spec: str, result: ModuleSpec) -> bool:
