@@ -7,7 +7,7 @@ import os
 from collections import defaultdict
 import typing as t
 import logging
-
+from .fixed import get_treeshake_fixed_preservations
 
 log = logging.getLogger(__name__)
 
@@ -28,7 +28,7 @@ def _process_modules(
 
 def treeshake_package(
     source_dir: str,
-    preserve_packages: t.Collection[str] | None = None,
+    vendor_prefix: str | None = None,
     found_module_callback: t.Callable[[str], None] = lambda _: None,
     total_modules_callback: t.Callable[[int], None] = lambda _: None,
     references_iteration_callback: t.Callable[[int], None] = lambda _: None,
@@ -61,7 +61,10 @@ def treeshake_package(
     )
     total_modules_callback(len(file_modules))
     references_counts: dict[str, int] = defaultdict(int)
-    new_references_count = 1
+    treeshake_fixed_preservations = get_treeshake_fixed_preservations()
+    for preserved_name in treeshake_fixed_preservations:
+        references_counts[f"{vendor_prefix}.{preserved_name}"] = 1
+    new_references_count = 1 + len(treeshake_fixed_preservations)
 
     references_counter = ReferencesCounter(references_counts)
     treeshake_iteration = 1
@@ -86,11 +89,14 @@ def treeshake_package(
         known_module_specs=known_module_specs,
     )
     references_counts |= references_counter.references_counts
+
     log.debug("Counted references: %s", references_counts)
+
     # remove nodes without references
     nodes_remover = NodesRemover(references_counts, set(known_module_specs.values()))
     for file_path in file_modules:
         module_spec = known_module_specs[file_path]
+
         nodes_removal_callback(module_spec)
         nodes_remover.process_module(module_spec=module_spec, source_path=file_path)
 
