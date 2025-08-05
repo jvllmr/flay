@@ -3,8 +3,8 @@ use ruff_python_ast::{
     Decorator, DictItem, ElifElseClause, ExceptHandler, Expr, ExprContext, FString, FStringPart,
     FStringValue, InterpolatedStringElement, InterpolatedStringElements, Keyword, MatchCase,
     Operator, Parameter, ParameterWithDefault, Parameters, Pattern, PatternArguments,
-    PatternKeyword, Stmt, StringLiteral, StringLiteralValue, TString, TStringPart, TStringValue,
-    TypeParam, TypeParams, UnaryOp, WithItem,
+    PatternKeyword, Stmt, StringLiteral, StringLiteralValue, TString, TStringValue, TypeParam,
+    TypeParams, UnaryOp, WithItem,
 };
 
 fn box_expr_option(expr: Option<Expr>) -> Option<Box<Expr>> {
@@ -672,32 +672,16 @@ pub fn walk_expr<V: Transformer + ?Sized>(visitor: &mut V, expr: Expr) -> Option
             Some(Expr::FString(f_string))
         }
         Expr::TString(mut t_string) => {
-            let mut new_t_string_parts: Vec<TStringPart> = Vec::new();
+            let mut new_t_string_parts: Vec<TString> = Vec::new();
             for t_string_part in t_string.value.iter() {
-                if let Some(new_t_string_part) = match t_string_part {
-                    ast::TStringPart::Literal(string_literal) => visitor
-                        .visit_string_literal(string_literal.to_owned())
-                        .map(ast::TStringPart::Literal),
-
-                    ast::TStringPart::TString(t_string) => visitor
-                        .visit_t_string(t_string.to_owned())
-                        .map(ast::TStringPart::TString),
-                    ast::TStringPart::FString(f_string) => visitor
-                        .visit_f_string(f_string.to_owned())
-                        .map(ast::TStringPart::FString),
-                } {
+                if let Some(new_t_string_part) = visitor.visit_t_string(t_string_part.to_owned()) {
                     new_t_string_parts.push(new_t_string_part);
                 }
             }
             if new_t_string_parts.len() > 1 {
                 t_string.value = TStringValue::concatenated(new_t_string_parts);
             } else if new_t_string_parts.len() == 1 {
-                t_string.value = TStringValue::single(
-                    new_t_string_parts[0]
-                        .as_t_string()
-                        .expect("Expected t-string")
-                        .to_owned(),
-                );
+                t_string.value = TStringValue::single(new_t_string_parts[0].to_owned());
             }
             Some(Expr::TString(t_string))
         }
