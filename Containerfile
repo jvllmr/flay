@@ -33,7 +33,7 @@ RUN --mount=type=cache,target=/root/.cache/pip \
 RUN --mount=type=cache,target=/root/.cache/pip \
     --mount=type=cache,target=/root/.cargo/git \
     --mount=type=cache,target=/root/.cargo/registry \
-     maturin develop --release --locked
+     maturin develop --release
 RUN pdm run flay bundle flay
 FROM docker.io/python:3.12-alpine3.22 AS runner
 WORKDIR /opt/flay
