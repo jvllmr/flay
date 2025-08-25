@@ -249,3 +249,13 @@ def test_treeshake_package_class_bases(
     assert "from collections import ChainMap" in init_file_content
     assert "KT = TypeVar('KT')" in init_file_content
     assert "VT = TypeVar('VT')" in init_file_content
+
+
+def test_treeshake_package_call_func_on_module_in_class(
+    run_treeshake_package: RunTreeshakePackageT,
+) -> None:
+    source_path = TEST_PACKAGES_DIR / "call_func_on_module_in_class"
+    result_path = run_treeshake_package(source_path)
+
+    hello_func_file_content = (result_path / "hello_func.py").read_text()
+    assert "def the_hello_func(who: str) -> str:" in hello_func_file_content
