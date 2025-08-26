@@ -121,16 +121,20 @@ impl NodesRemover {
 
     fn visit_stmt_import_from(&mut self, mut stmt: StmtImportFrom) -> Option<StmtImportFrom> {
         let mut new_names: Vec<Alias> = Vec::new();
-
+        let mut added_names: HashSet<String> = HashSet::new();
         if let Ok(module_specs) =
             get_import_from_absolute_module_spec(&stmt, &self.get_parent_package())
         {
-            for module_spec in module_specs {
+            for module_spec in &module_specs {
                 for name in &stmt.names {
-                    if name.name.as_str() == "*"
-                        || self.has_references_for_str(&format!("{}.{}", module_spec, name.name))
+                    let result_name = name.asname.as_ref().unwrap_or(&name.name);
+                    if !added_names.contains(result_name.as_str())
+                        && (name.name.as_str() == "*"
+                            || self
+                                .has_references_for_str(&format!("{}.{}", module_spec, name.name)))
                     {
                         new_names.push(name.clone());
+                        added_names.insert(result_name.to_string());
                     }
                 }
             }
