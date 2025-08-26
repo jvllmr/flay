@@ -84,27 +84,15 @@ def test_bundle_vendor_bundle(
     )
     assert f"import vendor_bundle.{vendor_module_name}.rich.emoji" in init_file_content
 
-    assert (
-        f'heart_emoji = vendor_bundle.{vendor_module_name}.rich.emoji.Emoji("heart")'
-        in init_file_content
-    )
-    assert (
-        f"vendor_bundle.{vendor_module_name}.typer.echo(heart_emoji)"
-        in init_file_content
-    )
-    assert (
-        f"vendor_bundle.{vendor_module_name}.typer.echo(heart_emoji)"
-        in init_file_content
-    )
+    assert f'heart_emoji = rich_emoji.Emoji("heart")' in init_file_content
+    assert f"typer.echo(heart_emoji)" in init_file_content
+    assert f"typer.echo(heart_emoji)" in init_file_content
     assert (
         'cst.parse_expression("assert answer_of_universe == 42")' in init_file_content
     )
     assert "tree = ensure_type(" in init_file_content
     assert "except ClickException:" in init_file_content
-    assert (
-        f'vendor_bundle.{vendor_module_name}.typer.echo("Something went wrong...")'
-        in init_file_content
-    )
+    assert f'typer.echo("Something went wrong...")' in init_file_content
     assert (
         f"from vendor_bundle.{vendor_module_name}.flay.cli.debug.bundle import debug_bundle_package"
         in init_file_content
@@ -128,6 +116,7 @@ def test_bundle_relative_imports(run_bundle_package: RunBundlePackageT) -> None:
 def test_bundle_correct_transformer_recursion(
     run_bundle_package: RunBundlePackageT,
 ) -> None:
+    # TODO: re-design test since it does not really test transformer recursion anymore
     _, result_path = run_bundle_package(
         "correct_transformer_recursion", "correct_transformer_recursion"
     )
@@ -136,7 +125,7 @@ def test_bundle_correct_transformer_recursion(
     init_file_content = init_file.read_text()
 
     assert (
-        'correct_transformer_recursion._vendor.typer.style("Hello World!", fg=correct_transformer_recursion._vendor.typer.colors.BRIGHT_MAGENTA)'
+        'typer.style("Hello World!", fg=typer.colors.BRIGHT_MAGENTA)'
         in init_file_content
     )
 
@@ -153,13 +142,22 @@ def test_bundle_annotation_string_literals(
 
     assert 'random_literal = "typer.Typer"' in init_file_content
 
+    assert 'def modify_app(app: "typer.Typer") -> "typer.Typer":\n' in init_file_content
+
     assert (
-        'def modify_app(app: "annotation_string_literals._vendor.typer.Typer") -> "annotation_string_literals._vendor.typer.Typer":\n'
+        'def modify_app2(app2: "typerino.Typer") -> "typerino.Typer":\n'
+        in init_file_content
+    )
+
+    assert 'def modify_app(app: "typer.Typer") -> "typer.Typer":\n' in init_file_content
+
+    assert (
+        'def accept_ordered_dict(ordered_dict: "collections.OrderedDict[str, str]") -> "collections.OrderedDict[str, str]":\n'
         in init_file_content
     )
 
     assert (
-        'def modify_app2(app2: "typerino.Typer") -> "typerino.Typer":\n'
+        'def accept_hashable(collection: "collections_abc.Hashable") -> "collections_abc.Hashable":\n'
         in init_file_content
     )
 
