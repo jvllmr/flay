@@ -123,7 +123,7 @@ impl NodesRemover {
         let mut new_names: Vec<Alias> = Vec::new();
         let mut added_names: HashSet<String> = HashSet::new();
         if let Ok(module_specs) =
-            get_import_from_absolute_module_spec(&stmt, &self.get_parent_package())
+            get_import_from_absolute_module_spec(&stmt, &self.get_parent_package(), true)
         {
             for module_spec in &module_specs {
                 for name in &stmt.names {

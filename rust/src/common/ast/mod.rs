@@ -62,6 +62,7 @@ fn resolve_name(name: &str, package: &str, level: &usize) -> PyResult<String> {
 pub fn get_import_from_absolute_module_spec(
     node: &StmtImportFrom,
     parent_package: &str,
+    greedy: bool,
 ) -> PyResult<Vec<String>> {
     let mut fixed_parent_package = parent_package.to_string();
     if fixed_parent_package.ends_with(".__main__") {
@@ -86,10 +87,12 @@ pub fn get_import_from_absolute_module_spec(
             target_package = get_parent_package(&target_package);
         }
         let mut result = vec![target_package.clone()];
-        for name in &node.names {
-            let name_str = name.name.to_string();
-            if name_str != "*" {
-                result.push(format!("{}.{}", target_package, name_str));
+        if greedy {
+            for name in &node.names {
+                let name_str = name.name.to_string();
+                if name_str != "*" {
+                    result.push(format!("{}.{}", target_package, name_str));
+                }
             }
         }
         return Ok(result);
