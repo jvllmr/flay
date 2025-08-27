@@ -57,6 +57,7 @@ pub trait ReferencesHolder {
                     if let Ok(module_specs) = get_import_from_absolute_module_spec(
                         import_from,
                         &self.get_parent_package(),
+                        true,
                     ) {
                         module_specs
                     } else {
@@ -389,6 +390,7 @@ impl Visitor<'_> for ReferencesCounter {
                     if let Ok(module_specs) = get_import_from_absolute_module_spec(
                         &stmt_import_from,
                         &self.get_parent_package(),
+                        true,
                     ) {
                         for module_spec in module_specs {
                             let mut new_names: Vec<String> = Vec::new();

@@ -43,7 +43,7 @@ pub fn get_full_name_for_stmt(stmt: &Stmt, parent_package: &str) -> Vec<String> 
         Stmt::ImportFrom(import_from) => {
             let mut names: Vec<String> = Vec::new();
             if let Ok(module_specs) =
-                get_import_from_absolute_module_spec(import_from, parent_package)
+                get_import_from_absolute_module_spec(import_from, parent_package, true)
             {
                 for module_spec in module_specs {
                     for alias in &import_from.names {

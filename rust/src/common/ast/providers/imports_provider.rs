@@ -53,10 +53,11 @@ impl ImportsTrackingProvider {
 
     pub fn visit_import_from(&mut self, import_from: &StmtImportFrom) {
         let module_specs =
-            match get_import_from_absolute_module_spec(import_from, &self.parent_package) {
+            match get_import_from_absolute_module_spec(import_from, &self.parent_package, false) {
                 Ok(spec) => spec,
                 Err(_) => vec![],
             };
+
         for module_spec in &module_specs {
             for name in &import_from.names {
                 if name.name.as_str() == "*" {
@@ -65,22 +66,10 @@ impl ImportsTrackingProvider {
                     self.active_imports
                         .insert(asname.to_string(), format!("{}.{}", module_spec, name.name));
                 } else {
-                    // we probably imported a module here because the imported name was appended
-                    // to the generated module_spec already
-                    if module_spec.ends_with(name.name.as_str())
-                        && import_from
-                            .module
-                            .as_ref()
-                            .is_none_or(|x| !x.ends_with(name.name.as_str()))
-                    {
-                        self.active_imports
-                            .insert(name.name.to_string(), module_spec.to_owned());
-                    } else {
-                        self.active_imports.insert(
-                            name.name.to_string(),
-                            format!("{}.{}", module_spec, name.name),
-                        );
-                    }
+                    self.active_imports.insert(
+                        name.name.to_string(),
+                        format!("{}.{}", module_spec, name.name),
+                    );
                 }
             }
         }
