@@ -53,7 +53,7 @@ test = [
   "pytest-env>=1.1.5",
   "packaging>=25.0",
 ]
-lint = ["mypy>=1.17.1", "ruff>=0.12.12", "pre-commit>=4.3.0"]
+lint = ["mypy>=1.18.1", "ruff>=0.13.0", "pre-commit>=4.3.0"]
 dev = ["nox>=2025.5.1", "maturin>=1.9.4", "maturin-import-hook>=0.3.0"]
 debug = ["tuna>=0.5.11"]
 types = ["types-setuptools>=80.9.0.20250822"]
