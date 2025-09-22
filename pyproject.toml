@@ -46,14 +46,14 @@ dev = "maturin develop"
 [dependency-groups]
 test = [
   "pytest>=8.4.2",
-  "pytest-cov>=6.3.0",
+  "pytest-cov>=7.0.0",
   "setuptools>=80.9.0",
   "pip>=25.2",
   "wheel>=0.45.1",
   "pytest-env>=1.1.5",
   "packaging>=25.0",
 ]
-lint = ["mypy>=1.18.1", "ruff>=0.13.0", "pre-commit>=4.3.0"]
+lint = ["mypy>=1.18.2", "ruff>=0.13.1", "pre-commit>=4.3.0"]
 dev = ["nox>=2025.5.1", "maturin>=1.9.4", "maturin-import-hook>=0.3.0"]
 debug = ["tuna>=0.5.11"]
 types = ["types-setuptools>=80.9.0.20250822"]
