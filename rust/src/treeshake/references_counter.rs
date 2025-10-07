@@ -430,15 +430,7 @@ impl Visitor<'_> for ReferencesCounter {
         };
 
         let scope = self.names_provider.enter_scope(&stmt);
-        match stmt {
-            Stmt::Import(import) => {
-                self.names_provider.visit_import(import);
-            }
-            Stmt::ImportFrom(import_from) => {
-                self.names_provider.visit_import_from(&import_from);
-            }
-            _ => {}
-        }
+        self.names_provider.visit_stmt(stmt);
         walk_stmt(self, stmt);
         if can_reset_context {
             self.always_bump_context = false;
@@ -469,6 +461,7 @@ impl Visitor<'_> for ReferencesCounter {
             }
             _ => {}
         }
+
         walk_expr(self, expr);
         if can_reset_context {
             self.always_bump_context = false;

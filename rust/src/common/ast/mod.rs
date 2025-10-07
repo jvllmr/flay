@@ -1,3 +1,5 @@
+pub mod checkers;
+pub mod finders;
 pub mod full_name;
 pub mod providers;
 pub mod transformer;

@@ -1,5 +1,6 @@
 use std::collections::HashSet;
 
+use crate::common::ast::checkers::{is_dynamic_import, is_importlib_import};
 use crate::common::ast::generate_source;
 use crate::common::ast::transformer::{
     Transformer, walk_annotation, walk_body, walk_expr, walk_stmt,
@@ -10,7 +11,7 @@ use pyo3::pyfunction;
 use ruff_python_ast::name::Name;
 use ruff_python_ast::{
     Alias, AtomicNodeIndex, Expr, ExprAttribute, ExprContext, ExprName, Identifier, Stmt,
-    StmtImport, StringLiteral,
+    StmtImport, StringLiteral, StringLiteralFlags, StringLiteralValue,
 };
 use ruff_python_parser::parse_module;
 use ruff_text_size::TextRange;
@@ -21,6 +22,7 @@ struct ImportsTransformer {
     names_to_sanitize: HashSet<String>,
     needed_imports: Vec<HashSet<String>>,
     is_in_annotation: bool,
+    importlib_package_alias: Option<String>,
 }
 
 impl ImportsTransformer {
@@ -31,6 +33,7 @@ impl ImportsTransformer {
             names_to_sanitize: HashSet::new(),
             needed_imports: Vec::new(),
             is_in_annotation: false,
+            importlib_package_alias: None,
         }
     }
 
@@ -156,6 +159,10 @@ impl Transformer for ImportsTransformer {
     }
 
     fn visit_stmt(&mut self, stmt: ruff_python_ast::Stmt) -> Option<ruff_python_ast::Stmt> {
+        if let Some(importlib_package_alias) = is_importlib_import(&stmt) {
+            self.importlib_package_alias = Some(importlib_package_alias);
+        }
+
         match stmt {
             Stmt::Import(mut import) => {
                 import.names = import
@@ -186,6 +193,23 @@ impl Transformer for ImportsTransformer {
     }
 
     fn visit_expr(&mut self, expr: Expr) -> Option<ruff_python_ast::Expr> {
+        if let Some(dynamic_import_expr) =
+            is_dynamic_import(&expr, self.importlib_package_alias.as_ref())
+        {
+            match dynamic_import_expr {
+                Expr::StringLiteral(mut literal) => {
+                    let old_value = literal.value.to_str();
+                    literal.value = StringLiteralValue::single(StringLiteral {
+                        range: TextRange::default(),
+                        node_index: AtomicNodeIndex::dummy(),
+                        value: format!("{}.{}", self.get_vendor_string(), old_value)
+                            .into_boxed_str(),
+                        flags: StringLiteralFlags::empty(),
+                    })
+                }
+                _ => {}
+            }
+        }
         match expr {
             Expr::Attribute(attribute) => {
                 let mut name_parts: Vec<String> = vec![attribute.attr.to_string()];
