@@ -9,17 +9,7 @@
   ],
   "labels": ["dependencies"],
   "rangeStrategy": "bump",
-  "customManagers": [
-    {
-      "customType": "regex",
-      "managerFilePatterns": ["/Cargo.toml/"],
-      "matchStrings": [
-        "{.*git.*=.*\"(?<depName>.+)\".*,.*tag.*=.*\"(?<currentValue>.*)\".*}",
-        "{.*tag.*=.*\"(?<currentValue>.*)\".*,.*git.*=.*\"(?<depName>.+)\".*}"
-      ],
-      "datasourceTemplate": "git-tags"
-    }
-  ],
+
   "packageRules": [
     {
       "description": "Do not update required python version",
@@ -44,16 +34,6 @@
       "groupSlug": "python-minor-patch",
       "matchManagers": ["pep621"],
       "matchUpdateTypes": ["minor", "patch"]
-    },
-    {
-      "description": "Group ruff git dependency",
-      "groupName": "ruff git dependency",
-      "groupSlug": "ruff-git",
-      "matchDepNames": ["https://github.com/astral-sh/ruff.git"]
     }
-  ],
-  "lockFileMaintenance": {
-    "enabled": true,
-    "schedule": ["* 4-6 * * 1"]
-  }
+  ]
 }
