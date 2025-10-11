@@ -33,7 +33,7 @@ pub fn is_in_std_lib(module_spec: &str) -> bool {
 }
 
 pub fn get_file_for_module_spec(module_spec: &str) -> Option<(String, PathBuf)> {
-    let key_result = Python::with_gil(|py| -> PyResult<Option<(String, PathBuf)>> {
+    let key_result = Python::attach(|py| -> PyResult<Option<(String, PathBuf)>> {
         let flay_common = PyModule::import(py, "flay.common.module_spec")?;
         let module_spec_obj = flay_common
             .getattr("find_module_path")?
