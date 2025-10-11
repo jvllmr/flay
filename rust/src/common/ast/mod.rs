@@ -30,7 +30,7 @@ pub fn generate_source(
     generator.unparse_suite(body);
     let new_source = generator.stmt(&Stmt::Pass(StmtPass {
         range: TextRange::default(),
-        node_index: AtomicNodeIndex::dummy(),
+        node_index: AtomicNodeIndex::default(),
     }));
     return match new_source.strip_suffix("pass") {
         Some(s) => s.to_owned(),

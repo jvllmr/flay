@@ -147,9 +147,9 @@ impl Transformer for ImportsTransformer {
                             TextRange::default(),
                         )),
                         name: Identifier::new(needed_import, TextRange::default()),
-                        node_index: AtomicNodeIndex::dummy(),
+                        node_index: AtomicNodeIndex::default(),
                     }],
-                    node_index: AtomicNodeIndex::dummy(),
+                    node_index: AtomicNodeIndex::default(),
                     range: TextRange::default(),
                 }),
             );
@@ -172,7 +172,7 @@ impl Transformer for ImportsTransformer {
                         range: name.range,
                         name: self._prepend_vendor_import(name.name.to_owned(), name.name.as_str()),
                         asname: Some(self.decide_asname(&name.name, &name.asname)),
-                        node_index: AtomicNodeIndex::dummy(),
+                        node_index: AtomicNodeIndex::default(),
                     })
                     .collect();
                 Some(Stmt::Import(import))
@@ -245,7 +245,7 @@ impl Transformer for ImportsTransformer {
                         target_attribute.value = Box::new(Expr::Name(ExprName {
                             range: target_attribute.range,
                             id: Name::new(test_name.replace(".", "_")),
-                            node_index: AtomicNodeIndex::dummy(),
+                            node_index: AtomicNodeIndex::default(),
                             ctx: expr_context,
                         }));
 
