@@ -259,3 +259,15 @@ def test_treeshake_package_call_func_on_module_in_class(
 
     hello_func_file_content = (result_path / "hello_func.py").read_text()
     assert "def the_hello_func(who: str) -> str:" in hello_func_file_content
+
+
+def test_treeshake_package_dynamic_imports(
+    run_treeshake_package: RunTreeshakePackageT,
+) -> None:
+    source_path = TEST_PACKAGES_DIR / "dynamic_imports"
+    result_path = run_treeshake_package(source_path)
+
+    hello_file_content = (result_path / "hello.py").read_text()
+    assert "def hello_world() -> None:\n    print(" in hello_file_content
+
+    assert not (result_path / "useless.py").exists()

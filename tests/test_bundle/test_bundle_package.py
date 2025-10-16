@@ -178,6 +178,18 @@ def test_bundle_package_resources(
     ).exists() is True
 
 
+def test_bundle_package_dynamic_imports(
+    run_bundle_package: RunBundlePackageT,
+) -> None:
+    _, result_path = run_bundle_package(
+        "dynamic_imports",
+        "dynamic_imports",
+    )
+    assert (result_path / "sub_module/abc.py").exists()
+    assert (result_path / "sub_module/aliased.py").exists()
+    assert not (result_path / "sub_module/useless.py").exists()
+
+
 def test_bundle_package_bundle_metadata(tmp_path: Path) -> None:
     bundle_package("flay", tmp_path, bundle_metadata=True)
     root_dist = Distribution.from_name("flay")
