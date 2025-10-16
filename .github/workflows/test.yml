@@ -30,6 +30,8 @@ jobs:
           cache-targets: false
       - name: Install dependencies
         run: pdm install --frozen-lock
+      - name: Run maturin develop
+        run: pdm dev
       - name: Run pytest
         env:
           FLAY_INTEGRATION_TEST: 1
