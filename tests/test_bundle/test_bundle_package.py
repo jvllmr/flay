@@ -199,10 +199,10 @@ def test_bundle_package_bundle_metadata(tmp_path: Path) -> None:
 @pytest.mark.parametrize("name", ["pydantic_core", "flay"])
 def test_bundle_package_so_libs(tmp_path: Path, name: str) -> None:
     bundle_package(name, tmp_path)
-    assert (tmp_path / f"{name}.libs").exists()
+    assert (tmp_path / f"{name}.libs").exists(), os.listdir(tmp_path)
 
 
 @pytest.mark.skipif(not IS_ALPINE, reason="libs only present on musllinux")
 def test_bundle_package_so_libs_external(tmp_path: Path) -> None:
     bundle_package("flay", tmp_path)
-    assert (tmp_path / "flay/_vendor/pydantic_core.libs").exists()
+    assert (tmp_path / "flay/_vendor/pydantic_core.libs").exists(), os.listdir(tmp_path)
