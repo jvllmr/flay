@@ -201,7 +201,7 @@ impl Transformer for ImportsTransformer {
                     let old_value = literal.value.to_str();
                     literal.value = StringLiteralValue::single(StringLiteral {
                         range: TextRange::default(),
-                        node_index: AtomicNodeIndex::dummy(),
+                        node_index: AtomicNodeIndex::default(),
                         value: format!("{}.{}", self.get_vendor_string(), old_value)
                             .into_boxed_str(),
                         flags: StringLiteralFlags::empty(),
