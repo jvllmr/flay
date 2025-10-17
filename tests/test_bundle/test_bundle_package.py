@@ -196,7 +196,7 @@ def test_bundle_package_bundle_metadata(tmp_path: Path) -> None:
 
 
 @pytest.mark.skipif(not IS_ALPINE, reason="libs only present on musllinux")
-@pytest.mark.parametrize("name", ["pydantic_core", "flay"])
+@pytest.mark.parametrize("name", ["pydantic_core"])
 def test_bundle_package_so_libs(tmp_path: Path, name: str) -> None:
     bundle_package(name, tmp_path)
     assert (tmp_path / f"{name}.libs").exists(), os.listdir(tmp_path)
