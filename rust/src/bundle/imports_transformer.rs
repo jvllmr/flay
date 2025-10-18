@@ -1,6 +1,6 @@
 use std::collections::HashSet;
 
-use crate::common::ast::checkers::{is_dynamic_import, is_importlib_import};
+use crate::common::ast::checkers::{is_dynamic_import_mut, is_importlib_import};
 use crate::common::ast::generate_source;
 use crate::common::ast::transformer::{
     Transformer, walk_annotation, walk_body, walk_expr, walk_stmt,
@@ -192,12 +192,12 @@ impl Transformer for ImportsTransformer {
         }
     }
 
-    fn visit_expr(&mut self, expr: Expr) -> Option<ruff_python_ast::Expr> {
+    fn visit_expr(&mut self, mut expr: Expr) -> Option<ruff_python_ast::Expr> {
         if let Some(dynamic_import_expr) =
-            is_dynamic_import(&expr, self.importlib_package_alias.as_ref())
+            is_dynamic_import_mut(&mut expr, self.importlib_package_alias.as_ref())
         {
             match dynamic_import_expr {
-                Expr::StringLiteral(mut literal) => {
+                Expr::StringLiteral(literal) => {
                     let old_value = literal.value.to_str();
                     literal.value = StringLiteralValue::single(StringLiteral {
                         range: TextRange::default(),

@@ -84,7 +84,7 @@ impl FileCollector {
 impl Visitor<'_> for FileCollector {
     fn visit_expr(&mut self, expr: &'_ Expr) {
         if let Some(dynamic_import_expr) =
-            is_dynamic_import(&expr, self.importlib_package_alias.as_ref())
+            is_dynamic_import(expr, self.importlib_package_alias.as_ref())
         {
             match dynamic_import_expr {
                 Expr::StringLiteral(literal) => {

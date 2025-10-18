@@ -32,29 +32,45 @@ pub fn is_importlib_import(stmt: &Stmt) -> Option<String> {
     result
 }
 
-pub fn is_dynamic_import(expr: &Expr, importlib_module_alias: Option<&String>) -> Option<Expr> {
+pub fn is_dynamic_import<'a>(
+    expr: &'a Expr,
+    importlib_module_alias: Option<&String>,
+) -> Option<&'a Expr> {
     if let Expr::Call(call) = expr {
-        let full_names = get_full_name_for_expr(expr);
-        for full_name in full_names {
-            if full_name.contains("import_module") {
-                println!(
-                    "{:?} {:?} {:?} {:?}",
-                    importlib_module_alias,
-                    full_name,
-                    full_name == "__import__"
-                        || importlib_module_alias
-                            .is_some_and(|x| full_name == format!("{}.import_module", x)),
-                    expr,
-                );
-            }
-            if full_name == "__import__"
+        let full_names = get_full_name_for_expr(&expr);
+
+        let is_dynamic = full_names.iter().any(|full_name| {
+            full_name == "__import__"
                 || importlib_module_alias
-                    .is_some_and(|x| full_name == format!("{}.import_module", x))
-            {
-                if let Some(expr) = call.arguments.args.first() {
-                    println!("Heureka!");
-                    return Some(expr.clone());
-                }
+                    .is_some_and(|x| *full_name == format!("{}.import_module", x))
+        });
+
+        if is_dynamic {
+            if let Some(expr) = call.arguments.args.first() {
+                return Some(expr);
+            }
+        }
+    }
+    None
+}
+
+pub fn is_dynamic_import_mut<'a>(
+    expr: &'a mut Expr,
+    importlib_module_alias: Option<&String>,
+) -> Option<&'a mut Expr> {
+    let expr_copy = expr.clone();
+    if let Expr::Call(call) = expr {
+        let full_names = get_full_name_for_expr(&expr_copy);
+
+        let is_dynamic = full_names.iter().any(|full_name| {
+            full_name == "__import__"
+                || importlib_module_alias
+                    .is_some_and(|x| *full_name == format!("{}.import_module", x))
+        });
+
+        if is_dynamic {
+            if let Some(expr) = call.arguments.args.first_mut() {
+                return Some(expr);
             }
         }
     }

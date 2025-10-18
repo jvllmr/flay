@@ -185,9 +185,18 @@ def test_bundle_package_dynamic_imports(
         "dynamic_imports",
         "dynamic_imports",
     )
+
     assert (result_path / "sub_module/abc.py").exists()
     assert (result_path / "sub_module/aliased.py").exists()
     assert not (result_path / "sub_module/useless.py").exists()
+    clonf_init_file = result_path / "_vendor/clonf/__init__.py"
+    assert clonf_init_file.exists()
+    clonf_init_file_content = clonf_init_file.read_text()
+
+    assert (
+        "importlib.import_module('dynamic_imports._vendor.clonf"
+        in clonf_init_file_content
+    )
 
 
 def test_bundle_package_bundle_metadata(tmp_path: Path) -> None:

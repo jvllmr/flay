@@ -1,12 +1,12 @@
 use ruff_python_ast::{Expr, Stmt};
 
-use crate::common::ast::{checkers::is_dynamic_import, full_name::get_full_name_for_expr};
+use crate::common::ast::{checkers::is_dynamic_import_mut, full_name::get_full_name_for_expr};
 
 pub fn find_dynamic_import(
     stmt: &Stmt,
     importlib_module_alias: Option<&String>,
 ) -> Vec<(String, String)> {
-    let calls: Vec<(String, Expr)> = match stmt {
+    let mut calls: Vec<(String, Expr)> = match stmt {
         Stmt::AnnAssign(ann_assign) => {
             let mut collected_calls: Vec<(String, Expr)> = Vec::new();
             if let Some(value_box) = ann_assign.value.to_owned() {
@@ -39,8 +39,8 @@ pub fn find_dynamic_import(
     };
 
     let mut found_import: Vec<(String, String)> = Vec::new();
-    for (full_name, call_expr) in &calls {
-        if let Some(expr) = is_dynamic_import(call_expr, importlib_module_alias) {
+    for (full_name, call_expr) in &mut calls {
+        if let Some(expr) = is_dynamic_import_mut(call_expr, importlib_module_alias) {
             if let Expr::StringLiteral(string_literal) = expr {
                 found_import.push((
                     full_name.to_string(),
