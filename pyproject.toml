@@ -7,7 +7,7 @@ dependencies = [
   "rich>=14.1.0",
   "platformdirs>=4.4.0",
   "typing-extensions>=4.15.0",
-  "clonf[click,settings]>=0.1.5",
+  "clonf[click,settings]>=0.2.1",
 ]
 requires-python = ">=3.9"
 readme = "README.md"

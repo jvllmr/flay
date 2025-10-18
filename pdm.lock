@@ -5,7 +5,7 @@
 groups = ["default", "debug", "dev", "lint", "test", "types"]
 strategy = ["inherit_metadata"]
 lock_version = "4.5.0"
-content_hash = "sha256:4c276d349386d624f219aa7ef3355e2824f6820e2274c501d8182e2e7b0aab27"
+content_hash = "sha256:1b8402e98fd1a16fc2aea23035b5445b96cb5b22ecebd8362a2af06b94fe4f64"
 
 [[metadata.targets]]
 requires_python = ">=3.9"
@@ -74,7 +74,7 @@ files = [
 
 [[package]]
 name = "clonf"
-version = "0.2.0"
+version = "0.2.1"
 requires_python = ">=3.9"
 summary = "Declaratively connect cli and config definition using pydantic"
 groups = ["default"]
@@ -83,25 +83,25 @@ dependencies = [
     "typing-extensions>=4.15.0",
 ]
 files = [
-    {file = "clonf-0.2.0-py3-none-any.whl", hash = "sha256:ff1f94bcc5aaed041f84a349ae63e9cbe333cbc10ab4c99e5f7a36e39e74aebf"},
-    {file = "clonf-0.2.0.tar.gz", hash = "sha256:a0399dc618aa66011484ab996e64f7270f7479f7b9b2c589d02df7d790b8eb22"},
+    {file = "clonf-0.2.1-py3-none-any.whl", hash = "sha256:3c9077ab0d67072005362b0d149f9f136e68644bc4d97fb5438e6fdd39adf4d9"},
+    {file = "clonf-0.2.1.tar.gz", hash = "sha256:6bd8617246c6a54cb88f167c758e377663879a8558814dc8eb26a2b3701240ed"},
 ]
 
 [[package]]
 name = "clonf"
-version = "0.2.0"
+version = "0.2.1"
 extras = ["click", "settings"]
 requires_python = ">=3.9"
 summary = "Declaratively connect cli and config definition using pydantic"
 groups = ["default"]
 dependencies = [
     "click>=8.1.8",
-    "clonf==0.2.0",
+    "clonf==0.2.1",
     "pydantic-settings>=2.11.0",
 ]
 files = [
-    {file = "clonf-0.2.0-py3-none-any.whl", hash = "sha256:ff1f94bcc5aaed041f84a349ae63e9cbe333cbc10ab4c99e5f7a36e39e74aebf"},
-    {file = "clonf-0.2.0.tar.gz", hash = "sha256:a0399dc618aa66011484ab996e64f7270f7479f7b9b2c589d02df7d790b8eb22"},
+    {file = "clonf-0.2.1-py3-none-any.whl", hash = "sha256:3c9077ab0d67072005362b0d149f9f136e68644bc4d97fb5438e6fdd39adf4d9"},
+    {file = "clonf-0.2.1.tar.gz", hash = "sha256:6bd8617246c6a54cb88f167c758e377663879a8558814dc8eb26a2b3701240ed"},
 ]
 
 [[package]]
