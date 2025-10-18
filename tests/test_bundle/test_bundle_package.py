@@ -148,6 +148,7 @@ def test_bundle_package_dynamic_imports(
     assert (result_path / "sub_module/abc.py").exists()
     assert (result_path / "sub_module/aliased.py").exists()
     assert not (result_path / "sub_module/useless.py").exists()
+    assert (result_path / "../clonf/integrations/click/__init__.py").exists()
 
 
 def test_bundle_package_bundle_metadata(tmp_path: Path) -> None:
