@@ -2,7 +2,7 @@ use std::collections::{HashMap, HashSet};
 
 use ruff_python_ast::{Stmt, StmtImport, StmtImportFrom};
 
-use crate::common::ast::get_import_from_absolute_module_spec;
+use crate::common::ast::{finders::find_dynamic_import, get_import_from_absolute_module_spec};
 
 type TActiveImports = HashMap<String, String>;
 type TActiveStarImports = HashSet<String>;
@@ -16,6 +16,7 @@ pub struct ImportsTrackingProvider {
     pub active_imports: TActiveImports,
     pub active_star_imports: TActiveStarImports,
     parent_package: String,
+    importlib_module_alias: Option<String>,
 }
 
 impl ImportsTrackingProvider {
@@ -24,6 +25,7 @@ impl ImportsTrackingProvider {
             active_imports: HashMap::new(),
             active_star_imports: HashSet::new(),
             parent_package: parent_package.to_string(),
+            importlib_module_alias: None,
         }
     }
 
@@ -51,7 +53,16 @@ impl ImportsTrackingProvider {
         }
     }
 
-    pub fn visit_import_from(&mut self, import_from: &StmtImportFrom) {
+    fn visit_import_from(&mut self, import_from: &StmtImportFrom) {
+        if import_from.level == 0
+            && import_from
+                .module
+                .as_ref()
+                .is_some_and(|x| x == "importlib")
+        {
+            self.importlib_module_alias = Some("importlib".to_string())
+        }
+
         let module_specs =
             match get_import_from_absolute_module_spec(import_from, &self.parent_package, false) {
                 Ok(spec) => spec,
@@ -75,7 +86,7 @@ impl ImportsTrackingProvider {
         }
     }
 
-    pub fn visit_import(&mut self, import: &StmtImport) {
+    fn visit_import(&mut self, import: &StmtImport) {
         for name in &import.names {
             if let Some(asname) = &name.asname {
                 self.active_imports
@@ -83,6 +94,31 @@ impl ImportsTrackingProvider {
             } else {
                 self.active_imports
                     .insert(name.name.to_string(), name.name.to_string());
+            }
+            if name.name.as_str() == "importlib" {
+                self.importlib_module_alias = name
+                    .asname
+                    .as_ref()
+                    .or(Some(&name.name))
+                    .map(|x| x.to_string())
+            }
+        }
+    }
+
+    pub fn visit_stmt(&mut self, stmt: &Stmt) {
+        match stmt {
+            Stmt::Import(import) => {
+                self.visit_import(import);
+            }
+            Stmt::ImportFrom(import_from) => {
+                self.visit_import_from(&import_from);
+            }
+            _ => {
+                for (full_name, module_spec) in
+                    find_dynamic_import(stmt, self.importlib_module_alias.as_ref())
+                {
+                    self.active_imports.insert(full_name, module_spec);
+                }
             }
         }
     }

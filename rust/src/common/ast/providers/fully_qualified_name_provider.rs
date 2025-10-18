@@ -1,4 +1,4 @@
-use ruff_python_ast::{Expr, Stmt, StmtImport, StmtImportFrom};
+use ruff_python_ast::{Expr, Stmt};
 
 use crate::common::{
     ast::full_name::{get_full_name_for_expr, get_full_name_for_stmt},
@@ -115,11 +115,8 @@ impl FullyQualifiedNameProvider {
         }
     }
 
-    pub fn visit_import_from(&mut self, import_from: &StmtImportFrom) {
-        self.imports_provider.visit_import_from(import_from);
-    }
-    pub fn visit_import(&mut self, import: &StmtImport) {
-        self.imports_provider.visit_import(import);
+    pub fn visit_stmt(&mut self, stmt: &Stmt) {
+        self.imports_provider.visit_stmt(stmt);
     }
 
     pub fn enter_scope(&mut self, stmt: &Stmt) -> FullyQualifiedNameProviderScope {

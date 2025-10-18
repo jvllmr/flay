@@ -38,6 +38,6 @@ RUN pdm run flay bundle flay
 FROM docker.io/python:3.12-alpine3.22 AS runner
 WORKDIR /opt/flay
 RUN apk add gcc
-COPY --from=builder /opt/flay/flayed/flay ./flay
+COPY --from=builder /opt/flay/flayed /opt/flay
 
 ENTRYPOINT [ "python3", "-m", "flay" ]

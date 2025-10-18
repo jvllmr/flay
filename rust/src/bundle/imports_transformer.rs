@@ -4,7 +4,6 @@ use crate::common::ast::generate_source;
 use crate::common::ast::transformer::{
     Transformer, walk_annotation, walk_body, walk_expr, walk_stmt,
 };
-use crate::common::module_spec::is_in_std_lib;
 use pyo3::pyfunction;
 
 use ruff_python_ast::name::Name;
@@ -16,42 +15,18 @@ use ruff_python_parser::parse_module;
 use ruff_text_size::TextRange;
 
 struct ImportsTransformer {
-    top_level_package: String,
-    vendor_module_name: String,
     names_to_sanitize: HashSet<String>,
     needed_imports: Vec<HashSet<String>>,
     is_in_annotation: bool,
 }
 
 impl ImportsTransformer {
-    fn new(top_level_package: String, vendor_module_name: String) -> Self {
+    fn new() -> Self {
         ImportsTransformer {
-            top_level_package,
-            vendor_module_name,
             names_to_sanitize: HashSet::new(),
             needed_imports: Vec::new(),
             is_in_annotation: false,
         }
-    }
-
-    fn get_vendor_string(&self) -> String {
-        return self.top_level_package.to_owned() + "." + &self.vendor_module_name;
-    }
-
-    fn _prepend_vendor(&self, node: &Name) -> Name {
-        let node_str = node.as_str();
-        return Name::new(self.get_vendor_string() + "." + node_str);
-    }
-
-    fn _prepend_vendor_import<'a>(&mut self, node: Identifier, module_spec: &str) -> Identifier {
-        if module_spec.starts_with(&self.top_level_package) || is_in_std_lib(module_spec) {
-            return node.clone();
-        }
-
-        return Identifier::new(
-            self._prepend_vendor(&Name::new(node.id)).to_owned(),
-            node.range,
-        );
     }
 
     fn decide_asname(&mut self, name: &Identifier, asname: &Option<Identifier>) -> Identifier {
@@ -163,23 +138,12 @@ impl Transformer for ImportsTransformer {
                     .iter()
                     .map(|name| Alias {
                         range: name.range,
-                        name: self._prepend_vendor_import(name.name.to_owned(), name.name.as_str()),
+                        name: name.name.to_owned(),
                         asname: Some(self.decide_asname(&name.name, &name.asname)),
                         node_index: AtomicNodeIndex::default(),
                     })
                     .collect();
                 Some(Stmt::Import(import))
-            }
-            Stmt::ImportFrom(mut import_from) => {
-                if import_from.level == 0 {
-                    if let Some(module_node) = &import_from.module {
-                        let module_spec = module_node.as_str();
-                        let new_module =
-                            self._prepend_vendor_import(module_node.to_owned(), module_spec);
-                        import_from.module = Option::from(new_module);
-                    }
-                }
-                Some(Stmt::ImportFrom(import_from))
             }
             _ => walk_stmt(self, stmt),
         }
@@ -237,18 +201,11 @@ impl Transformer for ImportsTransformer {
 }
 
 #[pyfunction]
-pub fn transform_imports(
-    source: &str,
-    top_level_package: &str,
-    vendor_module_name: &str,
-) -> String {
+pub fn transform_imports(source: &str) -> String {
     let parsed = parse_module(source).unwrap();
     let module = parsed.syntax();
 
-    let mut transformer = ImportsTransformer::new(
-        top_level_package.to_string(),
-        vendor_module_name.to_string(),
-    );
+    let mut transformer = ImportsTransformer::new();
     let new_body = transformer.visit_body(&module.body);
 
     return generate_source(&new_body, parsed, source);

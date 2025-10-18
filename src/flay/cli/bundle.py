@@ -73,7 +73,6 @@ class BundlePackageCliIO:
 def cli_bundle_package(
     module_spec: str,
     output_path: Path,
-    vendor_module_name: str,
     bundle_metadata: bool,
     resources: dict[str, str],
 ) -> None:
@@ -81,7 +80,6 @@ def cli_bundle_package(
         bundle_package(
             module_spec,
             output_path,
-            vendor_module_name=vendor_module_name,
             bundle_metadata=bundle_metadata,
             resources=resources,
             found_module_callback=io.on_found_module,

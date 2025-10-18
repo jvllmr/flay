@@ -28,7 +28,6 @@ def _process_modules(
 
 def treeshake_package(
     source_dir: str,
-    vendor_prefix: str | None = None,
     found_module_callback: t.Callable[[str], None] = lambda _: None,
     total_modules_callback: t.Callable[[int], None] = lambda _: None,
     references_iteration_callback: t.Callable[[int], None] = lambda _: None,
@@ -63,7 +62,7 @@ def treeshake_package(
     references_counts: dict[str, int] = defaultdict(int)
     treeshake_fixed_preservations = get_treeshake_fixed_preservations()
     for preserved_name in treeshake_fixed_preservations:
-        references_counts[f"{vendor_prefix}.{preserved_name}"] = 1
+        references_counts[preserved_name] = 1
     new_references_count = 1 + len(treeshake_fixed_preservations)
 
     references_counter = ReferencesCounter(references_counts)
