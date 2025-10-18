@@ -199,13 +199,15 @@ impl Transformer for ImportsTransformer {
             match dynamic_import_expr {
                 Expr::StringLiteral(literal) => {
                     let old_value = literal.value.to_str();
-                    literal.value = StringLiteralValue::single(StringLiteral {
-                        range: TextRange::default(),
-                        node_index: AtomicNodeIndex::default(),
-                        value: format!("{}.{}", self.get_vendor_string(), old_value)
-                            .into_boxed_str(),
-                        flags: StringLiteralFlags::empty(),
-                    })
+                    if !old_value.starts_with(&self.top_level_package) {
+                        literal.value = StringLiteralValue::single(StringLiteral {
+                            range: TextRange::default(),
+                            node_index: AtomicNodeIndex::default(),
+                            value: format!("{}.{}", self.get_vendor_string(), old_value)
+                                .into_boxed_str(),
+                            flags: StringLiteralFlags::empty(),
+                        })
+                    }
                 }
                 _ => {}
             }
