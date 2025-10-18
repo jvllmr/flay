@@ -180,11 +180,15 @@ impl Transformer for ImportsTransformer {
                 for i in 1..name_parts.len() {
                     let test_name = &name_parts[0..i].join(".");
                     if self.names_to_sanitize.contains(test_name) {
-                        let mut target_attribute = attribute_parts[i - 1].clone();
-
+                        let mut target_attribute = attribute_parts[i].clone();
+                        let new_name = format!(
+                            "{}.{}",
+                            test_name.replace(".", "_"),
+                            name_parts[i..i + 1].join(".")
+                        );
                         target_attribute.value = Box::new(Expr::Name(ExprName {
                             range: target_attribute.range,
-                            id: Name::new(test_name.replace(".", "_")),
+                            id: Name::new(new_name),
                             node_index: AtomicNodeIndex::default(),
                             ctx: expr_context,
                         }));

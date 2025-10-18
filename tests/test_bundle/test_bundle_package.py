@@ -151,6 +151,17 @@ def test_bundle_package_dynamic_imports(
     assert (result_path / "../clonf/integrations/click/__init__.py").exists()
 
 
+def test_bundle_package_aliased_imports(
+    run_bundle_package: RunBundlePackageT,
+) -> None:
+    _, result_path = run_bundle_package(
+        "aliased_imports",
+        "aliased_imports",
+    )
+
+    assert "os_path.sep.join" in (result_path / "__init__.py").read_text()
+
+
 def test_bundle_package_bundle_metadata(tmp_path: Path) -> None:
     bundle_package("flay", tmp_path, bundle_metadata=True)
     root_dist = Distribution.from_name("flay")
