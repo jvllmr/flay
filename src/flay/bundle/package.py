@@ -7,7 +7,7 @@ from importlib.metadata import (
     files as package_metadata_files,
 )
 from flay.common.compat import packages_distributions
-from . import DEFAULT_BUNDLE_METADATA, DEFAULT_VENDOR_MODULE_NAME
+from . import DEFAULT_BUNDLE_METADATA
 from flay.common.module_spec import (
     find_all_files_in_module_spec,
     get_parent_package,
@@ -28,7 +28,6 @@ log = logging.getLogger(__name__)
 def bundle_package(
     module_spec: str,
     destination_path: Path,
-    vendor_module_name: str = DEFAULT_VENDOR_MODULE_NAME,
     bundle_metadata: bool = DEFAULT_BUNDLE_METADATA,
     resources: dict[str, str] | None = None,
     found_module_callback: t.Callable[[str], None] = lambda _: None,
@@ -53,8 +52,6 @@ def bundle_package(
     found_total_modules_callback(len(files))
     top_level_package = get_top_level_package(module_spec)
 
-    vendor_path = destination_path / top_level_package / vendor_module_name
-
     gitignore = destination_path / ".gitignore"
     if not gitignore.exists():
         gitignore.parent.mkdir(parents=True, exist_ok=True)
@@ -77,19 +74,11 @@ def bundle_package(
     for (found_module, found_path), module_source in files.items():
         process_module_callback(found_module)
         if module_source:
-            module_source = transform_imports(
-                module_source, top_level_package, vendor_module_name
-            )
+            module_source = transform_imports(module_source)
         module_path_part = Path(os.path.sep.join(found_module.split(".")))
-        is_external = get_top_level_package(found_module) != top_level_package
 
         if found_path.match(f"*/{module_path_part}/__init__.py"):
-            if is_external:
-                target_file = vendor_path / module_path_part / "__init__.py"
-            else:
-                target_file = destination_path / module_path_part / "__init__.py"
-        elif is_external:
-            target_file = vendor_path / module_path_part.parent / found_path.name
+            target_file = destination_path / module_path_part / "__init__.py"
         else:
             target_file = destination_path / module_path_part.parent / found_path.name
 
@@ -120,12 +109,7 @@ def bundle_package(
                         if dir_ == f"{so_top_level_package}.libs":
                             shutil.copytree(
                                 f"{sys_path}/{dir_}",
-                                destination_path
-                                / top_level_package
-                                / vendor_module_name
-                                / dir_
-                                if is_external
-                                else destination_path / dir_,
+                                destination_path / dir_,
                                 dirs_exist_ok=True,
                             )
 
@@ -141,10 +125,7 @@ def bundle_package(
                 if not fnmatch.fnmatch(resource_path, glob_pattern):
                     continue
 
-                if is_external:
-                    target_file = vendor_path / resource_path
-                else:  # pragma: no cover
-                    target_file = destination_path / resource_path
+                target_file = destination_path / resource_path
 
                 target_dir = target_file.parent
                 if not target_dir.exists():

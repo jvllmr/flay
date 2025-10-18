@@ -1,60 +1,32 @@
 use std::collections::HashSet;
 
-use crate::common::ast::checkers::{is_dynamic_import_mut, is_importlib_import};
 use crate::common::ast::generate_source;
 use crate::common::ast::transformer::{
     Transformer, walk_annotation, walk_body, walk_expr, walk_stmt,
 };
-use crate::common::module_spec::is_in_std_lib;
 use pyo3::pyfunction;
 
 use ruff_python_ast::name::Name;
 use ruff_python_ast::{
     Alias, AtomicNodeIndex, Expr, ExprAttribute, ExprContext, ExprName, Identifier, Stmt,
-    StmtImport, StringLiteral, StringLiteralFlags, StringLiteralValue,
+    StmtImport, StringLiteral,
 };
 use ruff_python_parser::parse_module;
 use ruff_text_size::TextRange;
 
 struct ImportsTransformer {
-    top_level_package: String,
-    vendor_module_name: String,
     names_to_sanitize: HashSet<String>,
     needed_imports: Vec<HashSet<String>>,
     is_in_annotation: bool,
-    importlib_package_alias: Option<String>,
 }
 
 impl ImportsTransformer {
-    fn new(top_level_package: String, vendor_module_name: String) -> Self {
+    fn new() -> Self {
         ImportsTransformer {
-            top_level_package,
-            vendor_module_name,
             names_to_sanitize: HashSet::new(),
             needed_imports: Vec::new(),
             is_in_annotation: false,
-            importlib_package_alias: None,
         }
-    }
-
-    fn get_vendor_string(&self) -> String {
-        return self.top_level_package.to_owned() + "." + &self.vendor_module_name;
-    }
-
-    fn _prepend_vendor(&self, node: &Name) -> Name {
-        let node_str = node.as_str();
-        return Name::new(self.get_vendor_string() + "." + node_str);
-    }
-
-    fn _prepend_vendor_import<'a>(&mut self, node: Identifier, module_spec: &str) -> Identifier {
-        if module_spec.starts_with(&self.top_level_package) || is_in_std_lib(module_spec) {
-            return node.clone();
-        }
-
-        return Identifier::new(
-            self._prepend_vendor(&Name::new(node.id)).to_owned(),
-            node.range,
-        );
     }
 
     fn decide_asname(&mut self, name: &Identifier, asname: &Option<Identifier>) -> Identifier {
@@ -159,10 +131,6 @@ impl Transformer for ImportsTransformer {
     }
 
     fn visit_stmt(&mut self, stmt: ruff_python_ast::Stmt) -> Option<ruff_python_ast::Stmt> {
-        if let Some(importlib_package_alias) = is_importlib_import(&stmt) {
-            self.importlib_package_alias = Some(importlib_package_alias);
-        }
-
         match stmt {
             Stmt::Import(mut import) => {
                 import.names = import
@@ -170,48 +138,18 @@ impl Transformer for ImportsTransformer {
                     .iter()
                     .map(|name| Alias {
                         range: name.range,
-                        name: self._prepend_vendor_import(name.name.to_owned(), name.name.as_str()),
+                        name: name.name.to_owned(),
                         asname: Some(self.decide_asname(&name.name, &name.asname)),
                         node_index: AtomicNodeIndex::default(),
                     })
                     .collect();
                 Some(Stmt::Import(import))
             }
-            Stmt::ImportFrom(mut import_from) => {
-                if import_from.level == 0 {
-                    if let Some(module_node) = &import_from.module {
-                        let module_spec = module_node.as_str();
-                        let new_module =
-                            self._prepend_vendor_import(module_node.to_owned(), module_spec);
-                        import_from.module = Option::from(new_module);
-                    }
-                }
-                Some(Stmt::ImportFrom(import_from))
-            }
             _ => walk_stmt(self, stmt),
         }
     }
 
-    fn visit_expr(&mut self, mut expr: Expr) -> Option<ruff_python_ast::Expr> {
-        if let Some(dynamic_import_expr) =
-            is_dynamic_import_mut(&mut expr, self.importlib_package_alias.as_ref())
-        {
-            match dynamic_import_expr {
-                Expr::StringLiteral(literal) => {
-                    let old_value = literal.value.to_str();
-                    if !old_value.starts_with(&self.top_level_package) {
-                        literal.value = StringLiteralValue::single(StringLiteral {
-                            range: TextRange::default(),
-                            node_index: AtomicNodeIndex::default(),
-                            value: format!("{}.{}", self.get_vendor_string(), old_value)
-                                .into_boxed_str(),
-                            flags: StringLiteralFlags::empty(),
-                        })
-                    }
-                }
-                _ => {}
-            }
-        }
+    fn visit_expr(&mut self, expr: Expr) -> Option<ruff_python_ast::Expr> {
         match expr {
             Expr::Attribute(attribute) => {
                 let mut name_parts: Vec<String> = vec![attribute.attr.to_string()];
@@ -263,18 +201,11 @@ impl Transformer for ImportsTransformer {
 }
 
 #[pyfunction]
-pub fn transform_imports(
-    source: &str,
-    top_level_package: &str,
-    vendor_module_name: &str,
-) -> String {
+pub fn transform_imports(source: &str) -> String {
     let parsed = parse_module(source).unwrap();
     let module = parsed.syntax();
 
-    let mut transformer = ImportsTransformer::new(
-        top_level_package.to_string(),
-        vendor_module_name.to_string(),
-    );
+    let mut transformer = ImportsTransformer::new();
     let new_body = transformer.visit_body(&module.body);
 
     return generate_source(&new_body, parsed, source);

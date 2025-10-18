@@ -59,47 +59,6 @@ def test_bundle_c_extension(run_bundle_package: RunBundlePackageT) -> None:
         assert len(list(result_path.glob("fibunacci_c.*.so"))) == 1
 
 
-@pytest.mark.parametrize(["vendor_module_name"], [("_vendor",), ("_bundled_packages",)])
-def test_bundle_vendor_bundle(
-    vendor_module_name: str, run_bundle_package: RunBundlePackageT
-) -> None:
-    _, result_path = run_bundle_package(
-        "vendor_bundle", "vendor_bundle", vendor_module_name=vendor_module_name
-    )
-
-    init_file = result_path / "__init__.py"
-    init_file_content = init_file.read_text()
-
-    assert (
-        f"import vendor_bundle.{vendor_module_name}.libcst as cst" in init_file_content
-    )
-    assert (
-        f"from vendor_bundle.{vendor_module_name}.click import ClickException"
-        in init_file_content
-    )
-    assert f"import vendor_bundle.{vendor_module_name}.typer" in init_file_content
-    assert (
-        f"from vendor_bundle.{vendor_module_name}.libcst.helpers import ensure_type"
-        in init_file_content
-    )
-    assert f"import vendor_bundle.{vendor_module_name}.rich.emoji" in init_file_content
-
-    assert f'heart_emoji = rich_emoji.Emoji("heart")' in init_file_content
-    assert f"typer.echo(heart_emoji)" in init_file_content
-    assert f"typer.echo(heart_emoji)" in init_file_content
-    assert (
-        'cst.parse_expression("assert answer_of_universe == 42")' in init_file_content
-    )
-    assert "tree = ensure_type(" in init_file_content
-    assert "except ClickException:" in init_file_content
-    assert f'typer.echo("Something went wrong...")' in init_file_content
-    assert (
-        f"from vendor_bundle.{vendor_module_name}.flay.cli.debug.bundle import debug_bundle_package"
-        in init_file_content
-    )
-    assert "from pathlib import Path" in init_file_content
-
-
 def test_bundle_transitive_init_file(run_bundle_package: RunBundlePackageT) -> None:
     _, result_path = run_bundle_package("transitive_init_file", "transitive_init_file")
     assert (result_path / "__init__.py").exists()
@@ -171,10 +130,10 @@ def test_bundle_package_resources(
         resources={"pre_commit": "pre_commit/resources/*"},
     )
     assert (
-        result_path / "_vendor/pre_commit/resources/empty_template_main.go"
+        result_path / "../pre_commit/resources/empty_template_main.go"
     ).exists() is True
     assert (
-        result_path / "_vendor/pre_commit/resources/empty_template_go.mod"
+        result_path / "../pre_commit/resources/empty_template_go.mod"
     ).exists() is True
 
 
@@ -189,14 +148,6 @@ def test_bundle_package_dynamic_imports(
     assert (result_path / "sub_module/abc.py").exists()
     assert (result_path / "sub_module/aliased.py").exists()
     assert not (result_path / "sub_module/useless.py").exists()
-    clonf_init_file = result_path / "_vendor/clonf/__init__.py"
-    assert clonf_init_file.exists()
-    clonf_init_file_content = clonf_init_file.read_text()
-
-    assert (
-        "importlib.import_module('dynamic_imports._vendor.clonf"
-        in clonf_init_file_content
-    )
 
 
 def test_bundle_package_bundle_metadata(tmp_path: Path) -> None:
@@ -226,4 +177,4 @@ def test_bundle_package_so_libs(tmp_path: Path, name: str) -> None:
 @pytest.mark.skipif(not IS_ALPINE, reason="libs only present on musllinux")
 def test_bundle_package_so_libs_external(tmp_path: Path) -> None:
     bundle_package("flay", tmp_path)
-    assert (tmp_path / "flay/_vendor/pydantic_core.libs").exists(), os.listdir(tmp_path)
+    assert (tmp_path / "pydantic_core.libs").exists(), os.listdir(tmp_path)

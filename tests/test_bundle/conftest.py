@@ -14,7 +14,6 @@ class RunBundlePackageT(t.Protocol):
         self,
         package_name: str,
         module_spec: str,
-        vendor_module_name: str = "_vendor",
         resources: dict[str, str] | None = None,
     ) -> tuple[Path, Path]: ...
 
@@ -27,7 +26,6 @@ def run_bundle_package(tmp_path: Path) -> RunBundlePackageT:
     def _run_bundle_package(
         package_name: str,
         module_spec: str,
-        vendor_module_name: str = "_vendor",
         resources: dict[str, str] | None = None,
     ) -> tuple[Path, Path]:
         pre_bundle_path = tmp_path / "pre_bundle"
@@ -58,7 +56,6 @@ def run_bundle_package(tmp_path: Path) -> RunBundlePackageT:
             bundle_package(
                 module_spec=module_spec,
                 destination_path=bundled_path,
-                vendor_module_name=vendor_module_name,
                 resources=resources or {},
                 bundle_metadata=False,
             )

@@ -1,7 +1,6 @@
-from flay.bundle import DEFAULT_BUNDLE_METADATA, DEFAULT_VENDOR_MODULE_NAME
+from flay.bundle import DEFAULT_BUNDLE_METADATA
 from flay.common.logging import enable_debug_logging
 
-from flay.common.module_spec import get_top_level_package
 from flay.common.pydantic import FlayBaseSettings
 from pydantic_settings import CliPositionalArg
 
@@ -48,15 +47,6 @@ class FlayMainSettings(FlayBaseSettings):
             validation_alias=AliasChoices("output", "o"),
         ),
     ] = Path("flayed")
-    vendor_module_name: t.Annotated[
-        str,
-        CliOption(),
-        Field(
-            description="Name of the module where external packages should be",
-            alias="vendor-module-name",
-            validation_alias=AliasChoices("vendor-module-name", "vendor_module_name"),
-        ),
-    ] = DEFAULT_VENDOR_MODULE_NAME
     bundle_metadata: t.Annotated[
         bool,
         CliOption(is_flag=True),
@@ -91,16 +81,15 @@ def flay_main(settings: FlayMainSettings) -> None:
     cli_bundle_package(
         settings.module_spec,
         settings.output_path,
-        settings.vendor_module_name,
         settings.bundle_metadata,
         settings.resources,
     )
     console.print(check, f"Finished bundling {settings.module_spec}")
     if settings.treeshake:
         console.print("Start removing unused code...")
-        vendor_prefix = f"{get_top_level_package(settings.module_spec)}.{settings.vendor_module_name}"
+
         removed_stmts_count = cli_treeshake_package(
-            str(settings.output_path.absolute()), vendor_prefix=vendor_prefix
+            str(settings.output_path.absolute())
         )
         console.print(
             check,

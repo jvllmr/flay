@@ -265,7 +265,7 @@ def test_treeshake_package_dynamic_imports(
     run_treeshake_package: RunTreeshakePackageT,
 ) -> None:
     source_path = TEST_PACKAGES_DIR / "dynamic_imports"
-    result_path = run_treeshake_package(source_path, bundle_before=True)
+    result_path = run_treeshake_package(source_path)
 
     hello_file_content = (result_path / "hello.py").read_text()
     assert "def hello_world() -> None:\n    print(" in hello_file_content
