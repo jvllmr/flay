@@ -158,8 +158,9 @@ def test_bundle_package_aliased_imports(
         "aliased_imports",
         "aliased_imports",
     )
-
-    assert "os_path.sep.join" in (result_path / "__init__.py").read_text()
+    init_file_content = (result_path / "__init__.py").read_text()
+    assert "os_path.sep.__doc__.join" in init_file_content
+    assert 'os_path.abspath("/").casefold().count' in init_file_content
 
 
 def test_bundle_package_bundle_metadata(tmp_path: Path) -> None:
