@@ -151,7 +151,7 @@ impl Transformer for ImportsTransformer {
 
     fn visit_expr(&mut self, expr: Expr) -> Option<ruff_python_ast::Expr> {
         match expr {
-            Expr::Attribute(attribute) => {
+            Expr::Attribute(mut attribute) => {
                 let mut name_parts: Vec<String> = vec![attribute.attr.to_string()];
 
                 let mut attribute_parts: Vec<ExprAttribute> = vec![attribute.clone()];
@@ -171,8 +171,10 @@ impl Transformer for ImportsTransformer {
                             break;
                         }
                         _ => {
-                            self.visit_expr(value_expr);
-                            return Some(Expr::Attribute(attribute));
+                            if let Some(new_value) = self.visit_expr(value_expr) {
+                                attribute.value = Box::new(new_value);
+                            }
+                            break;
                         }
                     }
                 }
@@ -180,15 +182,23 @@ impl Transformer for ImportsTransformer {
                 for i in 1..name_parts.len() {
                     let test_name = &name_parts[0..i].join(".");
                     if self.names_to_sanitize.contains(test_name) {
-                        let mut target_attribute = attribute_parts[i - 1].clone();
+                        let rest = attribute_parts.len() - i;
+                        let mut target_attribute = attribute_parts[i - 1 + rest].to_owned();
+
+                        let mut new_name = test_name.replace(".", "_");
+
+                        if rest > 0 && i + rest < name_parts.len() {
+                            new_name =
+                                format!("{}.{}", new_name, name_parts[i..i + rest].join("."));
+                        }
 
                         target_attribute.value = Box::new(Expr::Name(ExprName {
                             range: target_attribute.range,
-                            id: Name::new(test_name.replace(".", "_")),
+                            id: Name::new(new_name),
                             node_index: AtomicNodeIndex::default(),
                             ctx: expr_context,
                         }));
-
+                        println!("{:?}", target_attribute);
                         return Some(Expr::Attribute(target_attribute));
                     }
                 }
