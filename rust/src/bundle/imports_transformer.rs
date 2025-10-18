@@ -198,7 +198,7 @@ impl Transformer for ImportsTransformer {
                             node_index: AtomicNodeIndex::default(),
                             ctx: expr_context,
                         }));
-                        println!("{:?}", target_attribute);
+
                         return Some(Expr::Attribute(target_attribute));
                     }
                 }
