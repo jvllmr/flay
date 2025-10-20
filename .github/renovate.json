@@ -22,6 +22,12 @@
       "enabled": false
     },
     {
+      "description": "Don't update dependencies that dropped python 3.9 too soon...",
+      "matchManagers": ["pep621"],
+      "matchPackageNames": ["platformdirs"], 
+      "enabled": false 
+    },
+    {
       "description": "Group all rust `minor` and `patch` dependency updates",
       "groupName": "all rust non-major dependencies",
       "groupSlug": "rust-minor-patch",
@@ -34,6 +40,6 @@
       "groupSlug": "python-minor-patch",
       "matchManagers": ["pep621"],
       "matchUpdateTypes": ["minor", "patch"]
-    }
+    }    
   ]
 }
