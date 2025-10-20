@@ -9,9 +9,9 @@ name = "flay"
 crate-type = ["cdylib"]
 
 [dependencies]
-pyo3 = { version = "0.26.0", features = ["extension-module"] }
-ruff_python_ast = { git = "https://github.com/astral-sh/ruff.git", tag = "0.14.0" }
-ruff_python_codegen = { git = "https://github.com/astral-sh/ruff.git", tag = "0.14.0" }
-ruff_python_parser = { git = "https://github.com/astral-sh/ruff.git", tag = "0.14.0" }
-ruff_text_size = { git = "https://github.com/astral-sh/ruff.git", tag = "0.14.0" }
-ruff_python_stdlib = { git = "https://github.com/astral-sh/ruff.git", tag = "0.14.0" }
+pyo3 = { version = "0.27.0", features = ["extension-module"] }
+ruff_python_ast = { git = "https://github.com/astral-sh/ruff.git", tag = "0.14.1" }
+ruff_python_codegen = { git = "https://github.com/astral-sh/ruff.git", tag = "0.14.1" }
+ruff_python_parser = { git = "https://github.com/astral-sh/ruff.git", tag = "0.14.1" }
+ruff_text_size = { git = "https://github.com/astral-sh/ruff.git", tag = "0.14.1" }
+ruff_python_stdlib = { git = "https://github.com/astral-sh/ruff.git", tag = "0.14.1" }
