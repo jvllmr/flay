@@ -75,10 +75,11 @@ class TreeshakePackageCliIO:
         self.end_progress()
 
 
-def cli_treeshake_package(source_dir: str) -> int:
+def cli_treeshake_package(source_dir: str, import_aliases: dict[str, str]) -> int:
     with TreeshakePackageCliIO() as io:
         return treeshake_package(
             source_dir=source_dir,
+            import_aliases=import_aliases,
             found_module_callback=io.on_found_module,
             total_modules_callback=io.on_total_modules,
             nodes_removal_callback=io.on_nodes_removal,

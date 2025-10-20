@@ -72,6 +72,15 @@ class FlayMainSettings(FlayBaseSettings):
             default_factory=dict,
         ),
     ]
+    import_aliases: t.Annotated[
+        dict[str, str],
+        CliOption(),
+        Field(
+            alias="import-aliases",
+            description="Import aliases mapping. Useful for patching dynamic imports. Absolute paths for symbols are required.",
+            default_factory=dict,
+        ),
+    ]
 
 
 @flay.command(name="bundle")
@@ -79,17 +88,19 @@ class FlayMainSettings(FlayBaseSettings):
 def flay_main(settings: FlayMainSettings) -> None:
     console.print(f"Starting to bundle module {settings.module_spec}...")
     cli_bundle_package(
-        settings.module_spec,
-        settings.output_path,
-        settings.bundle_metadata,
-        settings.resources,
+        module_spec=settings.module_spec,
+        output_path=settings.output_path,
+        bundle_metadata=settings.bundle_metadata,
+        resources=settings.resources,
+        import_aliases=settings.import_aliases,
     )
     console.print(check, f"Finished bundling {settings.module_spec}")
     if settings.treeshake:
         console.print("Start removing unused code...")
 
         removed_stmts_count = cli_treeshake_package(
-            str(settings.output_path.absolute())
+            source_dir=str(settings.output_path.absolute()),
+            import_aliases=settings.import_aliases,
         )
         console.print(
             check,
