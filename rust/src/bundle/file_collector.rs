@@ -4,10 +4,14 @@ use std::path::PathBuf;
 
 use pyo3::prelude::*;
 use pyo3::pyclass;
+use ruff_python_ast::Expr;
 use ruff_python_ast::Stmt;
 use ruff_python_ast::visitor::Visitor;
+use ruff_python_ast::visitor::walk_expr;
 use ruff_python_ast::visitor::walk_stmt;
 
+use crate::common::ast::checkers::is_dynamic_import;
+use crate::common::ast::checkers::is_importlib_import;
 use crate::common::ast::{get_import_from_absolute_module_spec, parse_python_source};
 use crate::common::module_spec::{get_file_for_module_spec, get_parent_package, is_in_std_lib};
 
@@ -17,6 +21,7 @@ pub struct FileCollector {
     package: String,
     #[pyo3(get, set)]
     collected_files: HashMap<(String, PathBuf), Option<String>>,
+    importlib_package_alias: Option<String>,
 }
 #[pymethods]
 impl FileCollector {
@@ -25,6 +30,7 @@ impl FileCollector {
         FileCollector {
             package,
             collected_files: HashMap::new(),
+            importlib_package_alias: None,
         }
     }
 
@@ -59,6 +65,7 @@ impl FileCollector {
                         let mut sub_collector = FileCollector {
                             package: next_parent_package,
                             collected_files: self.collected_files.to_owned(),
+                            importlib_package_alias: None,
                         };
                         let module = parse_python_source(&file_content).unwrap().expect_module();
                         for stmt in &module.body {
@@ -75,7 +82,24 @@ impl FileCollector {
 }
 
 impl Visitor<'_> for FileCollector {
+    fn visit_expr(&mut self, expr: &'_ Expr) {
+        if let Some(dynamic_import_expr) =
+            is_dynamic_import(expr, self.importlib_package_alias.as_ref())
+        {
+            match dynamic_import_expr {
+                Expr::StringLiteral(literal) => {
+                    self._process_module(literal.value.to_str());
+                }
+                _ => {}
+            }
+        }
+        walk_expr(self, expr);
+    }
+
     fn visit_stmt(&mut self, stmt: &'_ ruff_python_ast::Stmt) {
+        if let Some(importlib_package_alias) = is_importlib_import(stmt) {
+            self.importlib_package_alias = Some(importlib_package_alias)
+        }
         match stmt {
             Stmt::Import(import) => {
                 for name in &import.names {
