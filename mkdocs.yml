@@ -1,0 +1,18 @@
+site_name: flay docs
+site_url: https://flay.vllmr.dev
+theme:
+  name: material
+  icons:
+    repo: fontawesome/brands/github
+  features:
+    - content.action.edit
+    - content.action.view
+edit_uri: edit/main/docs/
+repo_url: https://github.com/jvllmr/flay
+plugins:
+  - optimize
+  - git-revision-date-localized:
+      type: datetime
+extra:
+  version:
+    provider: mike
