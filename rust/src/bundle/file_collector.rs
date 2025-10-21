@@ -129,30 +129,48 @@ impl Visitor<'_> for FileCollector {
         }
         match stmt {
             Stmt::Import(import) => {
-                let module_aliases = &self.module_aliases;
+                let mut modules: HashSet<String> = HashSet::new();
+
                 for name in &import.names {
+                    modules.insert(name.name.to_string());
                     self._process_module(&name.name);
-                    if let Some(aliases) = module_aliases.get(name.name.as_str()) {
-                        for alias in aliases.iter() {
-                            self._process_module(alias);
-                        }
+                    if let Some(aliases) = self.module_aliases.get(name.name.as_str()) {
+                        modules.extend(aliases.iter().cloned());
                     }
+                }
+
+                for module in modules {
+                    self._process_module(&module);
                 }
             }
             Stmt::ImportFrom(import_from) => {
                 for absolute_module_spec in
                     get_import_from_absolute_module_spec(&import_from, &self.package, true).unwrap()
                 {
-                    self._process_module(&absolute_module_spec);
                     // imported name could be a module
+                    let mut potential_modules: HashSet<String> =
+                        HashSet::from([absolute_module_spec.clone()]);
+
+                    if let Some(alias) = self.import_aliases.get(&absolute_module_spec) {
+                        potential_modules.insert(alias.to_owned());
+                    }
 
                     for name in &import_from.names {
                         if name.name.as_str() != "*" {
                             let potential_module_spec =
                                 format!("{}.{}", absolute_module_spec, name.name);
-
-                            self._process_module(&potential_module_spec);
+                            potential_modules.insert(potential_module_spec.clone());
+                            if let Some(alias) = self.import_aliases.get(&potential_module_spec) {
+                                potential_modules.insert(alias.to_owned());
+                            }
+                            if let Some(aliases) = self.module_aliases.get(&potential_module_spec) {
+                                potential_modules.extend(aliases.iter().cloned());
+                            }
                         }
+                    }
+
+                    for potential_module in potential_modules {
+                        self._process_module(&potential_module);
                     }
                 }
             }
