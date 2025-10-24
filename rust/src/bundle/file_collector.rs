@@ -155,6 +155,10 @@ impl Visitor<'_> for FileCollector {
                         potential_modules.insert(alias.to_owned());
                     }
 
+                    if let Some(aliases) = self.module_aliases.get(&absolute_module_spec) {
+                        potential_modules.extend(aliases.iter().cloned());
+                    }
+
                     for name in &import_from.names {
                         if name.name.as_str() != "*" {
                             let potential_module_spec =

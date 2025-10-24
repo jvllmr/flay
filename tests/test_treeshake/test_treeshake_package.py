@@ -271,3 +271,50 @@ def test_treeshake_package_dynamic_imports(
     assert "def hello_world() -> None:\n    print(" in hello_file_content
 
     assert not (result_path / "useless.py").exists()
+
+
+def test_treeshake_package_import_aliases(
+    run_treeshake_package: RunTreeshakePackageT,
+) -> None:
+    source_path = TEST_PACKAGES_DIR / "import_aliases"
+    result_path = run_treeshake_package(
+        source_path,
+        import_aliases={"import_aliases.bundle1.func1": "import_aliases.bundle2.func1"},
+    )
+
+    assert (result_path / "__init__.py").exists()
+    bundle1 = result_path / "bundle1.py"
+    assert bundle1.exists()
+    assert "def func1() -> None:" in bundle1.read_text()
+    bundle2 = result_path / "bundle2.py"
+    assert bundle2.exists()
+    assert "def func1() -> None:" in bundle2.read_text()
+    assert not (result_path / "useless.py").exists()
+
+
+def test_treeshake_package_preserve_symbols(
+    run_treeshake_package: RunTreeshakePackageT,
+) -> None:
+    source_path = TEST_PACKAGES_DIR / "preserve_symbols"
+    result_path = run_treeshake_package(
+        source_path,
+        preserve_symbols={
+            "preserve_symbols.bundle1.func1",
+        },
+        import_aliases={
+            "preserve_symbols.bundle1.func1": "preserve_symbols.bundle2.func1",
+            "preserve_symbols.bundle3.func1": "preserve_symbols.bundle1.func1",
+        },
+    )
+
+    assert (result_path / "__init__.py").exists()
+    bundle1 = result_path / "bundle1.py"
+    assert bundle1.exists()
+    assert "def func1() -> None:" in bundle1.read_text()
+    bundle2 = result_path / "bundle2.py"
+    assert bundle2.exists()
+    assert "def func1() -> None:" in bundle2.read_text()
+    bundle3 = result_path / "bundle3.py"
+    assert bundle3.exists()
+    assert "def func1() -> None:" in bundle3.read_text()
+    assert not (result_path / "useless.py").exists()

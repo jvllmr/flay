@@ -9,7 +9,10 @@ import typing as t
 import logging
 
 from flay.ecosystem.import_aliases import get_default_import_aliases
-from flay.ecosystem.preserve_symbols import get_default_preserve_symbols
+from flay.ecosystem.preserve_symbols import (
+    get_default_preserve_symbols,
+    enrich_preserve_symbols_from_import_aliases,
+)
 
 
 log = logging.getLogger(__name__)
@@ -68,15 +71,17 @@ def treeshake_package(
 
     new_references_count = 1
 
+    aliases = get_default_import_aliases()
+    if import_aliases:
+        aliases.update(import_aliases)
+
     preserve_symbols = get_default_preserve_symbols().union(preserve_symbols or [])
+    enrich_preserve_symbols_from_import_aliases(preserve_symbols, aliases)
 
     for symbol in preserve_symbols:
         references_counts[symbol] = 1
     new_references_count += len(preserve_symbols)
 
-    aliases = get_default_import_aliases()
-    if import_aliases:
-        aliases.update(import_aliases)
     references_counter = ReferencesCounter(references_counts, import_aliases=aliases)
     treeshake_iteration = 1
     # count references until no new references get added

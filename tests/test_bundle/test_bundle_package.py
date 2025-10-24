@@ -163,6 +163,24 @@ def test_bundle_package_aliased_imports(
     assert 'os_path.abspath("/").casefold().count' in init_file_content
 
 
+def test_bundle_package_import_aliases(
+    run_bundle_package: RunBundlePackageT,
+) -> None:
+    _, result_path = run_bundle_package(
+        "import_aliases",
+        "import_aliases",
+        import_aliases={
+            "import_aliases.sub.bundle1.func1": "import_aliases.sub.bundle2.func1"
+        },
+    )
+
+    assert (result_path / "__init__.py").exists()
+    assert (result_path / "sub/__init__.py").exists()
+    assert (result_path / "sub/bundle1.py").exists()
+    assert (result_path / "sub/bundle2.py").exists()
+    assert not (result_path / "sub/useless.py").exists()
+
+
 def test_bundle_package_bundle_metadata(tmp_path: Path) -> None:
     bundle_package("flay", tmp_path, bundle_metadata=True)
     root_dist = Distribution.from_name("flay")
