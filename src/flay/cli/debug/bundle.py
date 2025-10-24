@@ -27,7 +27,7 @@ class DebugBundleCollectorSettings(FlayBaseSettings):
 @debug_bundle_app.command(name="collector")
 @clonf_click
 def debug_bundle_collector_cmd(settings: DebugBundleCollectorSettings) -> None:
-    collector = FileCollector(package=settings.module_spec)
+    collector = FileCollector(package=settings.module_spec, import_aliases={})
     for path in find_all_files_in_module_spec(settings.module_spec):
         log.debug("Found: %s", path)
         file_module_spec = (

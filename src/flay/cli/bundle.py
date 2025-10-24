@@ -75,6 +75,7 @@ def cli_bundle_package(
     output_path: Path,
     bundle_metadata: bool,
     resources: dict[str, str],
+    import_aliases: dict[str, str],
 ) -> None:
     with BundlePackageCliIO(initial_module_spec=module_spec) as io:
         bundle_package(
@@ -82,6 +83,7 @@ def cli_bundle_package(
             output_path,
             bundle_metadata=bundle_metadata,
             resources=resources,
+            import_aliases=import_aliases,
             found_module_callback=io.on_found_module,
             found_total_modules_callback=io.on_found_total_modules,
             process_module_callback=io.on_process_module,

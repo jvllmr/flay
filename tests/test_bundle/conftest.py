@@ -15,6 +15,7 @@ class RunBundlePackageT(t.Protocol):
         package_name: str,
         module_spec: str,
         resources: dict[str, str] | None = None,
+        import_aliases: dict[str, str] | None = None,
     ) -> tuple[Path, Path]: ...
 
 
@@ -27,6 +28,7 @@ def run_bundle_package(tmp_path: Path) -> RunBundlePackageT:
         package_name: str,
         module_spec: str,
         resources: dict[str, str] | None = None,
+        import_aliases: dict[str, str] | None = None,
     ) -> tuple[Path, Path]:
         pre_bundle_path = tmp_path / "pre_bundle"
         bundled_path = tmp_path / "bundled"
@@ -58,6 +60,7 @@ def run_bundle_package(tmp_path: Path) -> RunBundlePackageT:
                 destination_path=bundled_path,
                 resources=resources or {},
                 bundle_metadata=False,
+                import_aliases=import_aliases,
             )
         finally:
             if build_before:

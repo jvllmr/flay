@@ -7,7 +7,13 @@ import os
 from collections import defaultdict
 import typing as t
 import logging
-from .fixed import get_treeshake_fixed_preservations
+
+from flay.ecosystem.import_aliases import get_default_import_aliases
+from flay.ecosystem.preserve_symbols import (
+    get_default_preserve_symbols,
+    enrich_preserve_symbols_from_import_aliases,
+)
+
 
 log = logging.getLogger(__name__)
 
@@ -28,6 +34,8 @@ def _process_modules(
 
 def treeshake_package(
     source_dir: str,
+    import_aliases: dict[str, str] | None = None,
+    preserve_symbols: set[str] | None = None,
     found_module_callback: t.Callable[[str], None] = lambda _: None,
     total_modules_callback: t.Callable[[int], None] = lambda _: None,
     references_iteration_callback: t.Callable[[int], None] = lambda _: None,
@@ -60,12 +68,21 @@ def treeshake_package(
     )
     total_modules_callback(len(file_modules))
     references_counts: dict[str, int] = defaultdict(int)
-    treeshake_fixed_preservations = get_treeshake_fixed_preservations()
-    for preserved_name in treeshake_fixed_preservations:
-        references_counts[preserved_name] = 1
-    new_references_count = 1 + len(treeshake_fixed_preservations)
 
-    references_counter = ReferencesCounter(references_counts)
+    new_references_count = 1
+
+    aliases = get_default_import_aliases()
+    if import_aliases:
+        aliases.update(import_aliases)
+
+    preserve_symbols = get_default_preserve_symbols().union(preserve_symbols or [])
+    enrich_preserve_symbols_from_import_aliases(preserve_symbols, aliases)
+
+    for symbol in preserve_symbols:
+        references_counts[symbol] = 1
+    new_references_count += len(preserve_symbols)
+
+    references_counter = ReferencesCounter(references_counts, import_aliases=aliases)
     treeshake_iteration = 1
     # count references until no new references get added
     while new_references_count:

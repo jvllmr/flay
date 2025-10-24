@@ -8,6 +8,13 @@ use ruff_python_stdlib::sys::{is_builtin_module, is_known_standard_library};
 
 use crate::constants::PYTHON_MINOR_VERSION;
 
+pub fn remove_last_segment(spec: &str) -> &str {
+    match spec.rfind('.') {
+        Some(pos) => &spec[..pos],
+        None => "",
+    }
+}
+
 pub fn get_parent_package(package: &str) -> String {
     if !package.contains(".") {
         return package.to_owned();

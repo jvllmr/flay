@@ -7,6 +7,7 @@ from importlib.metadata import (
     files as package_metadata_files,
 )
 from flay.common.compat import packages_distributions
+from flay.ecosystem.import_aliases import get_default_import_aliases
 from . import DEFAULT_BUNDLE_METADATA
 from flay.common.module_spec import (
     find_all_files_in_module_spec,
@@ -30,13 +31,17 @@ def bundle_package(
     destination_path: Path,
     bundle_metadata: bool = DEFAULT_BUNDLE_METADATA,
     resources: dict[str, str] | None = None,
+    import_aliases: dict[str, str] | None = None,
     found_module_callback: t.Callable[[str], None] = lambda _: None,
     found_total_modules_callback: t.Callable[[int], None] = lambda _: None,
     process_module_callback: t.Callable[[str], None] = lambda _: None,
     bundled_metadata_callback: t.Callable[[], None] = lambda: None,
 ) -> None:
     resources = resources or {}
-    collector = FileCollector(package=module_spec)
+    aliases = get_default_import_aliases()
+    if import_aliases:
+        aliases.update(import_aliases)
+    collector = FileCollector(package=module_spec, import_aliases=aliases)
 
     for path in find_all_files_in_module_spec(module_spec):
         if path.match("*.py"):

@@ -93,12 +93,16 @@ pub struct ReferencesCounter {
     new_references_count: usize,
     always_bump_context: bool,
     source_path: PathBuf,
+    import_aliases: HashMap<String, String>,
 }
 
 #[pymethods]
 impl ReferencesCounter {
     #[new]
-    fn new(references_counts: HashMap<String, usize>) -> Self {
+    fn new(
+        references_counts: HashMap<String, usize>,
+        import_aliases: HashMap<String, String>,
+    ) -> Self {
         ReferencesCounter {
             module_spec: String::new(),
             names_provider: FullyQualifiedNameProvider::new("", &PathBuf::from("")),
@@ -106,6 +110,7 @@ impl ReferencesCounter {
             always_bump_context: false,
             new_references_count: 0,
             source_path: PathBuf::new(),
+            import_aliases: import_aliases,
         }
     }
 
@@ -145,6 +150,9 @@ impl ReferencesCounter {
                 self.references_counts.insert(fqn.to_string(), 1);
                 self.new_references_count += 1;
             }
+        }
+        if let Some(alias) = self.import_aliases.get(fqn).cloned() {
+            self.increase(&alias);
         }
     }
 
