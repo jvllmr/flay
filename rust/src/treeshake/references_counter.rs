@@ -6,12 +6,9 @@ use ruff_python_ast::{
     visitor::{Visitor, walk_expr, walk_stmt},
 };
 
-use crate::common::{
-    ast::{
-        get_import_from_absolute_module_spec, parse_python_source,
-        providers::fully_qualified_name_provider::FullyQualifiedNameProvider,
-    },
-    module_spec::get_parent_package,
+use crate::common::ast::{
+    get_import_from_absolute_module_spec, parse_python_source,
+    providers::fully_qualified_name_provider::FullyQualifiedNameProvider,
 };
 
 pub trait ReferencesHolder {
@@ -56,7 +53,10 @@ pub trait ReferencesHolder {
                 if import_from.names.len() == 1 && import_from.names[0].name.as_str() == "*" {
                     if let Ok(module_specs) = get_import_from_absolute_module_spec(
                         import_from,
-                        &self.get_parent_package(),
+                        &self
+                            .get_names_provider()
+                            .get_imports_provider()
+                            .get_parent_package(),
                         true,
                     ) {
                         module_specs
@@ -76,19 +76,6 @@ pub trait ReferencesHolder {
             }
         }
         false
-    }
-
-    fn is_in_package(&self) -> bool {
-        let source_path = self.get_source_path();
-        source_path.ends_with("__init__.py") || source_path.ends_with("__main__.py")
-    }
-
-    fn get_parent_package(&self) -> String {
-        let module_spec = self.get_module_spec();
-        if self.is_in_package() {
-            return module_spec.to_owned();
-        }
-        return get_parent_package(&module_spec);
     }
 
     fn is_global_scope(&self) -> bool {
@@ -114,7 +101,7 @@ impl ReferencesCounter {
     fn new(references_counts: HashMap<String, usize>) -> Self {
         ReferencesCounter {
             module_spec: String::new(),
-            names_provider: FullyQualifiedNameProvider::new("", ""),
+            names_provider: FullyQualifiedNameProvider::new("", &PathBuf::from("")),
             references_counts,
             always_bump_context: false,
             new_references_count: 0,
@@ -135,7 +122,7 @@ impl ReferencesCounter {
         self.module_spec = module_spec;
         self.source_path = source_path;
         self.names_provider =
-            FullyQualifiedNameProvider::new(&self.module_spec, &self.get_parent_package());
+            FullyQualifiedNameProvider::new(&self.module_spec, self.get_source_path());
 
         let file_content = fs::read_to_string(&self.source_path)?;
         let module = parse_python_source(&file_content).unwrap().expect_module();
@@ -389,7 +376,10 @@ impl Visitor<'_> for ReferencesCounter {
                 {
                     if let Ok(module_specs) = get_import_from_absolute_module_spec(
                         &stmt_import_from,
-                        &self.get_parent_package(),
+                        &self
+                            .names_provider
+                            .get_imports_provider()
+                            .get_parent_package(),
                         true,
                     ) {
                         for module_spec in module_specs {

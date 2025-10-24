@@ -1,8 +1,14 @@
-use std::collections::{HashMap, HashSet};
+use std::{
+    collections::{HashMap, HashSet},
+    path::PathBuf,
+};
 
 use ruff_python_ast::{Stmt, StmtImport, StmtImportFrom};
 
-use crate::common::ast::{finders::find_dynamic_import, get_import_from_absolute_module_spec};
+use crate::common::{
+    ast::{finders::find_dynamic_import, get_import_from_absolute_module_spec},
+    module_spec::get_parent_package,
+};
 
 type TActiveImports = HashMap<String, String>;
 type TActiveStarImports = HashSet<String>;
@@ -15,18 +21,33 @@ pub struct ImportTrackingProviderScope {
 pub struct ImportsTrackingProvider {
     pub active_imports: TActiveImports,
     pub active_star_imports: TActiveStarImports,
-    parent_package: String,
+    module_spec: String,
+    source_path: PathBuf,
     importlib_module_alias: Option<String>,
 }
 
 impl ImportsTrackingProvider {
-    pub fn new(parent_package: &str) -> Self {
+    pub fn new(module_spec: &str, source_path: &PathBuf) -> Self {
         ImportsTrackingProvider {
             active_imports: HashMap::new(),
             active_star_imports: HashSet::new(),
-            parent_package: parent_package.to_string(),
+            module_spec: module_spec.to_string(),
+            source_path: source_path.to_owned(),
             importlib_module_alias: None,
         }
+    }
+
+    fn is_in_package(&self) -> bool {
+        let source_path = &self.source_path;
+        source_path.ends_with("__init__.py") || source_path.ends_with("__main__.py")
+    }
+
+    pub fn get_parent_package(&self) -> String {
+        let module_spec = &self.module_spec;
+        if self.is_in_package() {
+            return module_spec.to_owned();
+        }
+        return get_parent_package(&module_spec);
     }
 
     pub fn enter_scope(&self, stmt: &Stmt) -> ImportTrackingProviderScope {
@@ -63,11 +84,14 @@ impl ImportsTrackingProvider {
             self.importlib_module_alias = Some("importlib".to_string())
         }
 
-        let module_specs =
-            match get_import_from_absolute_module_spec(import_from, &self.parent_package, false) {
-                Ok(spec) => spec,
-                Err(_) => vec![],
-            };
+        let module_specs = match get_import_from_absolute_module_spec(
+            import_from,
+            &self.get_parent_package(),
+            false,
+        ) {
+            Ok(spec) => spec,
+            Err(_) => vec![],
+        };
 
         for module_spec in &module_specs {
             for name in &import_from.names {

@@ -46,7 +46,7 @@ impl NodesRemover {
 
         NodesRemover {
             references_counts,
-            names_provider: FullyQualifiedNameProvider::new("", ""),
+            names_provider: FullyQualifiedNameProvider::new("", &PathBuf::from("")),
             source_path: PathBuf::new(),
             module_spec: String::new(),
             statements_removed: 0,
@@ -61,7 +61,7 @@ impl NodesRemover {
         self.module_spec = module_spec;
         self.source_path = source_path;
         self.names_provider =
-            FullyQualifiedNameProvider::new(&self.module_spec, &self.get_parent_package());
+            FullyQualifiedNameProvider::new(&self.module_spec, self.get_source_path());
         let file_content = fs::read_to_string(&self.source_path)?;
         let parsed = parse_module(&file_content).unwrap();
         let module = parsed.syntax();
@@ -122,9 +122,14 @@ impl NodesRemover {
     fn visit_stmt_import_from(&mut self, mut stmt: StmtImportFrom) -> Option<StmtImportFrom> {
         let mut new_names: Vec<Alias> = Vec::new();
         let mut added_names: HashSet<String> = HashSet::new();
-        if let Ok(module_specs) =
-            get_import_from_absolute_module_spec(&stmt, &self.get_parent_package(), true)
-        {
+        if let Ok(module_specs) = get_import_from_absolute_module_spec(
+            &stmt,
+            &self
+                .names_provider
+                .get_imports_provider()
+                .get_parent_package(),
+            true,
+        ) {
             for module_spec in &module_specs {
                 for name in &stmt.names {
                     let result_name = name.asname.as_ref().unwrap_or(&name.name);
