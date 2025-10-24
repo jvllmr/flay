@@ -9,7 +9,9 @@
   ],
   "labels": ["dependencies"],
   "rangeStrategy": "bump",
-
+  "pre-commit": {
+    "enabled": true
+  },
   "packageRules": [
     {
       "description": "Do not update required python version",
@@ -40,6 +42,12 @@
       "groupSlug": "python-minor-patch",
       "matchManagers": ["pep621"],
       "matchUpdateTypes": ["minor", "patch"]
+    },
+    {
+      "description": "Group all pre-commit updates",
+      "groupName": "all pre-commit dependencies",
+      "groupSlug": "pre-commit-updates",
+      "matchManagers": ["pre-commit"]
     }
   ]
 }
