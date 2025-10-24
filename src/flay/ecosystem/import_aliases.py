@@ -4,7 +4,7 @@ from clonf import _dynamic_imports as clonf_dynamic_imports
 
 
 @cache
-def get_import_aliases() -> dict[str, str]:
+def get_default_import_aliases() -> dict[str, str]:
     res: dict[str, str] = {}
 
     for obj, (parent, module) in pydantic_dynamic_imports.items():

@@ -15,6 +15,7 @@ from .debug import debug_app
 import click
 from clonf.integrations.click import clonf_click
 from clonf import CliArgument, CliOption
+import click
 
 
 class DebugSetting(FlayBaseSettings):
@@ -81,6 +82,15 @@ class FlayMainSettings(FlayBaseSettings):
             default_factory=dict,
         ),
     ]
+    preserve_symbols: t.Annotated[
+        list[str],
+        CliOption(),
+        Field(
+            alias="preserve-symbols",
+            description="List of symbols that should be preserved at all cost. Absolute paths are required.",
+            default_factory=list,
+        ),
+    ]
 
 
 @flay.command(name="bundle")
@@ -101,6 +111,7 @@ def flay_main(settings: FlayMainSettings) -> None:
         removed_stmts_count = cli_treeshake_package(
             source_dir=str(settings.output_path.absolute()),
             import_aliases=settings.import_aliases,
+            preserve_symbols=set(settings.preserve_symbols),
         )
         console.print(
             check,

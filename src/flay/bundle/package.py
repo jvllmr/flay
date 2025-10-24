@@ -7,7 +7,7 @@ from importlib.metadata import (
     files as package_metadata_files,
 )
 from flay.common.compat import packages_distributions
-from flay.ecosystem.import_aliases import get_import_aliases
+from flay.ecosystem.import_aliases import get_default_import_aliases
 from . import DEFAULT_BUNDLE_METADATA
 from flay.common.module_spec import (
     find_all_files_in_module_spec,
@@ -38,7 +38,7 @@ def bundle_package(
     bundled_metadata_callback: t.Callable[[], None] = lambda: None,
 ) -> None:
     resources = resources or {}
-    aliases = get_import_aliases()
+    aliases = get_default_import_aliases()
     if import_aliases:
         aliases.update(import_aliases)
     collector = FileCollector(package=module_spec, import_aliases=aliases)
