@@ -1,9 +1,8 @@
+use std::path::PathBuf;
+
 use ruff_python_ast::{Expr, Stmt};
 
-use crate::common::{
-    ast::full_name::{get_full_name_for_expr, get_full_name_for_stmt},
-    module_spec::get_parent_package,
-};
+use crate::common::ast::full_name::{get_full_name_for_expr, get_full_name_for_stmt};
 
 use super::imports_provider::{ImportTrackingProviderScope, ImportsTrackingProvider};
 
@@ -17,18 +16,20 @@ pub struct FullyQualifiedNameProviderScope {
 pub struct FullyQualifiedNameProvider {
     pub name_context: TNameContext,
     module_spec: String,
-    parent_package: String,
     imports_provider: ImportsTrackingProvider,
 }
 
 impl FullyQualifiedNameProvider {
-    pub fn new(module_spec: &str, parent_package: &str) -> Self {
+    pub fn new(module_spec: &str, source_path: &PathBuf) -> Self {
         FullyQualifiedNameProvider {
             name_context: String::new(),
-            imports_provider: ImportsTrackingProvider::new(&get_parent_package(module_spec)),
+            imports_provider: ImportsTrackingProvider::new(module_spec, source_path),
             module_spec: module_spec.to_string(),
-            parent_package: parent_package.to_string(),
         }
+    }
+
+    pub fn get_imports_provider(&self) -> &ImportsTrackingProvider {
+        return &self.imports_provider;
     }
 
     pub fn resolve_qualified_name(&self, name: &str) -> String {
@@ -53,7 +54,7 @@ impl FullyQualifiedNameProvider {
     }
 
     fn get_stmt_qualified_name(&self, stmt: &Stmt) -> Vec<String> {
-        get_full_name_for_stmt(stmt, &self.parent_package)
+        get_full_name_for_stmt(stmt, &self.imports_provider.get_parent_package())
             .iter()
             .map(|name|
                 // TODO: match outside of map
@@ -105,7 +106,7 @@ impl FullyQualifiedNameProvider {
     pub fn get_stmt_fully_qualified_name(&self, stmt: &Stmt) -> Vec<String> {
         match stmt {
             Stmt::Import(_) | Stmt::ImportFrom(_) => {
-                get_full_name_for_stmt(stmt, &self.parent_package)
+                get_full_name_for_stmt(stmt, &self.imports_provider.get_parent_package())
             }
             _ => self
                 .get_stmt_qualified_name(stmt)
@@ -122,7 +123,8 @@ impl FullyQualifiedNameProvider {
     pub fn enter_scope(&mut self, stmt: &Stmt) -> FullyQualifiedNameProviderScope {
         let old_name_context: Option<TNameContext> = match stmt {
             Stmt::ClassDef(_) | Stmt::FunctionDef(_) => {
-                let full_names = get_full_name_for_stmt(stmt, &self.parent_package);
+                let full_names =
+                    get_full_name_for_stmt(stmt, &self.imports_provider.get_parent_package());
                 let mut ret_value: Option<TNameContext> = None;
                 if full_names.len() == 1 {
                     ret_value = Some(self.name_context.clone());
