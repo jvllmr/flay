@@ -1,13 +1,21 @@
 from __future__ import annotations
-from flay.treeshake.package import treeshake_package
+from flay.treeshake.package import (
+    TreeshakePackageEvent,
+    treeshake_package,
+    TreeshakePackageFoundModuleEvent,
+    TreeshakePackageNodesRemovalEvent,
+    TreeshakePackageReferencesIterationEvent,
+    TreeshakePackageTotalModulesEvent,
+)
 from rich.progress import Progress
 import typing as t
 import typing_extensions as te
 from flay.common.rich import console, check
 from rich.progress import TextColumn, BarColumn, SpinnerColumn, MofNCompleteColumn
+from flay.common.events import EventHandler
 
 
-class TreeshakePackageCliIO:
+class TreeshakePackageCliIO(EventHandler[TreeshakePackageEvent]):
     def __init__(self) -> None:
         self.total_modules = 0
         self.found_modules = 0
@@ -34,34 +42,36 @@ class TreeshakePackageCliIO:
             visible=False,
         )
 
-    def on_found_module(self, spec: str) -> None:
-        self.found_modules += 1
-        self.progress.update(
-            self.discovery_task, completed=self.found_modules, spec=spec
-        )
-
-    def on_total_modules(self, count: int) -> None:
-        self.total_modules = count
-        self.progress.update(self.discovery_task, completed=count, total=count)
-
-    def on_references_iteration(self, count: int) -> None:
-        self.references_iteration = count
-        self.progress.update(
-            self.references_task,
-            visible=True,
-            completed=count,
-        )
-
-    def on_nodes_removal(self, spec: str) -> None:
-        self.progress.update(self.references_task, total=self.references_iteration)
-        self.removal_processed_modules += 1
-        self.progress.update(
-            self.removal_task,
-            total=self.total_modules,
-            completed=self.removal_processed_modules,
-            visible=True,
-            spec=spec,
-        )
+    def on_event(self, event: TreeshakePackageEvent) -> None:
+        if isinstance(event, TreeshakePackageFoundModuleEvent):
+            self.found_modules += 1
+            self.progress.update(
+                self.discovery_task,
+                completed=self.found_modules,
+                spec=event.module_spec,
+            )
+        elif isinstance(event, TreeshakePackageTotalModulesEvent):
+            self.total_modules = event.count
+            self.progress.update(
+                self.discovery_task, completed=event.count, total=event.count
+            )
+        elif isinstance(event, TreeshakePackageReferencesIterationEvent):
+            self.references_iteration = event.iteration
+            self.progress.update(
+                self.references_task,
+                visible=True,
+                completed=event.iteration,
+            )
+        elif isinstance(event, TreeshakePackageNodesRemovalEvent):
+            self.progress.update(self.references_task, total=self.references_iteration)
+            self.removal_processed_modules += 1
+            self.progress.update(
+                self.removal_task,
+                total=self.total_modules,
+                completed=self.removal_processed_modules,
+                visible=True,
+                spec=event.module_spec,
+            )
 
     def end_progress(self) -> None:
         if self.progress.live._started:
@@ -83,10 +93,7 @@ def cli_treeshake_package(
             source_dir=source_dir,
             import_aliases=import_aliases,
             preserve_symbols=preserve_symbols,
-            found_module_callback=io.on_found_module,
-            total_modules_callback=io.on_total_modules,
-            nodes_removal_callback=io.on_nodes_removal,
-            references_iteration_callback=io.on_references_iteration,
+            event_handler=io,
         )
 
 

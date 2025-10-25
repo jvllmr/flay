@@ -8,14 +8,39 @@ from collections import defaultdict
 import typing as t
 import logging
 
+from flay.common.events import Event, EventHandler, NoopEventHandler
 from flay.ecosystem.import_aliases import get_default_import_aliases
 from flay.ecosystem.preserve_symbols import (
     get_default_preserve_symbols,
     enrich_preserve_symbols_from_import_aliases,
 )
-
+import typing_extensions as te
 
 log = logging.getLogger(__name__)
+
+
+class TreeshakePackageFoundModuleEvent(Event):
+    module_spec: str
+
+
+class TreeshakePackageTotalModulesEvent(Event):
+    count: int
+
+
+class TreeshakePackageReferencesIterationEvent(Event):
+    iteration: int
+
+
+class TreeshakePackageNodesRemovalEvent(Event):
+    module_spec: str
+
+
+TreeshakePackageEvent: te.TypeAlias = t.Union[
+    TreeshakePackageFoundModuleEvent,
+    TreeshakePackageTotalModulesEvent,
+    TreeshakePackageReferencesIterationEvent,
+    TreeshakePackageNodesRemovalEvent,
+]
 
 
 def _process_modules(
@@ -36,10 +61,7 @@ def treeshake_package(
     source_dir: str,
     import_aliases: dict[str, str] | None = None,
     preserve_symbols: set[str] | None = None,
-    found_module_callback: t.Callable[[str], None] = lambda _: None,
-    total_modules_callback: t.Callable[[int], None] = lambda _: None,
-    references_iteration_callback: t.Callable[[int], None] = lambda _: None,
-    nodes_removal_callback: t.Callable[[str], None] = lambda _: None,
+    event_handler: EventHandler[TreeshakePackageEvent] = NoopEventHandler(),
 ) -> int:
     source_files: set[str] = set()
     known_module_specs: dict[str, str] = {}
@@ -61,12 +83,16 @@ def treeshake_package(
                     known_module_specs[file_path] = module_spec.rsplit(".", 1)[0]
                 else:
                     known_module_specs[file_path] = module_spec
-                found_module_callback(known_module_specs[file_path])
+                event_handler.on_event(
+                    TreeshakePackageFoundModuleEvent(
+                        module_spec=known_module_specs[file_path]
+                    )
+                )
 
     file_modules: list[str] = sorted(
         source_files, key=lambda x: 1 if x.endswith("__init__.py") else 0
     )
-    total_modules_callback(len(file_modules))
+    event_handler.on_event(TreeshakePackageTotalModulesEvent(count=len(file_modules)))
     references_counts: dict[str, int] = defaultdict(int)
 
     new_references_count = 1
@@ -90,7 +116,9 @@ def treeshake_package(
             "Treeshake reference counter iteration %s",
             treeshake_iteration,
         )
-        references_iteration_callback(treeshake_iteration)
+        event_handler.on_event(
+            TreeshakePackageReferencesIterationEvent(iteration=treeshake_iteration)
+        )
         treeshake_iteration += 1
         references_counter.reset_counter()
         _process_modules(
@@ -113,7 +141,9 @@ def treeshake_package(
     for file_path in file_modules:
         module_spec = known_module_specs[file_path]
 
-        nodes_removal_callback(module_spec)
+        event_handler.on_event(
+            TreeshakePackageNodesRemovalEvent(module_spec=module_spec)
+        )
         nodes_remover.process_module(module_spec=module_spec, source_path=file_path)
 
     return nodes_remover.statements_removed

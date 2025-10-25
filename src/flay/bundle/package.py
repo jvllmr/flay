@@ -7,6 +7,7 @@ from importlib.metadata import (
     files as package_metadata_files,
 )
 from flay.common.compat import packages_distributions
+from flay.common.events import Event, EventHandler, NoopEventHandler
 from flay.ecosystem.import_aliases import get_default_import_aliases
 from . import DEFAULT_BUNDLE_METADATA
 from flay.common.module_spec import (
@@ -22,8 +23,33 @@ import shutil
 from flay._flay_rs import transform_imports
 import fnmatch
 import sys
+import typing_extensions as te
 
 log = logging.getLogger(__name__)
+
+
+class BundlePackageFoundModuleEvent(Event):
+    module_spec: str
+
+
+class BundlePackageFoundTotalModulesEvent(Event):
+    count: int
+
+
+class BundlePackageProcessModuleEvent(Event):
+    module_spec: str
+
+
+class BundlePackageBundledMetadataEvent(Event):
+    pass
+
+
+BundlePackageEvent: te.TypeAlias = t.Union[
+    BundlePackageFoundModuleEvent,
+    BundlePackageFoundTotalModulesEvent,
+    BundlePackageProcessModuleEvent,
+    BundlePackageBundledMetadataEvent,
+]
 
 
 def bundle_package(
@@ -32,10 +58,7 @@ def bundle_package(
     bundle_metadata: bool = DEFAULT_BUNDLE_METADATA,
     resources: dict[str, str] | None = None,
     import_aliases: dict[str, str] | None = None,
-    found_module_callback: t.Callable[[str], None] = lambda _: None,
-    found_total_modules_callback: t.Callable[[int], None] = lambda _: None,
-    process_module_callback: t.Callable[[str], None] = lambda _: None,
-    bundled_metadata_callback: t.Callable[[], None] = lambda: None,
+    event_handler: EventHandler[BundlePackageEvent] = NoopEventHandler(),
 ) -> None:
     resources = resources or {}
     aliases = get_default_import_aliases()
@@ -50,11 +73,13 @@ def bundle_package(
                 if path.name == "__init__.py"
                 else f"{module_spec}.{path.stem}"
             )
-            found_module_callback(found_module_spec)
+            event_handler.on_event(
+                BundlePackageFoundModuleEvent(module_spec=found_module_spec)
+            )
             collector._process_module(found_module_spec)
 
     files = collector.collected_files
-    found_total_modules_callback(len(files))
+    event_handler.on_event(BundlePackageFoundTotalModulesEvent(count=len(files)))
     top_level_package = get_top_level_package(module_spec)
 
     gitignore = destination_path / ".gitignore"
@@ -77,7 +102,9 @@ def bundle_package(
                 files[new_init_key] = ""
 
     for (found_module, found_path), module_source in files.items():
-        process_module_callback(found_module)
+        event_handler.on_event(
+            BundlePackageProcessModuleEvent(module_spec=found_module)
+        )
         if module_source:
             module_source = transform_imports(module_source)
         module_path_part = Path(os.path.sep.join(found_module.split(".")))
@@ -165,4 +192,4 @@ def bundle_package(
                     raise PackageNotFoundError(module_spec)
                 metadata_path.touch()
                 metadata_path.write_text(metadata, encoding=FLAY_STANDARD_ENCODING)
-        bundled_metadata_callback()
+        event_handler.on_event(BundlePackageBundledMetadataEvent())

@@ -1,14 +1,22 @@
 from __future__ import annotations
 from pathlib import Path
 from rich.progress import SpinnerColumn, TextColumn, MofNCompleteColumn
+from flay.common.events import EventHandler
 from flay.common.rich import console, check
-from flay.bundle.package import bundle_package
+from flay.bundle.package import (
+    BundlePackageEvent,
+    bundle_package,
+    BundlePackageBundledMetadataEvent,
+    BundlePackageFoundModuleEvent,
+    BundlePackageFoundTotalModulesEvent,
+    BundlePackageProcessModuleEvent,
+)
 import typing_extensions as te
 import typing as t
 from rich.progress import Progress, BarColumn
 
 
-class BundlePackageCliIO:
+class BundlePackageCliIO(EventHandler[BundlePackageEvent]):
     found_modules_counter: int
     processed_modules: int
     total_modules: int | None
@@ -33,34 +41,36 @@ class BundlePackageCliIO:
         self.found_modules_counter = 0
         self.processed_modules = 0
 
-    def on_found_module(self, spec: str) -> None:
-        self.found_modules_counter += 1
-        self.progress.update(
-            self.find_modules_task, spec=spec, completed=self.found_modules_counter
-        )
-
-    def on_found_total_modules(self, count: int) -> None:
-        self.total_modules = count
-        self.progress.update(self.find_modules_task, completed=count, total=count)
-
-    def on_process_module(self, spec: str) -> None:
-        self.processed_modules += 1
-        if self.processed_modules <= (self.total_modules or 0):
+    def on_event(self, event: BundlePackageEvent) -> None:
+        if isinstance(event, BundlePackageFoundModuleEvent):
+            self.found_modules_counter += 1
             self.progress.update(
-                self.process_modules_task,
-                visible=True,
-                total=self.total_modules,
-                completed=self.processed_modules,
-                spec=spec,
+                self.find_modules_task,
+                spec=event.module_spec,
+                completed=self.found_modules_counter,
             )
+        elif isinstance(event, BundlePackageFoundTotalModulesEvent):
+            self.total_modules = event.count
+            self.progress.update(
+                self.find_modules_task, completed=event.count, total=event.count
+            )
+        elif isinstance(event, BundlePackageProcessModuleEvent):
+            self.processed_modules += 1
+            if self.processed_modules <= (self.total_modules or 0):
+                self.progress.update(
+                    self.process_modules_task,
+                    visible=True,
+                    total=self.total_modules,
+                    completed=self.processed_modules,
+                    spec=event.module_spec,
+                )
+        elif isinstance(event, BundlePackageBundledMetadataEvent):
+            self.end_progress()
+            console.print(check, "Copied package metadata")
 
     def end_progress(self) -> None:
         if self.progress.live._started:
             self.progress.stop()
-
-    def on_bundled_metadata(self) -> None:
-        self.end_progress()
-        console.print(check, "Copied package metadata")
 
     def __enter__(self) -> te.Self:
         self.progress.start()
@@ -84,10 +94,7 @@ def cli_bundle_package(
             bundle_metadata=bundle_metadata,
             resources=resources,
             import_aliases=import_aliases,
-            found_module_callback=io.on_found_module,
-            found_total_modules_callback=io.on_found_total_modules,
-            process_module_callback=io.on_process_module,
-            bundled_metadata_callback=io.on_bundled_metadata,
+            event_handler=io,
         )
 
 
