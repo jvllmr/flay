@@ -1,8 +1,12 @@
 use std::path::PathBuf;
 
 use ruff_python_ast::{Expr, Stmt};
+use ruff_python_stdlib::builtins::is_python_builtin;
 
-use crate::common::ast::full_name::{get_full_name_for_expr, get_full_name_for_stmt};
+use crate::{
+    common::ast::full_name::{get_full_name_for_expr, get_full_name_for_stmt},
+    constants::PYTHON_MINOR_VERSION,
+};
 
 use super::imports_provider::{ImportTrackingProviderScope, ImportsTrackingProvider};
 
@@ -84,10 +88,9 @@ impl FullyQualifiedNameProvider {
 
         if result.len() == 0 {
             result.push(format!("{}.{}", self.module_spec, qualified_name));
-            // at this point the name could reference a built-in
-            // __builtin__ is prefixed to make a difference between builtins and local names
-            // TODO: differ builtins from locals by tracking local names via a new provider
-            result.push(format!("__builtin__.{}", qualified_name));
+            if is_python_builtin(qualified_name, PYTHON_MINOR_VERSION, false) {
+                result.push(format!("__builtin__.{}", qualified_name));
+            }
         }
 
         for star_import in &self.imports_provider.active_star_imports {
