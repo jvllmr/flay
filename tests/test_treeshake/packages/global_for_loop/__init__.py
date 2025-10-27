@@ -1,4 +1,6 @@
-GLOBAL_LIST: list[str] = []
+from .mod import func
 
-for char in "hello world":
-    GLOBAL_LIST.append(char)
+
+
+if __name__ == "__main__":
+    func()
