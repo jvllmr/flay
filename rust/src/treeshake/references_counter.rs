@@ -1,8 +1,12 @@
-use std::{collections::HashMap, fs, path::PathBuf};
+use std::{
+    collections::{HashMap, HashSet},
+    fs,
+    path::PathBuf,
+};
 
 use pyo3::{pyclass, pymethods};
 use ruff_python_ast::{
-    Expr, ExprAttribute, ExprCompare, Stmt,
+    Decorator, Expr, ExprAttribute, ExprCompare, Stmt,
     visitor::{Visitor, walk_expr, walk_stmt},
 };
 
@@ -94,6 +98,7 @@ pub struct ReferencesCounter {
     always_bump_context: bool,
     source_path: PathBuf,
     import_aliases: HashMap<String, String>,
+    safe_decorators: HashSet<String>,
 }
 
 #[pymethods]
@@ -102,6 +107,7 @@ impl ReferencesCounter {
     fn new(
         references_counts: HashMap<String, usize>,
         import_aliases: HashMap<String, String>,
+        safe_decorators: HashSet<String>,
     ) -> Self {
         ReferencesCounter {
             module_spec: String::new(),
@@ -111,6 +117,7 @@ impl ReferencesCounter {
             new_references_count: 0,
             source_path: PathBuf::new(),
             import_aliases: import_aliases,
+            safe_decorators: safe_decorators,
         }
     }
 
@@ -189,6 +196,27 @@ impl ReferencesCounter {
             self.make_known(&fqn);
         }
     }
+
+    fn is_safe_decorator(&mut self, decorator: &Decorator) -> bool {
+        for fqn in self
+            .names_provider
+            .get_expr_fully_qualified_name(&decorator.expression)
+        {
+            if self.safe_decorators.contains(&fqn) {
+                return true;
+            }
+        }
+        false
+    }
+
+    fn has_unsafe_decorator(&mut self, decorators: &Vec<Decorator>) -> bool {
+        for decorator in decorators {
+            if !self.is_safe_decorator(decorator) {
+                return true;
+            }
+        }
+        false
+    }
 }
 
 fn is_if_name_main(expr: &Expr) -> bool {
@@ -265,7 +293,7 @@ impl Visitor<'_> for ReferencesCounter {
             }
             Stmt::Assign(stmt_assign) => {
                 let mut should_bump_stmt_assign = false;
-                if self.is_global_scope() {
+                if self.is_global_scope() && self.module_spec_has_references() {
                     for target in &stmt_assign.targets {
                         let mut search_target = target;
                         let mut found_deepest_attribute: Option<ExprAttribute> = None;
@@ -287,7 +315,9 @@ impl Visitor<'_> for ReferencesCounter {
                 }
             }
             Stmt::ClassDef(class_def) => {
-                if class_def.decorator_list.len() > 0 || self.has_references_for_stmt(&stmt) {
+                if self.has_unsafe_decorator(&class_def.decorator_list)
+                    || self.has_references_for_stmt(&stmt)
+                {
                     self.maybe_increase_stmt(&stmt);
                     self.always_bump_context = true;
                 }
@@ -303,12 +333,14 @@ impl Visitor<'_> for ReferencesCounter {
                 }
             }
             Stmt::For(_) => {
-                if self.is_global_scope() {
+                if self.is_global_scope() && self.module_spec_has_references() {
                     self.always_bump_context = true;
                 }
             }
             Stmt::FunctionDef(func_def) => {
-                if func_def.decorator_list.len() > 0 || self.has_references_for_stmt(&stmt) {
+                if self.has_unsafe_decorator(&func_def.decorator_list)
+                    || self.has_references_for_stmt(&stmt)
+                {
                     self.maybe_increase_stmt(&stmt);
                     self.always_bump_context = true;
                     // visit decorators before they are prefixed with scope
@@ -331,7 +363,7 @@ impl Visitor<'_> for ReferencesCounter {
                 if self.is_global_scope() && is_if_name_main(&if_block.test) {
                     self.maybe_increase_stmt(&stmt);
                     self.always_bump_context = true;
-                } else if self.is_global_scope() {
+                } else if self.is_global_scope() && self.module_spec_has_references() {
                     self.always_bump_context = true;
                     self.visit_expr(&if_block.test);
                     self.always_bump_context = false;

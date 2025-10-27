@@ -84,6 +84,10 @@ impl FullyQualifiedNameProvider {
 
         if result.len() == 0 {
             result.push(format!("{}.{}", self.module_spec, qualified_name));
+            // at this point the name could reference a built-in
+            // __builtin__ is prefixed to make a difference between builtins and local names
+            // TODO: differ builtins from locals by tracking local names via a new provider
+            result.push(format!("__builtin__.{}", qualified_name));
         }
 
         for star_import in &self.imports_provider.active_star_imports {

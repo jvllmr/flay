@@ -12,6 +12,7 @@ class RunTreeshakePackageT(t.Protocol):
         path: Path,
         preserve_symbols: set[str] | None = None,
         import_aliases: dict[str, str] | None = None,
+        safe_decorators: set[str] | None = None,
     ) -> Path: ...
 
 
@@ -21,6 +22,7 @@ def run_treeshake_package(tmp_path: Path) -> RunTreeshakePackageT:
         path: Path,
         preserve_symbols: set[str] | None = None,
         import_aliases: dict[str, str] | None = None,
+        safe_decorators: set[str] | None = None,
     ) -> Path:
         assert path.is_dir(), "Must specifiy a directory!"
         target_path = tmp_path / path.name
@@ -29,6 +31,7 @@ def run_treeshake_package(tmp_path: Path) -> RunTreeshakePackageT:
             str(tmp_path),
             preserve_symbols=preserve_symbols,
             import_aliases=import_aliases,
+            safe_decorators=safe_decorators,
         )
         return target_path
 

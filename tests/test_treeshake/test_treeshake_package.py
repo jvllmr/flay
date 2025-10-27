@@ -73,11 +73,19 @@ def test_treeshake_package_preserve_with_decorators(
     run_treeshake_package: RunTreeshakePackageT,
 ) -> None:
     source_path = TEST_PACKAGES_DIR / "preserve_with_decorators"
-    result_path = run_treeshake_package(source_path)
+    result_path = run_treeshake_package(
+        source_path,
+        safe_decorators={
+            "preserve_with_decorators.safe_decorator",
+        },
+    )
     init_file = result_path / "__init__.py"
     init_file_content = init_file.read_text()
-    assert "@dataclass\nclass MyClass:\n    pass" in init_file_content
-    assert "@contextmanager\ndef my_context_manager() ->" in init_file_content
+    assert "@dataclass\nclass MyClass:\n" not in init_file_content
+    assert "@contextmanager\ndef my_context_manager() ->" not in init_file_content
+    assert "@unknown_decorator\ndef decorated_func() ->" in init_file_content
+    assert "def safe_decorated_func(" not in init_file_content
+    assert "def safe_decorator(" not in init_file_content
 
 
 def test_treeshake_package_re_exports(
@@ -234,9 +242,9 @@ def test_treeshake_package_global_for_loop(
     source_path = TEST_PACKAGES_DIR / "global_for_loop"
     result_path = run_treeshake_package(source_path)
 
-    init_file_content = (result_path / "__init__.py").read_text()
-    assert "GLOBAL_LIST: list[str] = []" in init_file_content
-    assert 'for char in "hello world":' in init_file_content
+    mod_file_content = (result_path / "mod.py").read_text()
+    assert "GLOBAL_LIST: list[str] = []" in mod_file_content
+    assert 'for char in "hello world":' in mod_file_content
 
 
 def test_treeshake_package_class_bases(
