@@ -400,7 +400,7 @@ impl Visitor<'_> for ReferencesCounter {
                     for fqn in self.names_provider.resolve_fully_qualified_name(
                         &self.names_provider.resolve_qualified_name(&defined_name),
                     ) {
-                        if self.has_references_for_str(&fqn) {
+                        if !fqn.starts_with("__builtin__") && self.has_references_for_str(&fqn) {
                             self.maybe_increase_stmt_selective(&stmt, |n| {
                                 n.ends_with(alias.name.as_str())
                             });

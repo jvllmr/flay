@@ -15,12 +15,23 @@ _stdlib_decorators: set[str] = {
     "functools.cache",
     "functools.cached_property",
     "functools.lru_cache",
+    "functools.total_ordering",
     "functools.wraps",
+    "typing.dataclass_transform",
     "typing.no_type_check",
     "typing.overload",
+    "typing_extensions.dataclass_transform",
 }
 
-_ecosystem_decorators: set[str] = {"pydantic.v1.main.dataclass_transform"}
+_ecosystem_decorators: set[str] = {
+    "attr.attrs",
+    "attr._make.attrs",
+    "clonf.clonf_click",
+    "pydantic.root_validator",
+    "pydantic.validator",
+    "pydantic.v1.class_validators.root_validator",
+    "pydantic.v1.class_validators.validator",
+}
 
 
 @cache
