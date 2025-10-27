@@ -16,6 +16,8 @@ from flay.ecosystem.preserve_symbols import (
 )
 import typing_extensions as te
 
+from flay.ecosystem.safe_decorators import get_default_safe_decorators
+
 log = logging.getLogger(__name__)
 
 
@@ -61,6 +63,7 @@ def treeshake_package(
     source_dir: str,
     import_aliases: dict[str, str] | None = None,
     preserve_symbols: set[str] | None = None,
+    safe_decorators: set[str] | None = None,
     event_handler: EventHandler[TreeshakePackageEvent] = NoopEventHandler(),
 ) -> int:
     source_files: set[str] = set()
@@ -108,7 +111,15 @@ def treeshake_package(
         references_counts[symbol] = 1
     new_references_count += len(preserve_symbols)
 
-    references_counter = ReferencesCounter(references_counts, import_aliases=aliases)
+    s_decs = get_default_safe_decorators()
+    if safe_decorators:
+        s_decs = s_decs.union(safe_decorators)
+
+    references_counter = ReferencesCounter(
+        references_counts,
+        import_aliases=aliases,
+        safe_decorators=s_decs,
+    )
     treeshake_iteration = 1
     # count references until no new references get added
     while new_references_count:

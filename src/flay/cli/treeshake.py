@@ -86,13 +86,17 @@ class TreeshakePackageCliIO(EventHandler[TreeshakePackageEvent]):
 
 
 def cli_treeshake_package(
-    source_dir: str, import_aliases: dict[str, str], preserve_symbols: set[str]
+    source_dir: str,
+    import_aliases: dict[str, str],
+    preserve_symbols: set[str],
+    safe_decorators: set[str],
 ) -> int:
     with TreeshakePackageCliIO() as io:
         return treeshake_package(
             source_dir=source_dir,
             import_aliases=import_aliases,
             preserve_symbols=preserve_symbols,
+            safe_decorators=safe_decorators,
             event_handler=io,
         )
 

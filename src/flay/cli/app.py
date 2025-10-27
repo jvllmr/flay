@@ -91,6 +91,15 @@ class FlayMainSettings(FlayBaseSettings):
             default_factory=list,
         ),
     ]
+    safe_decorators: t.Annotated[
+        list[str],
+        CliOption(),
+        Field(
+            alias="safe-decorators",
+            description="A list of decorators without side-effects that can be safely removed.",
+            default_factory=list,
+        ),
+    ]
 
 
 @flay.command(name="bundle")
@@ -112,6 +121,7 @@ def flay_main(settings: FlayMainSettings) -> None:
             source_dir=str(settings.output_path.absolute()),
             import_aliases=settings.import_aliases,
             preserve_symbols=set(settings.preserve_symbols),
+            safe_decorators=set(settings.safe_decorators),
         )
         console.print(
             check,

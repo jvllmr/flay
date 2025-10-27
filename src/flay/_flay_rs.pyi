@@ -11,7 +11,10 @@ def transform_imports(source_code: str) -> str: ...
 
 class ReferencesCounter:
     def __init__(
-        self, references_counts: dict[str, int], import_aliases: dict[str, str]
+        self,
+        references_counts: dict[str, int],
+        import_aliases: dict[str, str],
+        safe_decorators: set[str],
     ): ...
     def visit_module(
         self,
