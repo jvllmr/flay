@@ -331,7 +331,7 @@ impl Visitor<'_> for ReferencesCounter {
                 if self.is_global_scope() && is_if_name_main(&if_block.test) {
                     self.maybe_increase_stmt(&stmt);
                     self.always_bump_context = true;
-                } else if self.is_global_scope() {
+                } else if self.is_global_scope() && self.module_spec_has_references() {
                     self.always_bump_context = true;
                     self.visit_expr(&if_block.test);
                     self.always_bump_context = false;
