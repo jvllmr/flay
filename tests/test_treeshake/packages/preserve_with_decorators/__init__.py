@@ -10,6 +10,13 @@ def unknown_decorator(func: t.Callable[[], None]) -> None:
 def decorated_func() -> None:
     pass
 
+def safe_decorator(func: t.Callable[[], None]) -> None:
+    print(func)
+
+@safe_decorator
+def safe_decorated_func() -> None:
+    pass
+
 @dataclass
 class MyClass:
     @classmethod
