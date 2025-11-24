@@ -116,7 +116,7 @@ def test_bundle_annotation_string_literals(
     )
 
     assert (
-        'def accept_hashable(collection: "collections_abc.Hashable") -> "collections_abc.Hashable":\n'
+        'def accept_hashable(collection: "collections.abc.Hashable") -> "collections.abc.Hashable":\n'
         in init_file_content
     )
 
