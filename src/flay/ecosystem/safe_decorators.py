@@ -18,6 +18,7 @@ _stdlib_decorators: set[str] = {
     "functools.total_ordering",
     "functools.wraps",
     "typing.dataclass_transform",
+    "typing.final",
     "typing.no_type_check",
     "typing.overload",
     "typing_extensions.dataclass_transform",
