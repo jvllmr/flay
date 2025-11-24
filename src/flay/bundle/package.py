@@ -20,7 +20,7 @@ import logging
 import os.path
 import typing as t
 import shutil
-from flay._flay_rs import transform_imports
+
 import fnmatch
 import sys
 import typing_extensions as te
@@ -106,7 +106,9 @@ def bundle_package(
             BundlePackageProcessModuleEvent(module_spec=found_module)
         )
         if module_source:
-            module_source = transform_imports(module_source)
+            # additional processing of modules should be done here
+            # initially, imports were transformed here
+            pass
         module_path_part = Path(os.path.sep.join(found_module.split(".")))
 
         if found_path.match(f"*/{module_path_part}/__init__.py"):
