@@ -17,12 +17,11 @@ jobs:
       - uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5
         with:
           persist-credentials: false
-      - name: Setup PDM
-        uses: pdm-project/setup-pdm@94a823180e06fcde4ad29308721954a521c96ed0 # v4
+      - name: Setup UV
+        uses: astral-sh/setup-uv@1e862dfacbd1d6d858c55d9b792c756523627244 # v7.1.4
         with:
           python-version: "3.9"
-          cache: true
       - name: Install dependencies
-        run: pdm install --frozen-lock
+        run: uv sync --groups lint types
       - name: Run MyPy
         run: pdm run mypy

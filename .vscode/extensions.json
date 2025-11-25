@@ -8,6 +8,7 @@
     "esbenp.prettier-vscode",
 
     "streetsidesoftware.code-spell-checker",
-    "rust-lang.rust-analyzer"
+    "rust-lang.rust-analyzer",
+    "ms-vscode.makefile-tools"
   ]
 }

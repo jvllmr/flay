@@ -29,19 +29,8 @@ features = ["pyo3/extension-module"]
 module-name = "flay._flay_rs"
 manifest-path = "rust/Cargo.toml"
 
-[tool.pdm]
-distribution = true
-
-[tool.pdm.version]
-source = "scm"
-
-[tool.pdm.scripts]
-hook = "python -m maturin_import_hook site install"
-
-test = "pytest"
-test_matrix = "nox"
-cov = "pytest --cov=flay --cov-report=html"
-dev = "maturin develop"
+[tool.uv]
+package = true
 
 [dependency-groups]
 test = [
