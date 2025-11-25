@@ -71,7 +71,7 @@ jobs:
         with:
           cache-targets: false
       - name: Install dependencies
-        run: uv sync --groups test
+        run: uv sync --group test
       - name: Run pytest
         env:
           FLAY_INTEGRATION_TEST: 1
