@@ -40,7 +40,7 @@ def run_bundle_package(tmp_path: Path) -> RunBundlePackageT:
         )
         if build_before:
             install_cmd = [
-                "pdm",
+                "uv",
                 "run",
                 "pip",
                 "install",
