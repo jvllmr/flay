@@ -23,18 +23,18 @@ FROM docker.io/rust:1-alpine3.22 AS builder
 RUN apk add python3 python3-dev py3-pip build-base musl-dev
 
 
-RUN --mount=type=cache,target=/root/.cache/pip pip install pdm maturin --break-system-packages
+RUN --mount=type=cache,target=/root/.cache/pip pip install uv maturin --break-system-packages
 WORKDIR /opt/flay
-COPY README.md Cargo.toml Cargo.lock pyproject.toml pdm.lock ./
+COPY README.md Cargo.toml Cargo.lock pyproject.toml uv.lock ./
 COPY rust ./rust
 COPY src ./src
 RUN --mount=type=cache,target=/root/.cache/pip \
-    pdm install --frozen-lock --no-self
+    uv sync --locked --no-install-project
 RUN --mount=type=cache,target=/root/.cache/pip \
     --mount=type=cache,target=/root/.cargo/git \
     --mount=type=cache,target=/root/.cargo/registry \
      maturin develop --release
-RUN pdm run flay bundle flay
+RUN uv run flay bundle flay
 FROM docker.io/python:3.12-alpine3.22 AS runner
 WORKDIR /opt/flay
 RUN apk add gcc

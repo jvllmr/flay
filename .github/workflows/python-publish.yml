@@ -17,7 +17,7 @@ on:
     paths:
       - "src/**"
       - "rust/**"
-      - "pdm.lock"
+      - "uv.lock"
       - "pyproject.toml"
       - "Cargo.lock"
       - "Cargo.toml"
