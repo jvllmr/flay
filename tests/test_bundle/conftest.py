@@ -40,7 +40,7 @@ def run_bundle_package(tmp_path: Path) -> RunBundlePackageT:
         )
         if build_before:
             install_cmd = [
-                "pdm",
+                "uv",
                 "run",
                 "pip",
                 "install",
@@ -64,7 +64,7 @@ def run_bundle_package(tmp_path: Path) -> RunBundlePackageT:
             )
         finally:
             if build_before:
-                subprocess.run(["pdm", "run", "pip", "uninstall", "-y", package_name])
+                subprocess.run(["uv", "run", "pip", "uninstall", "-y", package_name])
             else:
                 sys.path = sys.path[1:]
         return pre_bundle_path / package_name, bundled_path / package_name
