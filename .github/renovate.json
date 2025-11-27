@@ -26,7 +26,13 @@
     {
       "description": "Don't update dependencies that dropped python 3.9 too soon...",
       "matchManagers": ["pep621"],
-      "matchPackageNames": ["platformdirs", "pytest-env"],
+      "matchPackageNames": [
+        "platformdirs",
+        "pytest-env",
+        "pre-commit",
+        "pydantic-settings",
+        "cfgv"
+      ],
       "enabled": false
     },
     {
