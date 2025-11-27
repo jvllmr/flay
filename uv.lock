@@ -417,6 +417,7 @@ wheels = [
 
 [[package]]
 name = "flay"
+version = "0.1.0a2"
 source = { editable = "." }
 dependencies = [
     { name = "clonf", extra = ["click", "settings"] },
