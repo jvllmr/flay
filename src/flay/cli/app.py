@@ -2,7 +2,6 @@ from flay.bundle import DEFAULT_BUNDLE_METADATA
 from flay.common.logging import enable_debug_logging
 
 from flay.common.pydantic import FlayBaseSettings
-from pydantic_settings import CliPositionalArg
 
 import os
 from pydantic import Field, AliasChoices
@@ -32,12 +31,10 @@ def flay(debug_setting: DebugSetting) -> None:
 
 
 class FlayMainSettings(FlayBaseSettings):
-    module_spec: CliPositionalArg[
-        t.Annotated[
-            str,
-            CliArgument(),
-            Field(description="Module that should be bundled"),
-        ]
+    module_spec: t.Annotated[
+        str,
+        CliArgument(),
+        Field(description="Module that should be bundled"),
     ]
     output_path: t.Annotated[
         Path,
@@ -69,7 +66,7 @@ class FlayMainSettings(FlayBaseSettings):
         dict[str, str],
         CliOption(),
         Field(
-            description="Resources that should be bundled. Accepts a module spec mapped to a glob pattern",
+            description="Resources that should be bundled. Accepts a mapping with a module name as key and a glob pattern as value",
             default_factory=dict,
         ),
     ]
@@ -96,7 +93,7 @@ class FlayMainSettings(FlayBaseSettings):
         CliOption(),
         Field(
             alias="safe-decorators",
-            description="A list of decorators without side-effects that can be safely removed.",
+            description="A list of decorators without side-effects that can be safely removed. Absolute paths are required.",
             default_factory=list,
         ),
     ]

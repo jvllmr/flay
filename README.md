@@ -1,44 +1,77 @@
 # flay
 
 > [!IMPORTANT]
-> This project is in a very experimental/alpha stage and can definitely not be used in a productive way so far
+> This project is in an early development stage and probably should not be used in production
 
-A utility for bundling, treeshaking and minifying your python modules and scripts and building OCI container images out of them.
+A utility for bundling and treeshaking your python applications and building OCI container images out of them.
 
-One day I was tasked with building a docker container for a python project and was frustrated with the fact that I have to put all the bloat into it. This cannot be too difficult I thought...
+One day I tasked myself with building a docker container for a python project I was working on thought it would be cool if I could further optimize the footprint of python-based containers. This cannot be too difficult I thought...
+
+## What it does
+
+1. Discover imports and copy the module to bundle with its dependencies into a new directory
+2. Strip unused code from the bundled modules
+3. Finished! Now you can use your bundled module from the new directory
 
 ## Goals
 
-### Step 1
+- Smaller image sizes
+- Smaller layer sizes which result in faster updates
+- Improved runtime performance by removing unused code and imports
+- Safer containers by removing unused code which could become harmful
 
-- a working pipeline for bundling, treeshaking and minifying modules
-- a working CLI with no configuration effort for simple projects
+## Usage
 
-### Step 2
+### Installation
 
-- support for shared objects (i.e. rust based libraries such as pydantic or orjson)
-- support for modules with external files such as HTML, CSS, JavaScript...
-- support for bundling into "one-file"-scripts as far as possible
+Flay needs to be run from inside the environment where the target module is located. Therefore `pipx` or the flay container image can only be used if all needed modules are located inside the current working directory.
 
-### Step 3
+It is recommended to install flay inside your project with your favored python package manager. The package name is `flay`.
 
-- automatically build OCI container images from your project by integrating buildah and possibly other building tools as building backends with presets provided by flay or bring your own ???
-- PEP517 compliant build backend for integration with other tooling
+### CLI usage
 
-## Comparison to other tools
+Right now there is only one command in flay:
 
-### snakepack
+```shell
+# flay bundle <module_spec>
+flay bundle flay
+```
 
-TODO...
+### Configuration
 
-### pyodide-pack
+There are multiple ways to configure flay:
 
-TODO...
+- CLI options
+- `tool.flay` section in `pyproject.toml`
+- env vars or `.env` file with `FLAY_` prefix
+- `flay.toml` in cwd
+- `flay.json` in cwd
+- `flay.yaml` in cwd
 
-### pyinstaller
+Here is a quick reference of what can be configured with flay and the default values:
 
-TODO...
+```yaml
+# flay.yaml
 
-### nukita
+# the output path to put the bundled modules in
+output_path: /flayed
 
-TODO...
+# if package metadata should be bundled
+bundled_metadata: true
+
+# whether the treeshake step should be run
+treeshake: true
+
+# additional non-python resources to include (e.g. html templates)
+# accepts a mapping with a module as key and a glob pattern as value
+resources: {}
+
+# Import aliases mapping. Useful for patching dynamic imports. Absolute paths for symbols are required.
+import-aliases: {}
+
+# List of symbols that should be preserved at all cost. Absolute paths for symbols are required.
+preserve-symbols: []
+
+# A list of decorators without side-effects that can be safely removed. Absolute paths for symbols are required.
+safe-decorators: []
+```
