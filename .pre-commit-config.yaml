@@ -4,6 +4,11 @@ ci:
     - cargo-fix
 
 repos:
+  - repo: https://github.com/astral-sh/uv-pre-commit
+    # uv version.
+    rev: 0.9.13
+    hooks:
+      - id: uv-lock
   - repo: https://github.com/woodruffw/zizmor-pre-commit
     rev: v1.16.3
     hooks:
