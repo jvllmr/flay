@@ -1,6 +1,6 @@
 [project]
 name = "flay"
-description = "Bundle, treeshake and minify your python projects"
+description = "Bundle and treeshake your python projects for containers"
 authors = [{ name = "Jan Vollmer", email = "jan@vllmr.dev" }]
 dependencies = [
   "importlib-metadata>=8.7.0; python_version < '3.11'",
