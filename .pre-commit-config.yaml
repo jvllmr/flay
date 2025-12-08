@@ -6,7 +6,7 @@ ci:
 repos:
   - repo: https://github.com/astral-sh/uv-pre-commit
     # uv version.
-    rev: 0.9.13
+    rev: 0.9.16
     hooks:
       - id: uv-lock
   - repo: https://github.com/woodruffw/zizmor-pre-commit
@@ -26,14 +26,14 @@ repos:
       - id: cargo-fmt
       - id: cargo-fix
   - repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: "v0.14.7"
+    rev: "v0.14.8"
     hooks:
       - id: ruff
         args:
           - --fix
       - id: ruff-format
   - repo: https://github.com/jvllmr/pre-commit-prettier
-    rev: v3.6.2
+    rev: v3.7.4
     hooks:
       - id: prettier
         additional_dependencies:
