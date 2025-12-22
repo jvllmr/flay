@@ -1,6 +1,6 @@
 ci:
   skip:
-    - mypy
+    - ty
     - cargo-fix
 
 repos:
@@ -48,8 +48,8 @@ repos:
       - id: check-toml
   - repo: local
     hooks:
-      - id: mypy
+      - id: ty
         name: static type check
         language: system
-        entry: .venv/bin/mypy --fast-module-lookup
+        entry: .venv/bin/ty check
         pass_filenames: false
