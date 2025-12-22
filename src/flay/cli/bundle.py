@@ -20,6 +20,7 @@ class BundlePackageCliIO(EventHandler[BundlePackageEvent]):
     found_modules_counter: int
     processed_modules: int
     total_modules: int | None
+    progress: Progress
 
     def __init__(self, initial_module_spec: str) -> None:
         self.progress = Progress(
