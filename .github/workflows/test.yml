@@ -61,10 +61,6 @@ jobs:
         uses: astral-sh/setup-uv@1e862dfacbd1d6d858c55d9b792c756523627244 # v7.1.4
         with:
           python-version: ${{ matrix.python-version }}
-      - name: Set up Rust toolchain
-        uses: actions-rs/toolchain@16499b5e05bf2e26879000db0c1d13f7e13fa3af # v1
-        with:
-          toolchain: stable
       - name: Enable git longpaths
         run: git config --global core.longpaths true
       - uses: Swatinem/rust-cache@779680da715d629ac1d338a641029a2f4372abb5 # v2
