@@ -1,16 +1,16 @@
 ci:
   skip:
-    - mypy
+    - ty
     - cargo-fix
 
 repos:
   - repo: https://github.com/astral-sh/uv-pre-commit
     # uv version.
-    rev: 0.9.17
+    rev: 0.9.18
     hooks:
       - id: uv-lock
   - repo: https://github.com/woodruffw/zizmor-pre-commit
-    rev: v1.18.0
+    rev: v1.19.0
     hooks:
       - id: zizmor
   - repo: https://github.com/hadialqattan/pycln
@@ -26,7 +26,7 @@ repos:
       - id: cargo-fmt
       - id: cargo-fix
   - repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: "v0.14.9"
+    rev: "v0.14.10"
     hooks:
       - id: ruff
         args:
@@ -48,8 +48,8 @@ repos:
       - id: check-toml
   - repo: local
     hooks:
-      - id: mypy
+      - id: ty
         name: static type check
         language: system
-        entry: .venv/bin/mypy --fast-module-lookup
+        entry: .venv/bin/ty check
         pass_filenames: false
