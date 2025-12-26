@@ -1,7 +1,7 @@
 {
   "$schema": "https://docs.renovatebot.com/renovate-schema.json",
   "extends": [
-    "config:recommended",
+    "config:best-practices",
     "schedule:weekly",
     "group:allNonMajor",
     "group:testNonMajor",
@@ -11,7 +11,6 @@
     "helpers:pinGitHubActionDigests"
   ],
   "labels": ["dependencies"],
-  "rangeStrategy": "bump",
   "pre-commit": {
     "enabled": true
   },
