@@ -3,6 +3,9 @@
   "extends": [
     "config:recommended",
     "schedule:weekly",
+    "group:allNonMajor",
+    "group:testNonMajor",
+    "group:allDigest",
     ":automergeMinor",
     ":semanticCommitTypeAll(chore)",
     "helpers:pinGitHubActionDigests"
