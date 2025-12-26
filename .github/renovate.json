@@ -34,7 +34,8 @@
         "pytest-env",
         "pre-commit",
         "pydantic-settings",
-        "cfgv"
+        "cfgv",
+        "pytest"
       ],
       "enabled": false
     },
