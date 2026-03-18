@@ -8,7 +8,7 @@
     "group:allDigest",
     ":automergeMinor",
     ":semanticCommitTypeAll(chore)",
-    "helpers:pinGitHubActionDigests"
+    "helpers:pinGitHubActionDigestsToSemver"
   ],
   "labels": ["dependencies"],
   "pre-commit": {
