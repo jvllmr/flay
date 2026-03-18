@@ -16,7 +16,7 @@ jobs:
     container:
       image: docker.io/rust:1-alpine3.22
     steps:
-      - uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
         with:
           persist-credentials: false
       - name: Install dependencies
@@ -25,7 +25,7 @@ jobs:
           pip install uv maturin --break-system-packages
       - name: Enable git longpaths
         run: git config --global core.longpaths true
-      - uses: Swatinem/rust-cache@779680da715d629ac1d338a641029a2f4372abb5 # v2
+      - uses: Swatinem/rust-cache@e18b497796c12c097a38f9edb9d0641fb99eee32 # v2
         with:
           cache-targets: false
       - name: Install dependencies
@@ -35,7 +35,7 @@ jobs:
           FLAY_INTEGRATION_TEST: 1
         run: uv run pytest --cov --cov-report=xml --junitxml=junit.xml -o junit_family=legacy
       - name: Upload coverage report to Codecov
-        uses: codecov/codecov-action@671740ac38dd9b0130fbe1cec585b89eea48d3de # v5
+        uses: codecov/codecov-action@1af58845a975a7985b0beb0cbe6fbbb71a41dbad # v5
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
       - name: Upload test results to Codecov
@@ -54,7 +54,7 @@ jobs:
     runs-on: ${{ matrix.os }}
 
     steps:
-      - uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
         with:
           persist-credentials: false
       - name: Setup UV
@@ -63,7 +63,7 @@ jobs:
           python-version: ${{ matrix.python-version }}
       - name: Enable git longpaths
         run: git config --global core.longpaths true
-      - uses: Swatinem/rust-cache@779680da715d629ac1d338a641029a2f4372abb5 # v2
+      - uses: Swatinem/rust-cache@e18b497796c12c097a38f9edb9d0641fb99eee32 # v2
         with:
           cache-targets: false
       - name: Install dependencies
@@ -73,7 +73,7 @@ jobs:
           FLAY_INTEGRATION_TEST: 1
         run: uv run pytest --cov --cov-report=xml --junitxml=junit.xml -o junit_family=legacy
       - name: Upload coverage report to Codecov
-        uses: codecov/codecov-action@671740ac38dd9b0130fbe1cec585b89eea48d3de # v5
+        uses: codecov/codecov-action@1af58845a975a7985b0beb0cbe6fbbb71a41dbad # v5
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
       - name: Upload test results to Codecov
