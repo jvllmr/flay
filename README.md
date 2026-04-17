@@ -1,11 +1,11 @@
 # flay
 
 > [!IMPORTANT]
-> This project is in an early development stage and probably should not be used in production
+> This project is in an early development stage and probably should not be used in production. Take a look at the [issues of this project](https://github.com/jvllmr/flay/issues) to know what still needs to be done for improved maturity.
 
 A utility for bundling and treeshaking your python applications and building OCI container images out of them.
 
-One day I tasked myself with building a docker container for a python project I was working on thought it would be cool if I could further optimize the footprint of python-based containers. This cannot be too difficult I thought...
+One day I tasked myself with building a docker container for a python project I was working on and I thought it would be cool if I could further optimize the footprint of python-based containers. This cannot be too difficult I thought...
 
 ## What it does
 
