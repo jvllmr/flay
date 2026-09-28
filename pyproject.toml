@@ -43,21 +43,6 @@ manifest-path = "rust/Cargo.toml"
 [tool.uv]
 package = true
 
-[dependency-groups]
-test = [
-  "pytest>=8.4.2",
-  "pytest-cov>=7.0.0",
-  "setuptools>=80.9.0",
-  "pip>=25.2",
-  "wheel>=0.45.1",
-  "pytest-env>=1.1.5",
-  "packaging>=25.0",
-]
-lint = ["ruff>=0.14.2", "pre-commit>=4.3.0", "ty>=0.0.5"]
-dev = ["nox>=2025.10.16", "maturin>=1.9.6", "maturin-import-hook>=0.3.0"]
-debug = ["tuna>=0.5.11"]
-types = ["types-setuptools>=80.9.0.20250822"]
-
 [tool.ty.src]
 include = ["src"]
 
@@ -102,3 +87,18 @@ banned-from = ["typing"]
 
 [tool.ruff.lint.flake8-import-conventions.extend-aliases]
 typing = "t"
+
+[dependency-groups]
+test = [
+  "pytest>=8.4.2",
+  "pytest-cov>=7.0.0",
+  "setuptools>=80.9.0",
+  "pip>=25.2",
+  "wheel>=0.45.1",
+  "pytest-env>=1.1.5",
+  "packaging>=25.0",
+]
+lint = ["ruff>=0.14.2", "pre-commit>=4.3.0", "ty>=0.0.5"]
+dev = ["nox>=2025.10.16", "maturin>=1.9.6", "maturin-import-hook>=0.3.0"]
+debug = ["tuna>=0.5.11"]
+types = ["types-setuptools>=80.9.0.20250822"]
