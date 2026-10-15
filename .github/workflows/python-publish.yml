@@ -102,7 +102,7 @@ jobs:
             target: aarch64
           - runner: ubuntu-24.04
             target: armv7
-          - runner: ubuntu-24.04
+          - runner: ubuntu-22.04
             target: s390x
           - runner: ubuntu-24.04
             target: ppc64le
