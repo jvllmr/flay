@@ -94,17 +94,17 @@ jobs:
     strategy:
       matrix:
         platform:
-          - runner: ubuntu-26.04
+          - runner: ubuntu-24.04
             target: x86_64
-          - runner: ubuntu-26.04
+          - runner: ubuntu-24.04
             target: x86
-          - runner: ubuntu-26.04
+          - runner: ubuntu-24.04
             target: aarch64
-          - runner: ubuntu-26.04
+          - runner: ubuntu-24.04
             target: armv7
-          - runner: ubuntu-26.04
+          - runner: ubuntu-24.04
             target: s390x
-          - runner: ubuntu-26.04
+          - runner: ubuntu-24.04
             target: ppc64le
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -137,13 +137,13 @@ jobs:
     strategy:
       matrix:
         platform:
-          - runner: ubuntu-26.04
+          - runner: ubuntu-24.04
             target: x86_64
-          - runner: ubuntu-26.04
+          - runner: ubuntu-24.04
             target: x86
-          - runner: ubuntu-26.04
+          - runner: ubuntu-24.04
             target: aarch64
-          - runner: ubuntu-26.04
+          - runner: ubuntu-24.04
             target: armv7
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
