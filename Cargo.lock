@@ -192,6 +192,7 @@ dependencies = [
  "ruff_python_parser",
  "ruff_python_stdlib",
  "ruff_text_size",
+ "thin-vec",
 ]
 
 [[package]]

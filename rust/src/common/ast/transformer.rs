@@ -6,6 +6,7 @@ use ruff_python_ast::{
     PatternKeyword, Stmt, StringLiteral, StringLiteralValue, TString, TStringValue, TypeParam,
     TypeParams, UnaryOp, WithItem,
 };
+use thin_vec::ThinVec;
 
 fn box_expr_option(expr: Option<Expr>) -> Option<Box<Expr>> {
     expr.map(Box::new)
@@ -93,7 +94,7 @@ pub trait Transformer {
     ) -> Option<PatternKeyword> {
         Some(walk_pattern_keyword(self, pattern_keyword))
     }
-    fn visit_body(&mut self, body: &[Stmt]) -> Vec<Stmt> {
+    fn visit_body(&mut self, body: &[Stmt]) -> ThinVec<Stmt> {
         walk_body(self, body)
     }
     fn visit_elif_else_clause(
@@ -124,8 +125,8 @@ pub trait Transformer {
     }
 }
 
-pub fn walk_body<V: Transformer + ?Sized>(visitor: &mut V, body: &[Stmt]) -> Vec<Stmt> {
-    let mut new_stmts: Vec<Stmt> = Vec::new();
+pub fn walk_body<V: Transformer + ?Sized>(visitor: &mut V, body: &[Stmt]) -> ThinVec<Stmt> {
+    let mut new_stmts: ThinVec<Stmt> = ThinVec::new();
     for stmt in body {
         if let Some(new_stmt) = visitor.visit_stmt(stmt.to_owned()) {
             new_stmts.push(new_stmt);
@@ -148,7 +149,7 @@ pub fn walk_elif_else_clause<V: Transformer + ?Sized>(
 pub fn walk_stmt<V: Transformer + ?Sized>(visitor: &mut V, stmt: Stmt) -> Option<Stmt> {
     match stmt {
         Stmt::FunctionDef(mut func_def) => {
-            let mut new_decorators: Vec<Decorator> = Vec::new();
+            let mut new_decorators: ThinVec<Decorator> = ThinVec::new();
             for decorator in func_def.decorator_list {
                 if let Some(new_decorator) = visitor.visit_decorator(decorator) {
                     new_decorators.push(new_decorator);
@@ -170,7 +171,7 @@ pub fn walk_stmt<V: Transformer + ?Sized>(visitor: &mut V, stmt: Stmt) -> Option
             Some(Stmt::FunctionDef(func_def))
         }
         Stmt::ClassDef(mut class_def) => {
-            let mut new_decorators: Vec<Decorator> = Vec::new();
+            let mut new_decorators: ThinVec<Decorator> = ThinVec::new();
             for decorator in class_def.decorator_list {
                 if let Some(new_decorator) = visitor.visit_decorator(decorator) {
                     new_decorators.push(new_decorator);
@@ -558,12 +559,16 @@ pub fn walk_expr<V: Transformer + ?Sized>(visitor: &mut V, expr: Expr) -> Option
                     new_generators.push(new_generator);
                 }
             }
-            dict_comp.generators = new_generators;
-            dict_comp.key = Box::new(
-                visitor
-                    .visit_expr(*dict_comp.key)
-                    .expect("Cannot remove key from dict comprehension"),
-            );
+            dict_comp.generators = new_generators.into_boxed_slice();
+
+            if let Some(key) = dict_comp.key {
+                dict_comp.key = Some(Box::new(
+                    visitor
+                        .visit_expr(*key)
+                        .expect("Cannot remove key from dict comprehension"),
+                ));
+            }
+
             dict_comp.value = Box::new(
                 visitor
                     .visit_expr(*dict_comp.value)
@@ -610,11 +615,6 @@ pub fn walk_expr<V: Transformer + ?Sized>(visitor: &mut V, expr: Expr) -> Option
             Some(Expr::YieldFrom(yield_from))
         }
         Expr::Compare(mut compare) => {
-            compare.left = Box::new(
-                visitor
-                    .visit_expr(*compare.left)
-                    .expect("Cannot remove left from comparison"),
-            );
             let mut new_cmp_ops: Vec<CmpOp> = Vec::new();
             for cmp_op in compare.ops {
                 if let Some(new_cmp_op) = visitor.visit_cmp_op(cmp_op) {
@@ -623,13 +623,13 @@ pub fn walk_expr<V: Transformer + ?Sized>(visitor: &mut V, expr: Expr) -> Option
             }
             compare.ops = new_cmp_ops.into_boxed_slice();
 
-            let mut new_comparators: Vec<Expr> = Vec::new();
-            for comparator in compare.comparators {
-                if let Some(new_comparator) = visitor.visit_expr(comparator) {
-                    new_comparators.push(new_comparator);
+            let mut new_operands: Vec<Expr> = Vec::new();
+            for operand in compare.operands {
+                if let Some(new_comparator) = visitor.visit_expr(operand) {
+                    new_operands.push(new_comparator);
                 }
             }
-            compare.comparators = new_comparators.into_boxed_slice();
+            compare.operands = new_operands.into_boxed_slice();
             Some(Expr::Compare(compare))
         }
         Expr::Call(mut call) => {
@@ -648,11 +648,11 @@ pub fn walk_expr<V: Transformer + ?Sized>(visitor: &mut V, expr: Expr) -> Option
             let mut new_f_string_parts: Vec<FStringPart> = Vec::new();
             for f_string_part in f_string.value.iter() {
                 if let Some(new_f_string_part) = match f_string_part {
-                    ast::FStringPart::Literal(string_literal) => visitor
+                    ast::FStringPartRef::Literal(string_literal) => visitor
                         .visit_string_literal(string_literal.to_owned())
                         .map(ast::FStringPart::Literal),
 
-                    ast::FStringPart::FString(f_string) => visitor
+                    ast::FStringPartRef::FString(f_string) => visitor
                         .visit_f_string(f_string.to_owned())
                         .map(ast::FStringPart::FString),
                 } {
@@ -854,21 +854,21 @@ pub fn walk_arguments<V: Transformer + ?Sized>(
     // Note that the there might be keywords before the last arg, e.g. in
     // f(*args, a=2, *args2, **kwargs)`, but we follow Python in evaluating first `args` and then
     // `keywords`. See also [Arguments::arguments_source_order`].
-    let mut new_args: Vec<Expr> = Vec::new();
+    let mut new_args: ThinVec<Expr> = ThinVec::new();
     for arg in arguments.args {
         if let Some(new_arg) = visitor.visit_expr(arg) {
             new_args.push(new_arg);
         }
     }
-    arguments.args = new_args.into_boxed_slice();
+    arguments.args = new_args;
 
-    let mut new_keywords: Vec<Keyword> = Vec::new();
+    let mut new_keywords: ThinVec<Keyword> = ThinVec::new();
     for keyword in arguments.keywords {
         if let Some(new_keyword) = visitor.visit_keyword(keyword) {
             new_keywords.push(new_keyword);
         }
     }
-    arguments.keywords = new_keywords.into_boxed_slice();
+    arguments.keywords = new_keywords;
 
     arguments
 }
@@ -879,7 +879,7 @@ pub fn walk_parameters<V: Transformer + ?Sized>(
 ) -> Parameters {
     // Defaults are evaluated before annotations.
 
-    let mut new_posonlyargs: Vec<ParameterWithDefault> = Vec::new();
+    let mut new_posonlyargs: ThinVec<ParameterWithDefault> = ThinVec::new();
     for mut arg in parameters.posonlyargs {
         if let Some(default) = arg.default {
             arg.default = visitor.visit_expr(*default).map(Box::new);
@@ -890,7 +890,7 @@ pub fn walk_parameters<V: Transformer + ?Sized>(
         }
     }
     parameters.posonlyargs = new_posonlyargs;
-    let mut new_args: Vec<ParameterWithDefault> = Vec::new();
+    let mut new_args: ThinVec<ParameterWithDefault> = ThinVec::new();
     for mut arg in parameters.args {
         if let Some(default) = arg.default {
             arg.default = visitor.visit_expr(*default).map(Box::new);
@@ -904,7 +904,7 @@ pub fn walk_parameters<V: Transformer + ?Sized>(
     if let Some(arg) = parameters.vararg {
         parameters.vararg = visitor.visit_parameter(*arg).map(Box::new);
     }
-    let mut new_kwonlyargs: Vec<ParameterWithDefault> = Vec::new();
+    let mut new_kwonlyargs: ThinVec<ParameterWithDefault> = ThinVec::new();
     for mut arg in parameters.kwonlyargs {
         if let Some(default) = arg.default {
             arg.default = visitor.visit_expr(*default).map(Box::new);
@@ -1031,7 +1031,7 @@ pub fn walk_pattern<V: Transformer + ?Sized>(visitor: &mut V, pattern: Pattern) 
             Pattern::MatchSequence(match_sequence)
         }
         Pattern::MatchMapping(mut match_mapping) => {
-            let mut new_keys: Vec<Expr> = Vec::new();
+            let mut new_keys: ThinVec<Expr> = ThinVec::new();
             for expr in match_mapping.keys {
                 if let Some(new_expr) = visitor.visit_expr(expr) {
                     new_keys.push(new_expr);
@@ -1040,7 +1040,7 @@ pub fn walk_pattern<V: Transformer + ?Sized>(visitor: &mut V, pattern: Pattern) 
 
             match_mapping.keys = new_keys;
 
-            let mut new_patterns: Vec<Pattern> = Vec::new();
+            let mut new_patterns: ThinVec<Pattern> = ThinVec::new();
             for pattern in match_mapping.patterns {
                 if let Some(new_pattern) = visitor.visit_pattern(pattern) {
                     new_patterns.push(new_pattern);
@@ -1084,7 +1084,7 @@ pub fn walk_pattern_arguments<V: Transformer + ?Sized>(
     visitor: &mut V,
     mut pattern_arguments: PatternArguments,
 ) -> PatternArguments {
-    let mut new_patterns: Vec<Pattern> = Vec::new();
+    let mut new_patterns: ThinVec<Pattern> = ThinVec::new();
     for pattern in pattern_arguments.patterns {
         if let Some(new_pattern) = visitor.visit_pattern(pattern) {
             new_patterns.push(new_pattern);
