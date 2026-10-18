@@ -11,6 +11,7 @@ use ruff_python_ast::{AtomicNodeIndex, Mod, ModModule, Stmt, StmtImportFrom, Stm
 use ruff_python_codegen::{Generator, Stylist};
 use ruff_python_parser::{Mode, ParseError, ParseOptions, Parsed, parse};
 use ruff_text_size::TextRange;
+use thin_vec::ThinVec;
 
 use crate::common::module_spec::get_parent_package;
 
@@ -21,7 +22,7 @@ pub fn parse_python_source(python_source: &str) -> Result<Mod, ParseError> {
 }
 
 pub fn generate_source(
-    body: &Vec<Stmt>,
+    body: &ThinVec<Stmt>,
     parsed: Parsed<ModModule>,
     original_source: &str,
 ) -> String {

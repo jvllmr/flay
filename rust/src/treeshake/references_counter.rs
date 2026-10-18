@@ -9,6 +9,7 @@ use ruff_python_ast::{
     Decorator, Expr, ExprAttribute, ExprCompare, Stmt,
     visitor::{Visitor, walk_expr, walk_stmt},
 };
+use thin_vec::ThinVec;
 
 use crate::common::ast::{
     get_import_from_absolute_module_spec, parse_python_source,
@@ -209,7 +210,7 @@ impl ReferencesCounter {
         false
     }
 
-    fn has_unsafe_decorator(&mut self, decorators: &Vec<Decorator>) -> bool {
+    fn has_unsafe_decorator(&mut self, decorators: &ThinVec<Decorator>) -> bool {
         for decorator in decorators {
             if !self.is_safe_decorator(decorator) {
                 return true;
@@ -222,25 +223,24 @@ impl ReferencesCounter {
 fn is_if_name_main(expr: &Expr) -> bool {
     if let Expr::Compare(ExprCompare {
         ops: cmp_ops,
-        left,
-        comparators,
+        operands,
         ..
     }) = expr
     {
         // NOTE: make more readable?
         if cmp_ops.len() == 1
             && cmp_ops[0].is_eq()
-            && comparators.len() == 1
-            && ((left
+            && operands.len() == 2
+            && ((operands[0]
                 .as_name_expr()
                 .is_some_and(|name| name.id.as_str() == "__name__")
-                && comparators[0]
+                && operands[1]
                     .as_string_literal_expr()
                     .is_some_and(|c| c.value == *"__main__"))
-                || (comparators[0]
+                || (operands[0]
                     .as_name_expr()
                     .is_some_and(|name| name.id.as_str() == "__name__")
-                    && left
+                    && operands[1]
                         .as_string_literal_expr()
                         .is_some_and(|c| c.value == *"__main__")))
         {
