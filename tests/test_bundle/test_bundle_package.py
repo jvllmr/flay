@@ -21,9 +21,14 @@ def test_bundle_non_existing() -> None:
         bundle_package("non_existing_module", Path("sub_dir"))
 
 
-def test_invalid_package(run_bundle_package: RunBundlePackageT) -> None:
-    with pytest.raises(FlayFileNotFoundError):
-        run_bundle_package("invalid_module", "invalid_module")
+def test_bundle_namespace_package(run_bundle_package: RunBundlePackageT) -> None:
+    """
+    A directory without an __init__.py is bundled as a namespace package
+    """
+    _, result_path = run_bundle_package("invalid_module", "invalid_module")
+
+    assert (result_path / "empty_file.py").exists()
+    assert not (result_path / "__init__.py").exists()
 
 
 @pytest.mark.skipif(
