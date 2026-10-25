@@ -358,6 +358,22 @@ impl Visitor<'_> for ReferencesCounter {
                     self.maybe_increase_stmt(&stmt);
                     self.always_bump_context = true;
                 }
+                // default values and annotations are evaluated in the
+                // enclosing scope, before the parameter names exist; visit
+                // them before the scope is entered so the parameters do not
+                // shadow their names
+                for default in func_def
+                    .parameters
+                    .iter_non_variadic_params()
+                    .filter_map(|parameter| parameter.default.as_deref())
+                {
+                    self.visit_expr(default);
+                }
+                for parameter in func_def.parameters.iter().map(|p| p.as_parameter()) {
+                    if let Some(annotation) = &parameter.annotation {
+                        self.visit_annotation(annotation);
+                    }
+                }
             }
 
             Stmt::If(if_block) => {
