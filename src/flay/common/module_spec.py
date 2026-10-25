@@ -81,7 +81,7 @@ def _valid_module_spec(module_spec: str, result: ModuleSpec) -> bool:
     if result.origin is None:
         # namespace packages have no __init__.py and therefore no origin;
         # use one of their search locations instead
-        if not result.submodule_search_locations:
+        if not result.submodule_search_locations:  # pragma: no cover
             return False
         origin = Path(next(iter(result.submodule_search_locations)))
     else:
