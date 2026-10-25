@@ -65,6 +65,7 @@ impl NodesRemover {
         let file_content = fs::read_to_string(&self.source_path)?;
         let parsed = parse_module(&file_content).unwrap();
         let module = parsed.syntax();
+        self.names_provider.seed_module_names(&module.body);
         let new_body = self.visit_body(&module.body);
 
         let stylist = Stylist::from_tokens(parsed.tokens(), &file_content);
