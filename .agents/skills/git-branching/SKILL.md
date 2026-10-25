@@ -10,7 +10,8 @@ never commit there unless the user explicitly asks for it.
 
 ## Rules
 
-1. Before starting any change, create or switch to a task branch:
+1. Before starting any change, base new work on the latest `main`:
+   `git checkout main && git pull`, then create a task branch:
    `git checkout -b <type>/<short-slug>` (e.g. `feat/bundle-namespaces`,
    `fix/treeshake-loc-provider`, `chore/update-deps`).
 2. Default branch for new work is the current task branch, not `main`. If the
@@ -25,4 +26,4 @@ never commit there unless the user explicitly asks for it.
 ## Commands
 
 - Check state: `git status --short && git branch --show-current`
-- New task branch: `git checkout -b <type>/<short-slug>`
+- New task branch off latest main: `git checkout main && git pull && git checkout -b <type>/<short-slug>`
