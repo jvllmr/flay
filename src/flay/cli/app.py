@@ -62,6 +62,13 @@ class FlayMainSettings(FlayBaseSettings):
             description="Should unused source code be stripped from the bundle?",
         ),
     ] = True
+    remove_type_annotations: t.Annotated[
+        bool,
+        CliOption(),
+        Field(
+            description="Should type annotations be removed from the bundled modules?",
+        ),
+    ] = True
     resources: t.Annotated[
         dict[str, str],
         CliOption(),
@@ -109,6 +116,7 @@ def flay_main(settings: FlayMainSettings) -> None:
         bundle_metadata=settings.bundle_metadata,
         resources=settings.resources,
         import_aliases=settings.import_aliases,
+        remove_type_annotations=settings.remove_type_annotations,
     )
     console.print(check, f"Finished bundling {settings.module_spec}")
     if settings.treeshake:

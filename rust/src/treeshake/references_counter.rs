@@ -12,7 +12,7 @@ use ruff_python_ast::{
 use thin_vec::ThinVec;
 
 use crate::common::ast::{
-    get_import_from_absolute_module_spec, parse_python_source,
+    full_name::get_full_name_for_expr, get_import_from_absolute_module_spec, parse_python_source,
     providers::fully_qualified_name_provider::FullyQualifiedNameProvider,
 };
 
@@ -219,6 +219,94 @@ impl ReferencesCounter {
         }
         false
     }
+
+    /// A string annotation like `Optional["SomeType"]` holds a forward
+    /// reference; the referenced name must stay alive
+    fn bump_string_annotation_references(&mut self, annotation: &Expr) {
+        let mut names: Vec<String> = Vec::new();
+        collect_string_annotation_reference_names(annotation, &mut names);
+        for name in names {
+            for fqn in self.names_provider.resolve_fully_qualified_name(&name) {
+                self.increase(&fqn);
+            }
+        }
+    }
+}
+
+/// Collect names referenced from string forward references inside an
+/// annotation. Unquoted names are referenced by the regular walk and must
+/// not be collected here.
+fn collect_string_annotation_reference_names(expr: &Expr, names: &mut Vec<String>) {
+    match expr {
+        Expr::StringLiteral(literal) => {
+            if let Ok(parsed) = ruff_python_parser::parse(
+                literal.value.to_str(),
+                ruff_python_parser::ParseOptions::from(ruff_python_parser::Mode::Expression),
+            ) {
+                if let ruff_python_ast::Mod::Expression(inner) = parsed.syntax() {
+                    collect_annotation_reference_names(&inner.body, names);
+                }
+            }
+        }
+        Expr::Subscript(subscript) => {
+            collect_string_annotation_reference_names(&subscript.value, names);
+            collect_string_annotation_reference_names(&subscript.slice, names);
+        }
+        Expr::Tuple(tuple) => {
+            for element in &tuple.elts {
+                collect_string_annotation_reference_names(element, names);
+            }
+        }
+        Expr::List(list) => {
+            for element in &list.elts {
+                collect_string_annotation_reference_names(element, names);
+            }
+        }
+        Expr::BinOp(bin_op) => {
+            collect_string_annotation_reference_names(&bin_op.left, names);
+            collect_string_annotation_reference_names(&bin_op.right, names);
+        }
+        _ => {}
+    }
+}
+
+/// Collect all names of a parsed forward reference expression, following
+/// nested string annotations recursively
+fn collect_annotation_reference_names(expr: &Expr, names: &mut Vec<String>) {
+    match expr {
+        Expr::StringLiteral(literal) => {
+            if let Ok(parsed) = ruff_python_parser::parse(
+                literal.value.to_str(),
+                ruff_python_parser::ParseOptions::from(ruff_python_parser::Mode::Expression),
+            ) {
+                if let ruff_python_ast::Mod::Expression(inner) = parsed.syntax() {
+                    collect_annotation_reference_names(&inner.body, names);
+                }
+            }
+        }
+        Expr::Subscript(subscript) => {
+            collect_annotation_reference_names(&subscript.value, names);
+            collect_annotation_reference_names(&subscript.slice, names);
+        }
+        Expr::Tuple(tuple) => {
+            for element in &tuple.elts {
+                collect_annotation_reference_names(element, names);
+            }
+        }
+        Expr::List(list) => {
+            for element in &list.elts {
+                collect_annotation_reference_names(element, names);
+            }
+        }
+        Expr::BinOp(bin_op) => {
+            collect_annotation_reference_names(&bin_op.left, names);
+            collect_annotation_reference_names(&bin_op.right, names);
+        }
+        Expr::Name(_) | Expr::Attribute(_) => {
+            names.extend(get_full_name_for_expr(expr));
+        }
+        _ => {}
+    }
 }
 
 fn is_if_name_main(expr: &Expr) -> bool {
@@ -286,7 +374,14 @@ impl Visitor<'_> for ReferencesCounter {
         self.make_known_stmt(&stmt);
 
         match &stmt {
-            Stmt::AnnAssign(_) | Stmt::AugAssign(_) => {
+            Stmt::AnnAssign(ann_assign) => {
+                self.bump_string_annotation_references(&ann_assign.annotation);
+                if self.has_references_for_stmt(&stmt) {
+                    self.maybe_increase_stmt(&stmt);
+                    self.always_bump_context = true;
+                }
+            }
+            Stmt::AugAssign(_) => {
                 if self.has_references_for_stmt(&stmt) {
                     self.maybe_increase_stmt(&stmt);
                     self.always_bump_context = true;
@@ -339,6 +434,31 @@ impl Visitor<'_> for ReferencesCounter {
                 }
             }
             Stmt::FunctionDef(func_def) => {
+                // forward references in string annotations reference real names
+                for parameter_with_default in func_def
+                    .parameters
+                    .posonlyargs
+                    .iter()
+                    .chain(func_def.parameters.args.iter())
+                    .chain(func_def.parameters.kwonlyargs.iter())
+                {
+                    if let Some(annotation) = &parameter_with_default.parameter.annotation {
+                        self.bump_string_annotation_references(annotation);
+                    }
+                }
+                if let Some(vararg) = &func_def.parameters.vararg {
+                    if let Some(annotation) = &vararg.annotation {
+                        self.bump_string_annotation_references(annotation);
+                    }
+                }
+                if let Some(kwarg) = &func_def.parameters.kwarg {
+                    if let Some(annotation) = &kwarg.annotation {
+                        self.bump_string_annotation_references(annotation);
+                    }
+                }
+                if let Some(returns) = &func_def.returns {
+                    self.bump_string_annotation_references(returns);
+                }
                 if self.has_unsafe_decorator(&func_def.decorator_list)
                     || self.has_references_for_stmt(&stmt)
                 {
