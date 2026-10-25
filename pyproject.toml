@@ -97,7 +97,7 @@ test = [
   "wheel>=0.45.1",
   "pytest-env>=1.1.5",
   "packaging>=25.0",
-  "fastapi<0.116",
+  "fastapi>=0.116",
   "httpx2>=2.0.0",
 ]
 lint = ["ruff>=0.14.2", "pre-commit>=4.3.0", "ty>=0.0.5"]
