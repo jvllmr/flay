@@ -487,10 +487,9 @@ debug = [
     { name = "tuna" },
 ]
 dev = [
-    { name = "maturin" },
+    { name = "maturin", extra = ["patchelf"] },
     { name = "maturin-import-hook" },
     { name = "nox" },
-    { name = "patchelf" },
 ]
 lint = [
     { name = "pre-commit", version = "4.3.0", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.10'" },
@@ -526,10 +525,9 @@ requires-dist = [
 [package.metadata.requires-dev]
 debug = [{ name = "tuna", specifier = ">=0.5.11" }]
 dev = [
-    { name = "maturin", specifier = ">=1.9.6" },
+    { name = "maturin", extras = ["patchelf"], specifier = ">=1.9.6" },
     { name = "maturin-import-hook", specifier = ">=0.3.0" },
     { name = "nox", specifier = ">=2025.10.16" },
-    { name = "patchelf", specifier = ">=0.19.1.0" },
 ]
 lint = [
     { name = "pre-commit", specifier = ">=4.3.0" },
@@ -681,6 +679,11 @@ wheels = [
     { url = "https://files.pythonhosted.org/packages/1d/98/1d0222521e112cd058b56e8d96c72cf9615f799e3b557adb4b16004f42aa/maturin-1.10.2-py3-none-win32.whl", hash = "sha256:da031771d9fb6ddb1d373638ec2556feee29e4507365cd5749a2d354bcadd818", size = 7667897, upload-time = "2025-11-19T11:53:10.14Z" },
     { url = "https://files.pythonhosted.org/packages/a0/ec/c6c973b1def0d04533620b439d5d7aebb257657ba66710885394514c8045/maturin-1.10.2-py3-none-win_amd64.whl", hash = "sha256:da777766fd584440dc9fecd30059a94f85e4983f58b09e438ae38ee4b494024c", size = 8908416, upload-time = "2025-11-19T11:53:12.862Z" },
     { url = "https://files.pythonhosted.org/packages/1b/01/7da60c9f7d5dc92dfa5e8888239fd0fb2613ee19e44e6db5c2ed5595fab3/maturin-1.10.2-py3-none-win_arm64.whl", hash = "sha256:a4c29a770ea2c76082e0afc6d4efd8ee94405588bfae00d10828f72e206c739b", size = 7506680, upload-time = "2025-11-19T11:53:15.403Z" },
+]
+
+[package.optional-dependencies]
+patchelf = [
+    { name = "patchelf" },
 ]
 
 [[package]]
