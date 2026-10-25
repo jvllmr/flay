@@ -11,6 +11,13 @@ pytestmark = pytest.mark.skipif(
     reason="Flay integration tests are not enabled. Enable them via setting FLAY_INTEGRATION_TEST env var.",
 )
 
+# treeshake needs a live root inside the bundle; pre-commit has its
+# `if __name__ == "__main__"` guard, fastapi needs an explicitly preserved
+# entry symbol
+_INTEGRATION_PRESERVE_SYMBOLS: dict[str, set[str]] = {
+    "test_integration_fastapi": {"fastapi.FastAPI"},
+}
+
 
 @pytest.fixture(autouse=True)
 def bundle_and_treeshake(
@@ -21,7 +28,9 @@ def bundle_and_treeshake(
     target_path = tmp_path
 
     bundle_package(package_name, target_path, bundle_metadata=True)
-    treeshake_package(str(target_path))
+    treeshake_package(
+        str(target_path), preserve_symbols=_INTEGRATION_PRESERVE_SYMBOLS.get(test_name)
+    )
 
     old_sys_path = sys.path
 
@@ -42,3 +51,34 @@ def test_integration_pre_commit() -> None:
     from pre_commit.main import main  # type: ignore[import-untyped]
 
     main(["validate-config"])
+
+
+def test_integration_fastapi() -> None:
+    """
+    Bundle/treeshake fastapi, define a route with a pydantic model and
+    generate the openapi schema from it
+    """
+
+    from fastapi import FastAPI
+    from pydantic import BaseModel
+
+    class Item(BaseModel):
+        name: str
+        price: float
+
+    app = FastAPI()
+
+    @app.get("/items/{item_id}")
+    def get_item(item_id: int) -> Item:
+        return Item(name="test", price=1.5)
+
+    schema = app.openapi()
+    item_schema = schema["components"]["schemas"]["Item"]
+    assert item_schema["properties"] == {
+        "name": {"title": "Name", "type": "string"},
+        "price": {"title": "Price", "type": "number"},
+    }
+    assert (
+        schema["paths"]["/items/{item_id}"]["get"]["operationId"]
+        == "get_item_items__item_id__get"
+    )
