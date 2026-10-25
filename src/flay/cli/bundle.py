@@ -87,6 +87,7 @@ def cli_bundle_package(
     bundle_metadata: bool,
     resources: dict[str, str],
     import_aliases: dict[str, str],
+    remove_type_annotations: bool,
 ) -> None:
     with BundlePackageCliIO(initial_module_spec=module_spec) as io:
         bundle_package(
@@ -95,6 +96,7 @@ def cli_bundle_package(
             bundle_metadata=bundle_metadata,
             resources=resources,
             import_aliases=import_aliases,
+            remove_type_annotations=remove_type_annotations,
             event_handler=io,
         )
 

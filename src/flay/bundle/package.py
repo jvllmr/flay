@@ -1,6 +1,6 @@
 from __future__ import annotations
 from flay.common.compat import FLAY_STANDARD_ENCODING
-from flay._flay_rs import FileCollector
+from flay._flay_rs import AnnotationsRemover, FileCollector
 from importlib.metadata import (
     Distribution,
     PackageNotFoundError,
@@ -9,6 +9,7 @@ from importlib.metadata import (
 from flay.common.compat import packages_distributions
 from flay.common.events import Event, EventHandler, NoopEventHandler
 from flay.ecosystem.import_aliases import get_default_import_aliases
+from flay.ecosystem.type_annotations import get_default_annotation_ecosystems
 from . import DEFAULT_BUNDLE_METADATA
 from flay.common.module_spec import (
     find_all_files_in_module_spec,
@@ -58,6 +59,7 @@ def bundle_package(
     bundle_metadata: bool = DEFAULT_BUNDLE_METADATA,
     resources: dict[str, str] | None = None,
     import_aliases: dict[str, str] | None = None,
+    remove_type_annotations: bool = True,
     event_handler: EventHandler[BundlePackageEvent] = NoopEventHandler(),
 ) -> None:
     resources = resources or {}
@@ -65,6 +67,7 @@ def bundle_package(
     if import_aliases:
         aliases.update(import_aliases)
     collector = FileCollector(package=module_spec, import_aliases=aliases)
+    annotations_remover = AnnotationsRemover(get_default_annotation_ecosystems())
 
     for path in find_all_files_in_module_spec(module_spec):
         if path.match("*.py"):
@@ -106,9 +109,9 @@ def bundle_package(
             BundlePackageProcessModuleEvent(module_spec=found_module)
         )
         if module_source:
-            # additional processing of modules should be done here
             # initially, imports were transformed here
-            pass
+            if remove_type_annotations and found_path.match("*.py"):
+                module_source = annotations_remover.remove_annotations(module_source)
         module_path_part = Path(os.path.sep.join(found_module.split(".")))
 
         if found_path.match(f"*/{module_path_part}/__init__.py"):

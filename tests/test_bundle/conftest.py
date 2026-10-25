@@ -16,6 +16,7 @@ class RunBundlePackageT(t.Protocol):
         module_spec: str,
         resources: dict[str, str] | None = None,
         import_aliases: dict[str, str] | None = None,
+        remove_type_annotations: bool = True,
     ) -> tuple[Path, Path]: ...
 
 
@@ -29,6 +30,7 @@ def run_bundle_package(tmp_path: Path) -> RunBundlePackageT:
         module_spec: str,
         resources: dict[str, str] | None = None,
         import_aliases: dict[str, str] | None = None,
+        remove_type_annotations: bool = True,
     ) -> tuple[Path, Path]:
         pre_bundle_path = tmp_path / "pre_bundle"
         bundled_path = tmp_path / "bundled"
@@ -61,6 +63,7 @@ def run_bundle_package(tmp_path: Path) -> RunBundlePackageT:
                 resources=resources or {},
                 bundle_metadata=False,
                 import_aliases=import_aliases,
+                remove_type_annotations=remove_type_annotations,
             )
         finally:
             if build_before:

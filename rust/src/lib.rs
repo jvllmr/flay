@@ -2,6 +2,7 @@ mod bundle;
 mod common;
 mod constants;
 mod treeshake;
+use bundle::annotations_remover::AnnotationsRemover;
 use bundle::file_collector::FileCollector;
 
 use pyo3::prelude::*;
@@ -10,6 +11,9 @@ use treeshake::references_counter::ReferencesCounter;
 #[pymodule]
 #[pyo3(name = "_flay_rs")]
 mod flay {
+    #[pymodule_export]
+    use super::AnnotationsRemover;
+
     #[pymodule_export]
     use super::FileCollector;
 

@@ -31,7 +31,9 @@ def test_invalid_package(run_bundle_package: RunBundlePackageT) -> None:
     reason="File content is not exactly the same on windows... Fix?",
 )
 def test_simple_bundle_hello_world(run_bundle_package: RunBundlePackageT) -> None:
-    source_path, result_path = run_bundle_package("hello_world", "hello_world")
+    source_path, result_path = run_bundle_package(
+        "hello_world", "hello_world", remove_type_annotations=False
+    )
 
     for (sub_path1, dirs1, _files1), (sub_path2, dirs2, _files2) in zip(
         os.walk(str(source_path)), os.walk(str(result_path))
@@ -93,7 +95,9 @@ def test_bundle_annotation_string_literals(
     run_bundle_package: RunBundlePackageT,
 ) -> None:
     _, result_path = run_bundle_package(
-        "annotation_string_literals", "annotation_string_literals"
+        "annotation_string_literals",
+        "annotation_string_literals",
+        remove_type_annotations=False,
     )
 
     init_file = result_path / "__init__.py"
@@ -119,6 +123,53 @@ def test_bundle_annotation_string_literals(
         'def accept_hashable(collection: "collections.abc.Hashable") -> "collections.abc.Hashable":\n'
         in init_file_content
     )
+
+
+def test_bundle_remove_type_annotations(
+    run_bundle_package: RunBundlePackageT,
+) -> None:
+    _, result_path = run_bundle_package("type_annotations", "type_annotations")
+
+    init_file_content = (result_path / "__init__.py").read_text()
+
+    # function parameter and return annotations are removed
+    assert 'def annotated_function(first, second="x", *args, key=False, **kwargs):' in (
+        init_file_content
+    )
+    # a variable annotation keeps its assignment, a bare annotation is removed
+    assert "annotated_var = [1]" in init_file_content
+    assert "bare_annotation" not in init_file_content
+
+
+def test_bundle_remove_type_annotations_preserves_ecosystems(
+    run_bundle_package: RunBundlePackageT,
+) -> None:
+    _, result_path = run_bundle_package("type_annotations", "type_annotations")
+
+    init_file_content = (result_path / "__init__.py").read_text()
+
+    # classes of ecosystems reading annotations at runtime keep them
+    assert "name: str" in init_file_content
+    assert "value: int = 5" in init_file_content
+    assert "x: int" in init_file_content
+    assert "y: int" in init_file_content
+    assert "a: int" in init_file_content
+    # a plain class loses its annotations
+    assert "x = 3" in init_file_content
+    assert "x: int = 3" not in init_file_content
+
+
+def test_bundle_remove_type_annotations_off(
+    run_bundle_package: RunBundlePackageT,
+) -> None:
+    source_path, result_path = run_bundle_package(
+        "type_annotations", "type_annotations", remove_type_annotations=False
+    )
+
+    source_content = (source_path / "__init__.py").read_text()
+    result_content = (result_path / "__init__.py").read_text()
+
+    assert ast.dump(ast.parse(result_content)) == ast.dump(ast.parse(source_content))
 
 
 def test_bundle_package_resources(
