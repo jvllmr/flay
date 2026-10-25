@@ -139,6 +139,7 @@ impl ReferencesCounter {
 
         let file_content = fs::read_to_string(&self.source_path)?;
         let module = parse_python_source(&file_content).unwrap().expect_module();
+        self.names_provider.seed_module_names(&module.body);
         for stmt in &module.body {
             self.visit_stmt(stmt);
         }
@@ -357,6 +358,22 @@ impl Visitor<'_> for ReferencesCounter {
                     self.maybe_increase_stmt(&stmt);
                     self.always_bump_context = true;
                 }
+                // default values and annotations are evaluated in the
+                // enclosing scope, before the parameter names exist; visit
+                // them before the scope is entered so the parameters do not
+                // shadow their names
+                for default in func_def
+                    .parameters
+                    .iter_non_variadic_params()
+                    .filter_map(|parameter| parameter.default.as_deref())
+                {
+                    self.visit_expr(default);
+                }
+                for parameter in func_def.parameters.iter().map(|p| p.as_parameter()) {
+                    if let Some(annotation) = &parameter.annotation {
+                        self.visit_annotation(annotation);
+                    }
+                }
             }
 
             Stmt::If(if_block) => {
@@ -378,9 +395,18 @@ impl Visitor<'_> for ReferencesCounter {
                     } else {
                         &alias.name
                     };
+                    // a name rebound at module level does not re-export the import
+                    let module_fqn = format!("{}.{}", self.module_spec, defined_name);
+                    let is_module_local = self
+                        .names_provider
+                        .get_locality_provider()
+                        .is_module_local(defined_name);
                     for fqn in self.names_provider.resolve_fully_qualified_name(
                         &self.names_provider.resolve_qualified_name(&defined_name),
                     ) {
+                        if fqn == module_fqn && is_module_local {
+                            continue;
+                        }
                         if self.has_references_for_str(&fqn) {
                             self.maybe_increase_stmt_selective(&stmt, |n| n == alias.name.as_str());
                         }
@@ -397,9 +423,18 @@ impl Visitor<'_> for ReferencesCounter {
                     } else {
                         &alias.name
                     };
+                    // a name rebound at module level does not re-export the import
+                    let module_fqn = format!("{}.{}", self.module_spec, defined_name);
+                    let is_module_local = self
+                        .names_provider
+                        .get_locality_provider()
+                        .is_module_local(defined_name);
                     for fqn in self.names_provider.resolve_fully_qualified_name(
                         &self.names_provider.resolve_qualified_name(&defined_name),
                     ) {
+                        if fqn == module_fqn && is_module_local {
+                            continue;
+                        }
                         if !fqn.starts_with("__builtin__") && self.has_references_for_str(&fqn) {
                             self.maybe_increase_stmt_selective(&stmt, |n| {
                                 n.ends_with(alias.name.as_str())

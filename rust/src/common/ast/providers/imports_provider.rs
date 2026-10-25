@@ -129,20 +129,28 @@ impl ImportsTrackingProvider {
         }
     }
 
-    pub fn visit_stmt(&mut self, stmt: &Stmt) {
+    /// Visit a statement and track its imports. Returns the names bound by
+    /// dynamic imports, so other providers can treat them as imports instead
+    /// of local names.
+    pub fn visit_stmt(&mut self, stmt: &Stmt) -> Vec<String> {
         match stmt {
             Stmt::Import(import) => {
                 self.visit_import(import);
+                Vec::new()
             }
             Stmt::ImportFrom(import_from) => {
                 self.visit_import_from(&import_from);
+                Vec::new()
             }
             _ => {
+                let mut dynamic_import_names: Vec<String> = Vec::new();
                 for (full_name, module_spec) in
                     find_dynamic_import(stmt, self.importlib_module_alias.as_ref())
                 {
-                    self.active_imports.insert(full_name, module_spec);
+                    self.active_imports.insert(full_name.clone(), module_spec);
+                    dynamic_import_names.push(full_name);
                 }
+                dynamic_import_names
             }
         }
     }

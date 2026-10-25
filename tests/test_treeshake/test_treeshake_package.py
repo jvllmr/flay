@@ -203,6 +203,107 @@ def test_treeshake_package_local_var(
     assert "_, git_version_b, _ =" in init_file_content
 
 
+def test_treeshake_package_locality_shadow_by_param(
+    run_treeshake_package: RunTreeshakePackageT,
+) -> None:
+    source_path = TEST_PACKAGES_DIR / "local_name_shadowing"
+    result_path = run_treeshake_package(source_path)
+    init_file_content = (result_path / "__init__.py").read_text()
+
+    # the parameter shadows the import, so the import is unused
+    assert "from secrets import token_urlsafe" not in init_file_content
+    assert "def shadowed_by_param(token_urlsafe: str) -> str:" in init_file_content
+
+
+def test_treeshake_package_locality_shadow_by_local_assignment(
+    run_treeshake_package: RunTreeshakePackageT,
+) -> None:
+    source_path = TEST_PACKAGES_DIR / "local_name_shadowing"
+    result_path = run_treeshake_package(source_path)
+    init_file_content = (result_path / "__init__.py").read_text()
+
+    # the local variable shadows the import, so the import is unused
+    assert "from os import path" not in init_file_content
+    assert "def use_shadowed() -> str:" in init_file_content
+    assert 'path = "shadowed"' in init_file_content
+
+
+def test_treeshake_package_locality_keep_used_import(
+    run_treeshake_package: RunTreeshakePackageT,
+) -> None:
+    source_path = TEST_PACKAGES_DIR / "local_name_shadowing"
+    result_path = run_treeshake_package(source_path)
+    init_file_content = (result_path / "__init__.py").read_text()
+
+    # an import that is not shadowed must survive
+    assert "from secrets import choice" in init_file_content
+    assert "def use_choice() -> str:" in init_file_content
+
+
+def test_treeshake_package_locality_shadow_by_for_target(
+    run_treeshake_package: RunTreeshakePackageT,
+) -> None:
+    source_path = TEST_PACKAGES_DIR / "locality_edge_cases"
+    result_path = run_treeshake_package(source_path)
+    init_file_content = (result_path / "__init__.py").read_text()
+
+    # the loop variable shadows the import, so the import is unused
+    assert "from os import sep" not in init_file_content
+    assert "def shadow_for():" in init_file_content
+
+
+def test_treeshake_package_locality_shadow_by_with_target(
+    run_treeshake_package: RunTreeshakePackageT,
+) -> None:
+    source_path = TEST_PACKAGES_DIR / "locality_edge_cases"
+    result_path = run_treeshake_package(source_path)
+    init_file_content = (result_path / "__init__.py").read_text()
+
+    # the with target shadows the import, so the import is unused
+    assert "from secrets import choice, token_urlsafe" not in init_file_content
+    assert "def shadow_with():" in init_file_content
+
+
+def test_treeshake_package_locality_shadow_by_except_handler(
+    run_treeshake_package: RunTreeshakePackageT,
+) -> None:
+    source_path = TEST_PACKAGES_DIR / "locality_edge_cases"
+    result_path = run_treeshake_package(source_path)
+    init_file_content = (result_path / "__init__.py").read_text()
+
+    # the handler name shadows the import, so the import is unused
+    assert "from secrets import choice, token_urlsafe" not in init_file_content
+    assert "def shadow_except():" in init_file_content
+    assert "as token_urlsafe:" in init_file_content
+
+
+def test_treeshake_package_locality_shadow_by_match_pattern(
+    run_treeshake_package: RunTreeshakePackageT,
+) -> None:
+    source_path = TEST_PACKAGES_DIR / "locality_edge_cases"
+    result_path = run_treeshake_package(source_path)
+    init_file_content = (result_path / "__init__.py").read_text()
+
+    # the capture name shadows the import, so the import is unused
+    assert "from os import sep" not in init_file_content
+    assert "def shadow_match(" in init_file_content
+    assert 'case {"key": sep}:' in init_file_content
+
+
+def test_treeshake_package_locality_shadow_by_module_reassignment(
+    run_treeshake_package: RunTreeshakePackageT,
+) -> None:
+    source_path = TEST_PACKAGES_DIR / "locality_edge_cases"
+    result_path = run_treeshake_package(source_path)
+    init_file_content = (result_path / "__init__.py").read_text()
+
+    # the module level reassignment shadows the import, so the import is
+    # unused while the assignment survives
+    assert "from string import digits" not in init_file_content
+    assert 'digits = "123"' in init_file_content
+    assert "def use_choice() -> str:" in init_file_content
+
+
 def test_treeshake_package_module_import_as_value(
     run_treeshake_package: RunTreeshakePackageT,
 ) -> None:
