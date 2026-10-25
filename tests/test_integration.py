@@ -1,6 +1,7 @@
 import pytest
 import os
 import sys
+import httpx2
 from flay.bundle.package import bundle_package
 from flay.treeshake.package import treeshake_package
 from pathlib import Path
@@ -57,7 +58,8 @@ def test_integration_pre_commit() -> None:
     sys.version_info < (3, 11),
     reason="fastapi requires python 3.11 or higher",
 )
-def test_integration_fastapi() -> None:
+@pytest.mark.anyio
+async def test_integration_fastapi() -> None:
     """
     Bundle/treeshake fastapi, define a route with a pydantic model and
     generate the openapi schema from it
@@ -86,3 +88,8 @@ def test_integration_fastapi() -> None:
         schema["paths"]["/items/{item_id}"]["get"]["operationId"]
         == "get_item_items__item_id__get"
     )
+
+    async with httpx2.AsyncClient(transport=httpx2.ASGITransport(app=app)) as client:
+        response = await client.get("http://testserver/items/5")
+    assert response.status_code == 200
+    assert response.json() == {"name": "test", "price": 1.5}
