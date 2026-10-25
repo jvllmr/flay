@@ -162,9 +162,18 @@ impl Transformer for NodesRemover {
             | Stmt::FunctionDef(_)
             | Stmt::AnnAssign(_)
             | Stmt::AugAssign(_)
-            | Stmt::Assign(_)
-            | Stmt::Import(_)
-            | Stmt::ImportFrom(_) => false,
+            | Stmt::Assign(_) => false,
+            Stmt::Import(ref import) => import
+                .names
+                .iter()
+                .any(|alias| alias.name.as_str() == "__future__"),
+            Stmt::ImportFrom(ref import_from) => {
+                import_from.level == 0
+                    && import_from
+                        .module
+                        .as_ref()
+                        .is_some_and(|m| m.as_str() == "__future__")
+            }
             _ => true,
         };
         if cannot_remove_stmt {
