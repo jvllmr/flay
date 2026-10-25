@@ -427,3 +427,16 @@ def test_treeshake_package_preserve_symbols(
     assert bundle3.exists()
     assert "def func1() -> None:" in bundle3.read_text()
     assert not (result_path / "useless.py").exists()
+
+
+def test_treeshake_package_keep_future_imports(
+    run_treeshake_package: RunTreeshakePackageT,
+) -> None:
+    result_path = run_treeshake_package(TEST_PACKAGES_DIR / "future_imports")
+
+    init_file_content = (result_path / "__init__.py").read_text()
+
+    assert "from __future__ import annotations\n" in init_file_content
+    assert "from __future__ import annotations as _annotations" in init_file_content
+    assert "import __future__ as _future" in init_file_content
+    assert "from secrets import token_urlsafe" not in init_file_content

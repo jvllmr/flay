@@ -155,8 +155,32 @@ impl NodesRemover {
     }
 }
 
+fn is_future_import_from(import_from: &StmtImportFrom) -> bool {
+    import_from.level == 0
+        && import_from
+            .module
+            .as_ref()
+            .is_some_and(|m| m.as_str() == "__future__")
+}
+
+fn is_future_stmt(stmt: &Stmt) -> bool {
+    match stmt {
+        Stmt::ImportFrom(import_from) => is_future_import_from(import_from),
+        // future flags are compile-time directives; never remove them, even when
+        // the bound name has no runtime references
+        Stmt::Import(import) => import
+            .names
+            .iter()
+            .any(|alias| alias.name.as_str() == "__future__"),
+        _ => false,
+    }
+}
+
 impl Transformer for NodesRemover {
     fn visit_stmt(&mut self, stmt: ruff_python_ast::Stmt) -> Option<Stmt> {
+        if is_future_stmt(&stmt) {
+            return Some(stmt);
+        }
         let cannot_remove_stmt = match stmt {
             Stmt::ClassDef(_)
             | Stmt::FunctionDef(_)
