@@ -53,6 +53,10 @@ def test_integration_pre_commit() -> None:
     main(["validate-config"])
 
 
+@pytest.mark.skipif(
+    sys.version_info < (3, 11),
+    reason="fastapi requires python 3.11 or higher",
+)
 def test_integration_fastapi() -> None:
     """
     Bundle/treeshake fastapi, define a route with a pydantic model and
