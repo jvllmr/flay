@@ -7,7 +7,7 @@ dependencies = [
   "platformdirs>=4.4.0",
   "typing-extensions>=4.15.0",
   "clonf[click,settings]>=0.4.1",
-  "pydantic>=2.12.4",
+  "pydantic-core>=2.50.2",
 ]
 requires-python = ">=3.11"
 readme = "README.md"
