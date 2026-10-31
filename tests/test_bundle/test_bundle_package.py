@@ -1,14 +1,17 @@
 from __future__ import annotations
-from pathlib import Path
-import typing as t
-import os
-import pytest
-import sys
-from flay.common.exc import FlayFileNotFoundError
-from flay.bundle.package import bundle_package
+
 import ast
+import os
+import sys
+import typing as t
 from importlib.metadata import Distribution, requires
+from pathlib import Path
+
+import pytest
 from packaging.requirements import Requirement
+
+from flay.bundle.package import bundle_package
+from flay.common.exc import FlayFileNotFoundError
 
 if t.TYPE_CHECKING:
     from .conftest import RunBundlePackageT
@@ -236,7 +239,7 @@ def test_bundle_package_bundle_metadata(tmp_path: Path) -> None:
     for req_ in reqs:
         req = Requirement(req_)
         if req.marker is not None and not req.marker.evaluate():
-            continue
+            continue  # pragma: no cover
         dist = Distribution.from_name(req.name)
         assert hasattr(dist, "_path")
         assert (tmp_path / Path(dist._path).name).exists(), os.listdir(tmp_path)

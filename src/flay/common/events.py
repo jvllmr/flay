@@ -1,6 +1,7 @@
 import typing as t
-from pydantic import BaseModel, ConfigDict
 from abc import ABCMeta, abstractmethod
+
+from pydantic import BaseModel, ConfigDict
 
 
 class Event(BaseModel):
@@ -15,6 +16,12 @@ class EventHandler(t.Generic[TEventType], metaclass=ABCMeta):
     def on_event(self, event: TEventType) -> None: ...
 
 
-class NoopEventHandler(t.Generic[TEventType], EventHandler[TEventType]):
+class NoopEventHandler(
+    EventHandler[TEventType],
+    t.Generic[TEventType],
+):
     def on_event(self, event: TEventType) -> None:
         pass
+
+
+NOOP_EVENT_HANDLER = NoopEventHandler()

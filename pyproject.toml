@@ -3,25 +3,24 @@ name = "flay"
 description = "Bundle and treeshake your python projects for containers"
 authors = [{ name = "Jan Vollmer", email = "jan@vllmr.dev" }]
 dependencies = [
-  "importlib-metadata>=8.7.0; python_version < '3.11'",
   "rich>=14.2.0",
   "platformdirs>=4.4.0",
   "typing-extensions>=4.15.0",
   "clonf[click,settings]>=0.4.1",
+  "pydantic-core>=2.50.2",
 ]
-requires-python = ">=3.9"
+requires-python = ">=3.11"
 readme = "README.md"
 license = { text = "MIT" }
 version = "0.1.0a2"
 classifiers = [
   "Intended Audience :: Developers",
   "License :: OSI Approved :: MIT License",
-  "Programming Language :: Python :: 3.9",
-  "Programming Language :: Python :: 3.10",
   "Programming Language :: Python :: 3.11",
   "Programming Language :: Python :: 3.12",
   "Programming Language :: Python :: 3.13",
   "Programming Language :: Python :: 3.14",
+  "Programming Language :: Python :: 3.15",
   "Typing :: Typed",
 ]
 
@@ -32,7 +31,7 @@ Source = "https://github.com/jvllmr/flay"
 flay = "flay.cli:cli"
 
 [build-system]
-requires = ["maturin>=1.9.6,<2.0"]
+requires = ["maturin>=1.10.2,<2.0"]
 build-backend = "maturin"
 
 [tool.maturin]
@@ -47,7 +46,7 @@ package = true
 include = ["src"]
 
 [tool.ty.environment]
-python-version = "3.9"
+python-version = "3.11"
 
 [tool.pyright]
 typeCheckingMode = "off"
@@ -76,11 +75,10 @@ exclude = [
   "tests/test_bundle/packages",
   "tests/test_treeshake/packages",
 ]
-target-version = "py39"
+target-version = "py311"
 
 [tool.ruff.lint]
-ignore = ["UP038"]
-select = ["RUF", "PERF", "G", "UP", "T", "ICN"]
+extend-select = ["F", "RUF", "PERF", "G", "UP", "T", "ICN"]
 
 [tool.ruff.lint.flake8-import-conventions]
 banned-from = ["typing"]
@@ -103,9 +101,10 @@ test = [
 lint = ["ruff>=0.14.2", "pre-commit>=4.3.0", "ty>=0.0.5"]
 dev = [
   "nox>=2025.10.16",
-  "maturin>=1.9.6",
+  "maturin>=1.10.2",
   "maturin-import-hook>=0.3.0",
   "patchelf>=0.19.1.0; sys_platform == 'linux'",
 ]
 debug = ["tuna>=0.5.11"]
 types = ["types-setuptools>=80.9.0.20250822"]
+integration-test = ["fastapi>=0.162.0"]

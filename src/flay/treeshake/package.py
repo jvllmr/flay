@@ -1,21 +1,19 @@
 from __future__ import annotations
 
-from flay._flay_rs import NodesRemover, ReferencesCounter
-from pathlib import Path
-
+import logging
 import os
 from collections import defaultdict
-import typing as t
-import logging
+from pathlib import Path
 
-from flay.common.events import Event, EventHandler, NoopEventHandler
-from flay.ecosystem.import_aliases import get_default_import_aliases
-from flay.ecosystem.preserve_symbols import (
-    get_default_preserve_symbols,
-    enrich_preserve_symbols_from_import_aliases,
-)
 import typing_extensions as te
 
+from flay._flay_rs import NodesRemover, ReferencesCounter
+from flay.common.events import NOOP_EVENT_HANDLER, Event, EventHandler
+from flay.ecosystem.import_aliases import get_default_import_aliases
+from flay.ecosystem.preserve_symbols import (
+    enrich_preserve_symbols_from_import_aliases,
+    get_default_preserve_symbols,
+)
 from flay.ecosystem.safe_decorators import get_default_safe_decorators
 
 log = logging.getLogger(__name__)
@@ -37,12 +35,12 @@ class TreeshakePackageNodesRemovalEvent(Event):
     module_spec: str
 
 
-TreeshakePackageEvent: te.TypeAlias = t.Union[
-    TreeshakePackageFoundModuleEvent,
-    TreeshakePackageTotalModulesEvent,
-    TreeshakePackageReferencesIterationEvent,
-    TreeshakePackageNodesRemovalEvent,
-]
+TreeshakePackageEvent: te.TypeAlias = (
+    TreeshakePackageFoundModuleEvent
+    | TreeshakePackageTotalModulesEvent
+    | TreeshakePackageReferencesIterationEvent
+    | TreeshakePackageNodesRemovalEvent
+)
 
 
 def _process_modules(
@@ -64,13 +62,13 @@ def treeshake_package(
     import_aliases: dict[str, str] | None = None,
     preserve_symbols: set[str] | None = None,
     safe_decorators: set[str] | None = None,
-    event_handler: EventHandler[TreeshakePackageEvent] = NoopEventHandler(),
+    event_handler: EventHandler[TreeshakePackageEvent] = NOOP_EVENT_HANDLER,
 ) -> int:
     source_files: set[str] = set()
     known_module_specs: dict[str, str] = {}
     for path, dirs, files in os.walk(source_dir):
         for file in files:
-            if file.endswith(".py") or file.endswith(".pyi"):
+            if file.endswith((".py", ".pyi")):
                 file_path = f"{path}{os.path.sep}{file}"
                 source_files.add(file_path)
                 module_spec = (
@@ -80,9 +78,7 @@ def treeshake_package(
                     .replace(os.path.sep, ".")
                 )
 
-                if module_spec.endswith(".__init__") or module_spec.endswith(
-                    ".__main__"
-                ):
+                if module_spec.endswith((".__init__", ".__main__")):
                     known_module_specs[file_path] = module_spec.rsplit(".", 1)[0]
                 else:
                     known_module_specs[file_path] = module_spec
