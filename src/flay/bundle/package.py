@@ -1,30 +1,33 @@
 from __future__ import annotations
-from flay.common.compat import FLAY_STANDARD_ENCODING
-from flay._flay_rs import AnnotationsRemover, FileCollector
+
+import fnmatch
+import logging
+import os.path
+import shutil
+import sys
 from importlib.metadata import (
     Distribution,
     PackageNotFoundError,
+)
+from importlib.metadata import (
     files as package_metadata_files,
 )
-from flay.common.compat import packages_distributions
-from flay.common.events import Event, EventHandler, NoopEventHandler
-from flay.ecosystem.import_aliases import get_default_import_aliases
-from flay.ecosystem.type_annotations import get_default_annotation_ecosystems
-from . import DEFAULT_BUNDLE_METADATA
+from pathlib import Path
+
+import typing_extensions as te
+
+from flay._flay_rs import AnnotationsRemover, FileCollector
+from flay.common.compat import FLAY_STANDARD_ENCODING, packages_distributions
+from flay.common.events import NOOP_EVENT_HANDLER, Event, EventHandler
 from flay.common.module_spec import (
     find_all_files_in_module_spec,
     get_parent_package,
     get_top_level_package,
 )
-from pathlib import Path
-import logging
-import os.path
-import typing as t
-import shutil
+from flay.ecosystem.import_aliases import get_default_import_aliases
+from flay.ecosystem.type_annotations import get_default_annotation_ecosystems
 
-import fnmatch
-import sys
-import typing_extensions as te
+from . import DEFAULT_BUNDLE_METADATA
 
 log = logging.getLogger(__name__)
 
@@ -45,12 +48,12 @@ class BundlePackageBundledMetadataEvent(Event):
     pass
 
 
-BundlePackageEvent: te.TypeAlias = t.Union[
-    BundlePackageFoundModuleEvent,
-    BundlePackageFoundTotalModulesEvent,
-    BundlePackageProcessModuleEvent,
-    BundlePackageBundledMetadataEvent,
-]
+BundlePackageEvent: te.TypeAlias = (
+    BundlePackageFoundModuleEvent
+    | BundlePackageFoundTotalModulesEvent
+    | BundlePackageProcessModuleEvent
+    | BundlePackageBundledMetadataEvent
+)
 
 
 def bundle_package(
@@ -60,7 +63,7 @@ def bundle_package(
     resources: dict[str, str] | None = None,
     import_aliases: dict[str, str] | None = None,
     remove_type_annotations: bool = True,
-    event_handler: EventHandler[BundlePackageEvent] = NoopEventHandler(),
+    event_handler: EventHandler[BundlePackageEvent] = NOOP_EVENT_HANDLER,
 ) -> None:
     resources = resources or {}
     aliases = get_default_import_aliases()
@@ -83,7 +86,6 @@ def bundle_package(
 
     files = collector.collected_files
     event_handler.on_event(BundlePackageFoundTotalModulesEvent(count=len(files)))
-    top_level_package = get_top_level_package(module_spec)
 
     gitignore = destination_path / ".gitignore"
     if not gitignore.exists():
@@ -108,10 +110,9 @@ def bundle_package(
         event_handler.on_event(
             BundlePackageProcessModuleEvent(module_spec=found_module)
         )
-        if module_source:
-            # initially, imports were transformed here
-            if remove_type_annotations and found_path.match("*.py"):
-                module_source = annotations_remover.remove_annotations(module_source)
+        if module_source and remove_type_annotations and found_path.match("*.py"):
+            module_source = annotations_remover.remove_annotations(module_source)
+
         module_path_part = Path(os.path.sep.join(found_module.split(".")))
 
         if found_path.match(f"*/{module_path_part}/__init__.py"):
@@ -150,11 +151,8 @@ def bundle_package(
                                 dirs_exist_ok=True,
                             )
 
-    for module_spec, glob_pattern in resources.items():
-        available_resources = package_metadata_files(module_spec)
-        is_external = (
-            get_top_level_package(module_spec=module_spec) != top_level_package
-        )
+    for spec, glob_pattern in resources.items():
+        available_resources = package_metadata_files(spec)
         if available_resources:
             for resource in available_resources:
                 resource_path = str(resource)

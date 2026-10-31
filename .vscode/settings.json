@@ -9,10 +9,10 @@
     "editor.defaultFormatter": "rust-lang.rust-analyzer"
   },
   "[toml]": {
-    "editor.defaultFormatter": "tamasfe.even-better-toml"
+    "editor.defaultFormatter": "oxc.oxc-vscode"
   },
   "python.terminal.activateEnvInCurrentTerminal": true,
-  "editor.defaultFormatter": "esbenp.prettier-vscode",
+  "editor.defaultFormatter": "oxc.oxc-vscode",
   "python.analysis.inlayHints.functionReturnTypes": true,
   "python.analysis.inlayHints.variableTypes": true,
   "cSpell.words": ["fqns", "pyclass", "rustpython", "setuptools", "treeshake"],

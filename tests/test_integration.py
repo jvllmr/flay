@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 import contextlib
 import os
 import shutil
@@ -9,7 +7,7 @@ from pathlib import Path
 
 import httpx2
 import pytest
-from pytest_benchmark.fixture import BenchmarkFixture
+from pytest_benchmark import BenchmarkFixture
 
 from flay.bundle.package import bundle_package
 from flay.treeshake.package import treeshake_package
@@ -60,9 +58,6 @@ def test_integration_pre_commit(benchmark: BenchmarkFixture, tmp_path: Path) -> 
         main(["validate-config"])
 
 
-# treeshake needs a live root inside the bundle; pre-commit has its
-# `if __name__ == "__main__"` guard, fastapi needs an explicitly preserved
-# entry symbol
 @pytest.mark.skipif(
     sys.version_info < (3, 11),
     reason="fastapi requires python 3.11 or higher",
