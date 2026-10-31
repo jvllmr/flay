@@ -31,7 +31,7 @@ Source = "https://github.com/jvllmr/flay"
 flay = "flay.cli:cli"
 
 [build-system]
-requires = ["maturin>=1.9.6,<2.0"]
+requires = ["maturin>=1.10.2,<2.0"]
 build-backend = "maturin"
 
 [tool.maturin]
@@ -101,7 +101,7 @@ test = [
 lint = ["ruff>=0.14.2", "pre-commit>=4.3.0", "ty>=0.0.5"]
 dev = [
   "nox>=2025.10.16",
-  "maturin>=1.9.6",
+  "maturin>=1.10.2",
   "maturin-import-hook>=0.3.0",
   "patchelf>=0.19.1.0; sys_platform == 'linux'",
 ]

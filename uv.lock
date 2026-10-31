@@ -314,7 +314,7 @@ requires-dist = [
 [package.metadata.requires-dev]
 debug = [{ name = "tuna", specifier = ">=0.5.11" }]
 dev = [
-    { name = "maturin", specifier = ">=1.9.6" },
+    { name = "maturin", specifier = ">=1.10.2" },
     { name = "maturin-import-hook", specifier = ">=0.3.0" },
     { name = "nox", specifier = ">=2025.10.16" },
     { name = "patchelf", marker = "sys_platform == 'linux'", specifier = ">=0.19.1.0" },
