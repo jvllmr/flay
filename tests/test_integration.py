@@ -7,7 +7,7 @@ from pathlib import Path
 
 import httpx2
 import pytest
-from pytest_benchmark import BenchmarkFixture
+from pytest_benchmark.fixture import BenchmarkFixture
 
 from flay.bundle.package import bundle_package
 from flay.treeshake.package import treeshake_package
