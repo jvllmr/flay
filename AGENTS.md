@@ -1,8 +1,3 @@
----
-name: flay-integration-tests
-description: Load this skill before running the full flay test suite or any integration tests, and before committing or pushing changes to this repository. Governs when the integration suite may run.
----
-
 # Flay integration tests gate
 
 The full integration suite (`tests/test_integration.py`) is skipped by pytest
@@ -30,3 +25,18 @@ tests/test_integration.py`.
 - Default (unit) check: `uv run pytest`
 - Full integration suite, gated: `FLAY_INTEGRATION_TEST=1 uv run pytest tests/test_integration.py`
 - Whole suite including integration, gated: `FLAY_INTEGRATION_TEST=1 uv run pytest`
+
+# Benchmarks
+
+The `benchmark` job in `.github/workflows/test.yml` benchmarks the
+bundling/treeshaking process of the integration tests (the pytest-benchmark
+`benchmark` fixture in `tests/test_integration.py` wraps
+`bundle_package`/`treeshake_package`) and publishes the results to GitHub
+Pages via `benchmark-action/github-action-benchmark`. Regular test jobs pass
+`--benchmark-disable` so benchmarks run only in the benchmark job.
+
+Not offending benchmark results is important in this repo: benchmark
+regressions are failures. The CI job sets `fail-on-alert: true`, so treat any
+benchmark alert as a regression to fix before committing or merging. Do not
+commit changes that regress the integration benchmarks published on the Pages
+site.

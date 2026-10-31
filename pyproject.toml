@@ -79,8 +79,7 @@ exclude = [
 target-version = "py39"
 
 [tool.ruff.lint]
-ignore = ["UP038"]
-select = ["RUF", "PERF", "G", "UP", "T", "ICN"]
+extend-select = ["RUF", "PERF", "G", "UP", "T", "ICN"]
 
 [tool.ruff.lint.flake8-import-conventions]
 banned-from = ["typing"]
@@ -99,6 +98,7 @@ test = [
   "packaging>=25.0",
   "fastapi>=0.116",
   "httpx2>=2.0.0",
+  "pytest-benchmark>=5.2.3",
 ]
 lint = ["ruff>=0.14.2", "pre-commit>=4.3.0", "ty>=0.0.5"]
 dev = [
