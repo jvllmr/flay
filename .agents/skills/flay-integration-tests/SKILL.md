@@ -15,7 +15,7 @@ as part of routine checks.
    - It is a commit for this repository (or the user explicitly asked for or
      approved an integration-test run), and
    - The command sets the flag: `FLAY_INTEGRATION_TEST=1 uv run pytest
-tests/test_integration.py`.
+     tests/test_integration.py`.
 2. Never set `FLAY_INTEGRATION_TEST` for regular unit-test runs, linting, or
    exploratory verification. Plain `uv run pytest` is the default check.
 3. If a task would benefit from integration coverage but is not at commit
