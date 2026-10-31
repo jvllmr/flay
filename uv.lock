@@ -543,15 +543,17 @@ dev = [
     { name = "nox" },
     { name = "patchelf", marker = "sys_platform == 'linux'" },
 ]
-lint = [
+integration-test = [
+    { name = "fastapi", version = "0.128.8", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.10'" },
+    { name = "fastapi", version = "0.162.0", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.10'" },
     { name = "pre-commit", version = "4.3.0", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.10'" },
     { name = "pre-commit", version = "4.5.0", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.10'" },
+]
+lint = [
     { name = "ruff" },
     { name = "ty" },
 ]
 test = [
-    { name = "fastapi", version = "0.128.8", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.10'" },
-    { name = "fastapi", version = "0.162.0", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.10'" },
     { name = "httpx2", version = "2.0.0", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.10'" },
     { name = "httpx2", version = "2.14.0", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version == '3.10.*'" },
     { name = "httpx2", version = "2.16.0", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.11'" },
@@ -588,13 +590,15 @@ dev = [
     { name = "nox", specifier = ">=2025.10.16" },
     { name = "patchelf", marker = "sys_platform == 'linux'", specifier = ">=0.19.1.0" },
 ]
-lint = [
+integration-test = [
+    { name = "fastapi", specifier = ">=0.128.8" },
     { name = "pre-commit", specifier = ">=4.3.0" },
+]
+lint = [
     { name = "ruff", specifier = ">=0.14.2" },
     { name = "ty", specifier = ">=0.0.5" },
 ]
 test = [
-    { name = "fastapi", specifier = ">=0.116" },
     { name = "httpx2", specifier = ">=2.0.0" },
     { name = "packaging", specifier = ">=25.0" },
     { name = "pip", specifier = ">=25.2" },
