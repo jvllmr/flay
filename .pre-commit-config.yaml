@@ -25,13 +25,11 @@ repos:
         args:
           - --fix
       - id: ruff-format
-  - repo: https://github.com/jvllmr/pre-commit-prettier
-    rev: v3.9.10
+  - repo: https://github.com/oxc-project/mirrors-oxfmt
+    rev: 1fb54d06ff80b555a6a428d9b12ff0796e67d923 # v0.74.0
     hooks:
-      - id: prettier
-        additional_dependencies:
-          - prettier@latest
-          - prettier-plugin-toml@latest
+      - id: oxfmt
+        types_or: [toml, json, yaml, markdown, mdx]
   - repo: https://github.com/pre-commit/pre-commit-hooks
     rev: v6.0.0
     hooks:
