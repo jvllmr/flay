@@ -95,10 +95,11 @@ test = [
   "wheel>=0.45.1",
   "pytest-env>=1.1.5",
   "packaging>=25.0",
-  "fastapi>=0.116",
+
   "httpx2>=2.0.0",
+  "pytest-benchmark>=5.2.3",
 ]
-lint = ["ruff>=0.14.2", "pre-commit>=4.3.0", "ty>=0.0.5"]
+lint = ["ruff>=0.14.2", "ty>=0.0.5"]
 dev = [
   "nox>=2025.10.16",
   "maturin>=1.10.2",
@@ -107,4 +108,4 @@ dev = [
 ]
 debug = ["tuna>=0.5.11"]
 types = ["types-setuptools>=80.9.0.20250822"]
-integration-test = ["fastapi>=0.162.0"]
+integration-test = ["fastapi>=0.162.0", "pre-commit>=4.2.0"]

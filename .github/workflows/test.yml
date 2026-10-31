@@ -29,11 +29,11 @@ jobs:
         with:
           cache-targets: false
       - name: Install dependencies
-        run: uv sync --locked --group test --group lint
+        run: uv sync --locked --group test --group integration-test
       - name: Run pytest
         env:
           FLAY_INTEGRATION_TEST: 1
-        run: uv run pytest --cov --cov-report=xml --junitxml=junit.xml -o junit_family=legacy
+        run: uv run pytest --benchmark-disable --cov --cov-report=xml --junitxml=junit.xml -o junit_family=legacy
       - name: Upload coverage report to Codecov
         uses: codecov/codecov-action@303a32d7a59b442fa8d48b6a1cc6825c09c847a5 # v7.1.1
         with:
@@ -43,6 +43,42 @@ jobs:
         uses: codecov/test-results-action@0fa95f0e1eeaafde2c782583b36b28ad0d8c77d3 # v1.2.1
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
+  benchmark:
+    permissions:
+      deployments: write
+      contents: write
+    name: Benchmark integration tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Setup UV
+        uses: astral-sh/setup-uv@07a047e608db84b3d8c06cd9a7c7dcc9c355c18e # v10.3.2
+        with:
+          python-version: "3.13"
+      - name: Enable git longpaths
+        run: git config --global core.longpaths true
+      - uses: Swatinem/rust-cache@d1527c8f67ef9af357290475d4af4b0fab8f12e0 # v2.9.3
+        with:
+          cache-targets: false
+      - name: Install dependencies
+        run: uv sync --locked --group test --group integration-test
+      - name: Run integration benchmarks
+        env:
+          FLAY_INTEGRATION_TEST: 1
+        run: uv run pytest tests/test_integration.py --benchmark-json=benchmark.json
+      - name: Store benchmark result
+        uses: benchmark-action/github-action-benchmark@4322e5726e6334590d251fc4f92bec0efafc45dc # v1.22.2
+        with:
+          tool: "pytest"
+          output-file-path: benchmark.json
+          fail-on-alert: true
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          comment-on-alert: true
+          summary-always: true
+          auto-push: true
+          gh-pages-branch: pages
   test:
     permissions:
       contents: read
@@ -71,7 +107,7 @@ jobs:
       - name: Run pytest
         env:
           FLAY_INTEGRATION_TEST: 1
-        run: uv run pytest --cov --cov-report=xml --junitxml=junit.xml -o junit_family=legacy
+        run: uv run pytest --benchmark-disable --cov --cov-report=xml --junitxml=junit.xml -o junit_family=legacy
       - name: Upload coverage report to Codecov
         uses: codecov/codecov-action@303a32d7a59b442fa8d48b6a1cc6825c09c847a5 # v7.1.1
         with:
