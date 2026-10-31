@@ -1,1 +1,1 @@
-from .import2 import * # nopycln: import
+from .import2 import *

@@ -1,11 +1,13 @@
-import pytest
 import os
 import sys
+import typing as t
+from pathlib import Path
+
 import httpx2
+import pytest
+
 from flay.bundle.package import bundle_package
 from flay.treeshake.package import treeshake_package
-from pathlib import Path
-import typing as t
 
 pytestmark = pytest.mark.skipif(
     not os.getenv("FLAY_INTEGRATION_TEST"),
@@ -54,10 +56,6 @@ def test_integration_pre_commit() -> None:
     main(["validate-config"])
 
 
-@pytest.mark.skipif(
-    sys.version_info < (3, 11),
-    reason="fastapi requires python 3.11 or higher",
-)
 @pytest.mark.anyio
 async def test_integration_fastapi() -> None:
     """

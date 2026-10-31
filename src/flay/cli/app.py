@@ -1,20 +1,20 @@
+import os
+import typing as t
+from pathlib import Path
+
+import click
+from clonf import CliArgument, CliOption
+from clonf.integrations.click import clonf_click
+from pydantic import AliasChoices, Field
+
 from flay.bundle import DEFAULT_BUNDLE_METADATA
 from flay.common.logging import enable_debug_logging
-
 from flay.common.pydantic import FlayBaseSettings
+from flay.common.rich import check, console
 
-import os
-from pydantic import Field, AliasChoices
-from pathlib import Path
-import typing as t
 from .bundle import cli_bundle_package
-from .treeshake import cli_treeshake_package
-from flay.common.rich import console, check
 from .debug import debug_app
-import click
-from clonf.integrations.click import clonf_click
-from clonf import CliArgument, CliOption
-import click
+from .treeshake import cli_treeshake_package
 
 
 class DebugSetting(FlayBaseSettings):

@@ -13,13 +13,6 @@ repos:
     rev: v1.31.1
     hooks:
       - id: zizmor
-  - repo: https://github.com/hadialqattan/pycln
-    rev: "v2.6.0"
-    hooks:
-      - id: pycln
-        args:
-          - --all
-          - --disable-all-dunder-policy
   - repo: https://github.com/AndrejOrsula/pre-commit-cargo
     rev: 0.5.0
     hooks:
