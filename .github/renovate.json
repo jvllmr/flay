@@ -33,6 +33,13 @@
       "matchUpdateTypes": ["minor", "patch"]
     },
     {
+      "description": "Group all dev dependency updates",
+      "groupName": "all dev dependencies",
+      "groupSlug": "dev-dependencies",
+      "matchManagers": ["pep621"],
+      "matchDepTypes": ["dependency-groups", "tool.uv.dev-dependencies"]
+    },
+    {
       "description": "Group all python `minor` and `patch` dependency updates",
       "groupName": "all python non-major dependencies",
       "groupSlug": "python-minor-patch",
