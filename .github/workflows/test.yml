@@ -103,7 +103,7 @@ jobs:
         with:
           cache-targets: false
       - name: Install dependencies
-        run: uv sync --locked --group test --group lint
+        run: uv sync --locked --group test --group integration-test
       - name: Run pytest
         env:
           FLAY_INTEGRATION_TEST: 1
