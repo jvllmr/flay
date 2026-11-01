@@ -99,7 +99,7 @@ test = [
   "httpx2>=2.0.0",
   "pytest-benchmark>=5.2.3",
 ]
-lint = ["ruff>=0.14.2", "ty>=0.0.5"]
+lint = ["prek>=0.5.9", "ruff>=0.14.2", "ty>=0.0.5"]
 dev = [
   "nox>=2025.10.16",
   "maturin>=1.10.2",

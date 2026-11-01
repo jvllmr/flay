@@ -9,6 +9,7 @@ import typing_extensions as te
 
 from flay._flay_rs import NodesRemover, ReferencesCounter
 from flay.common.events import NOOP_EVENT_HANDLER, Event, EventHandler
+from flay.common.exc import FlayTreeshakeError
 from flay.ecosystem.import_aliases import get_default_import_aliases
 from flay.ecosystem.preserve_symbols import (
     enrich_preserve_symbols_from_import_aliases,
@@ -52,9 +53,15 @@ def _process_modules(
         module_spec = known_module_specs[file_path]
 
         log.debug("Start processing references for module %s", module_spec)
-        references_counter.visit_module(
-            module_spec=module_spec, source_path=Path(file_path)
-        )
+        try:
+            references_counter.visit_module(
+                module_spec=module_spec, source_path=Path(file_path)
+            )
+        except Exception as exc:  # noqa: BLE001
+            raise FlayTreeshakeError(
+                f"An error occurred when counting references in {module_spec} located at {file_path}",
+                exc,
+            )
 
 
 def treeshake_package(

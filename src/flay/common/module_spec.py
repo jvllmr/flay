@@ -1,11 +1,13 @@
 from __future__ import annotations
-from importlib.machinery import ModuleSpec
+
+import os
 import sys
 import typing as t
-from pathlib import Path
-from .exc import FlayFileNotFoundError
-import os
 from functools import cache
+from importlib.machinery import ModuleSpec
+from pathlib import Path
+
+from .exc import FlayFileNotFoundError
 
 
 def get_top_level_package(module_spec: str) -> str:
@@ -123,7 +125,7 @@ def find_all_files_in_module_spec(module_spec: str) -> t.Generator[Path, t.Any, 
     found_path = find_module_path(module_spec)
     if found_path is None:
         raise FlayFileNotFoundError(
-            f"Could not find file for module spec '{module_spec}'. Found {found_path}."
+            f"Could not find file for module spec '{module_spec}'. Found {found_path}"
         )
     if found_path.origin is None:
         # namespace packages have no __init__.py; collect the modules of all
