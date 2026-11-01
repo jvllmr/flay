@@ -7,7 +7,7 @@ class Serializable(t.Protocol):
 
 class FlayError(Exception):
     def __init__(
-        self, msg: Serializable, rust_exc: Exception | None = None, *args: object
+        self, msg: Serializable, rust_exc: BaseException | None = None, *args: object
     ):
         self.msg = msg
         self.rust_exc = rust_exc
