@@ -180,6 +180,21 @@ def test_bundle_remove_type_annotations_off(
     assert ast.dump(ast.parse(result_content)) == ast.dump(ast.parse(source_content))
 
 
+def test_bundle_match_statements(run_bundle_package: RunBundlePackageT) -> None:
+    source_path, result_path = run_bundle_package(
+        "match_statements", "match_statements"
+    )
+
+    source_content = (source_path / "__init__.py").read_text()
+    result_content = (result_path / "__init__.py").read_text()
+
+    # class patterns must survive annotation removal, alone and in unions
+    assert "case bytes() | bytearray():" in result_content
+    assert "case Point(x=px, y=py):" in result_content
+
+    assert ast.dump(ast.parse(result_content)) == ast.dump(ast.parse(source_content))
+
+
 def test_bundle_package_resources(
     run_bundle_package: RunBundlePackageT,
 ) -> None:
