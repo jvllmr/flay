@@ -10,9 +10,9 @@ crate-type = ["cdylib"]
 
 [dependencies]
 pyo3 = { version = "0.30.1", features = ["extension-module"] }
-ruff_python_ast = { git = "https://github.com/astral-sh/ruff.git", tag = "0.17.1" }
-ruff_python_codegen = { git = "https://github.com/astral-sh/ruff.git", tag = "0.17.1" }
-ruff_python_parser = { git = "https://github.com/astral-sh/ruff.git", tag = "0.17.1" }
-ruff_text_size = { git = "https://github.com/astral-sh/ruff.git", tag = "0.17.1" }
-ruff_python_stdlib = { git = "https://github.com/astral-sh/ruff.git", tag = "0.17.1" }
+ruff_python_ast = "0.0.21"
+ruff_python_codegen = "0.0.21"
+ruff_python_parser = "0.0.21"
+ruff_text_size = "0.0.21"
+ruff_python_stdlib = "0.0.21"
 thin-vec = "0.2.21"
