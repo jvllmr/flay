@@ -1,19 +1,27 @@
 from __future__ import annotations
+
+import typing as t
 from pathlib import Path
-from rich.progress import SpinnerColumn, TextColumn, MofNCompleteColumn
-from flay.common.events import EventHandler
-from flay.common.rich import console, check
+
+import typing_extensions as te
+from rich.progress import (
+    BarColumn,
+    MofNCompleteColumn,
+    Progress,
+    SpinnerColumn,
+    TextColumn,
+)
+
 from flay.bundle.package import (
-    BundlePackageEvent,
-    bundle_package,
     BundlePackageBundledMetadataEvent,
+    BundlePackageEvent,
     BundlePackageFoundModuleEvent,
     BundlePackageFoundTotalModulesEvent,
     BundlePackageProcessModuleEvent,
+    bundle_package,
 )
-import typing_extensions as te
-import typing as t
-from rich.progress import Progress, BarColumn
+from flay.common.events import EventHandler
+from flay.common.rich import check, console
 
 
 class BundlePackageCliIO(EventHandler[BundlePackageEvent]):
@@ -77,7 +85,7 @@ class BundlePackageCliIO(EventHandler[BundlePackageEvent]):
         self.progress.start()
         return self
 
-    def __exit__(self, *args: t.Any, **kw: t.Any) -> None:
+    def __exit__(self, *args: object, **kw: t.Any) -> None:
         self.end_progress()
 
 
@@ -88,6 +96,7 @@ def cli_bundle_package(
     resources: dict[str, str],
     import_aliases: dict[str, str],
     remove_type_annotations: bool,
+    cache_dir: Path | None = None,
 ) -> None:
     with BundlePackageCliIO(initial_module_spec=module_spec) as io:
         bundle_package(
@@ -97,6 +106,7 @@ def cli_bundle_package(
             resources=resources,
             import_aliases=import_aliases,
             remove_type_annotations=remove_type_annotations,
+            cache_dir=cache_dir,
             event_handler=io,
         )
 

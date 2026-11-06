@@ -1,8 +1,11 @@
 from __future__ import annotations
-from pathlib import Path
-import typing as t
-import os
 
+import logging
+import os
+import typing as t
+from pathlib import Path
+
+import pytest
 
 TEST_DIR = Path(__file__).parent
 TEST_PACKAGES_DIR = TEST_DIR / "packages"
@@ -440,3 +443,23 @@ def test_treeshake_package_keep_future_imports(
     assert "from __future__ import annotations as _annotations" in init_file_content
     assert "import __future__ as _future" in init_file_content
     assert "from secrets import token_urlsafe" not in init_file_content
+
+
+def test_treeshake_package_logs_counted_references_at_debug(
+    run_treeshake_package: RunTreeshakePackageT,
+    caplog: pytest.LogCaptureFixture,
+) -> None:
+    from flay.common.logging import enable_debug_logging, reset_logging_level
+
+    enable_debug_logging()
+    try:
+        with caplog.at_level(logging.DEBUG, logger="flay"):
+            run_treeshake_package(TEST_PACKAGES_DIR / "remove_unused_import")
+    finally:
+        reset_logging_level()
+    # the counts are logged from rust via pyo3_log onto the same python logger
+    assert any(
+        record.name == "flay.treeshake.package"
+        and "Counted references:" in record.getMessage()
+        for record in caplog.records
+    )

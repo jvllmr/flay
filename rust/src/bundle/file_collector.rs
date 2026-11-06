@@ -1,6 +1,5 @@
 use std::collections::HashMap;
 use std::collections::HashSet;
-use std::fs::read_to_string;
 use std::path::PathBuf;
 
 use pyo3::prelude::*;
@@ -13,7 +12,8 @@ use ruff_python_ast::visitor::walk_stmt;
 
 use crate::common::ast::checkers::is_dynamic_import;
 use crate::common::ast::checkers::is_importlib_import;
-use crate::common::ast::{get_import_from_absolute_module_spec, parse_python_source};
+use crate::common::ast::get_import_from_absolute_module_spec;
+use crate::common::cache::load_module;
 use crate::common::module_spec::remove_last_segment;
 use crate::common::module_spec::{get_file_for_module_spec, get_parent_package, is_in_std_lib};
 
@@ -21,8 +21,10 @@ use crate::common::module_spec::{get_file_for_module_spec, get_parent_package, i
 pub struct FileCollector {
     #[pyo3(get, set)]
     package: String,
+    /// maps (module spec, source path) to whether the file exists on disk;
+    /// file contents are never transferred, they stay in the module cache
     #[pyo3(get, set)]
-    collected_files: HashMap<(String, PathBuf), Option<String>>,
+    collected_files: HashMap<(String, PathBuf), bool>,
     importlib_package_alias: Option<String>,
     import_aliases: HashMap<String, String>,
     module_aliases: HashMap<String, HashSet<String>>,
@@ -78,8 +80,8 @@ impl FileCollector {
                     .extension()
                     .is_some_and(|extension| extension == "py")
                 {
-                    if let Ok(file_content) = read_to_string(&file_origin) {
-                        self.collected_files.insert(key, Some(file_content.clone()));
+                    if let Ok(entry) = load_module(&file_origin) {
+                        self.collected_files.insert(key, true);
 
                         let mut next_parent_package = get_parent_package(&module_name).to_string();
                         if file_origin.file_name().is_some_and(|file_name| {
@@ -94,14 +96,14 @@ impl FileCollector {
                             import_aliases: self.import_aliases.to_owned(),
                             module_aliases: self.module_aliases.to_owned(),
                         };
-                        let module = parse_python_source(&file_content).unwrap().expect_module();
+                        let module = entry.parsed.syntax();
                         for stmt in &module.body {
                             sub_collector.visit_stmt(stmt);
                         }
                         self.collected_files.extend(sub_collector.collected_files);
                     }
                 } else {
-                    self.collected_files.insert(key, None);
+                    self.collected_files.insert(key, true);
                 }
             }
         };

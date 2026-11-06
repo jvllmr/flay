@@ -1,6 +1,5 @@
 from functools import cache
 
-
 _annotation_using_ecosystems: set[str] = {
     "attr.attrs",
     "attr.attrib",

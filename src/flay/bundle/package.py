@@ -63,6 +63,7 @@ def bundle_package(
     resources: dict[str, str] | None = None,
     import_aliases: dict[str, str] | None = None,
     remove_type_annotations: bool = True,
+    cache_dir: Path | None = None,
     event_handler: EventHandler[BundlePackageEvent] = NOOP_EVENT_HANDLER,
 ) -> None:
     resources = resources or {}
@@ -70,7 +71,9 @@ def bundle_package(
     if import_aliases:
         aliases.update(import_aliases)
     collector = FileCollector(package=module_spec, import_aliases=aliases)
-    annotations_remover = AnnotationsRemover(get_default_annotation_ecosystems())
+    annotations_remover = AnnotationsRemover(
+        get_default_annotation_ecosystems(), cache_dir
+    )
 
     for path in find_all_files_in_module_spec(module_spec):
         if path.match("*.py"):
@@ -103,15 +106,13 @@ def bundle_package(
             if new_init_key not in files_keys and "__init__.py" in os.listdir(
                 str(found_path.parent)
             ):
-                # act as if an __init__.py exists
-                files[new_init_key] = ""
+                # act as if an empty __init__.py exists
+                files[new_init_key] = False
 
-    for (found_module, found_path), module_source in files.items():
+    for (found_module, found_path), file_exists in files.items():
         event_handler.on_event(
             BundlePackageProcessModuleEvent(module_spec=found_module)
         )
-        if module_source and remove_type_annotations and found_path.match("*.py"):
-            module_source = annotations_remover.remove_annotations(module_source)
 
         module_path_part = Path(os.path.sep.join(found_module.split(".")))
 
@@ -123,19 +124,19 @@ def bundle_package(
         target_dir = target_file.parent
         if not target_dir.exists():
             target_dir.mkdir(parents=True)
-        if module_source is not None:
-            target_file.write_text(
-                module_source,
-                encoding=FLAY_STANDARD_ENCODING,
-            )
+        if found_path.match("*.py") and file_exists and remove_type_annotations:
+            annotations_remover.remove_annotations_in_file(found_path, target_file)
             log.debug(
                 "Written new source of %s to %s",
                 found_path,
                 target_file,
             )
-        else:
+        elif file_exists:
             shutil.copy2(str(found_path), str(target_file))
             log.debug("Copied %s to %s", found_path, target_file)
+        else:
+            target_file.write_text("", encoding=FLAY_STANDARD_ENCODING)
+            log.debug("Written empty source of %s to %s", found_path, target_file)
 
         # look for {so_top_level_package}.libs dir and bundle it
         # i.e. the musllinux build of pydantic-core needs this

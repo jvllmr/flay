@@ -1,14 +1,17 @@
 use std::collections::HashSet;
+use std::fs;
+use std::path::PathBuf;
 
 use pyo3::{pyclass, pymethods};
 use ruff_python_ast::{Stmt, StmtAnnAssign, StmtAssign, StmtClassDef, StmtFunctionDef};
-use ruff_python_parser::parse_module;
 
 use crate::common::ast::{
     generate_source,
     providers::fully_qualified_name_provider::FullyQualifiedNameProvider,
     transformer::{Transformer, walk_body, walk_stmt},
 };
+use crate::common::cache::load_module;
+use crate::common::fs_cache;
 
 /// Removes type annotations from a module. Classes that belong to an ecosystem
 /// which reads annotations at runtime, like dataclasses or pydantic, keep their
@@ -16,6 +19,7 @@ use crate::common::ast::{
 #[pyclass]
 pub struct AnnotationsRemover {
     annotation_ecosystem_names: HashSet<String>,
+    cache_dir: Option<PathBuf>,
     names_provider: FullyQualifiedNameProvider,
     preserved_classes: Vec<bool>,
     /// names of classes whose annotations are preserved, so subclasses of
@@ -26,25 +30,50 @@ pub struct AnnotationsRemover {
 #[pymethods]
 impl AnnotationsRemover {
     #[new]
-    fn new(annotation_ecosystem_names: HashSet<String>) -> Self {
+    fn new(annotation_ecosystem_names: HashSet<String>, cache_dir: Option<PathBuf>) -> Self {
         AnnotationsRemover {
             annotation_ecosystem_names,
-            names_provider: FullyQualifiedNameProvider::new("", &std::path::PathBuf::new()),
+            cache_dir,
+            names_provider: FullyQualifiedNameProvider::new("", &PathBuf::new()),
             preserved_classes: Vec::new(),
             preserved_class_names: HashSet::new(),
         }
     }
 
-    fn remove_annotations(&mut self, module_source: String) -> String {
+    /// Remove type annotations from a module file and write the result to
+    /// another file. The result is cached on disk keyed by the content hash
+    /// of the source, so unchanged files are not even parsed again on repeat
+    /// runs.
+    fn remove_annotations_in_file(
+        &mut self,
+        source_path: PathBuf,
+        target_path: PathBuf,
+    ) -> Result<(), std::io::Error> {
+        let raw_source = fs::read(&source_path)?;
+        let mut ecosystems: Vec<&str> = self
+            .annotation_ecosystem_names
+            .iter()
+            .map(|name| name.as_str())
+            .collect();
+        ecosystems.sort_unstable();
+        let cache_key = fs_cache::hash_parts(&[&raw_source, ecosystems.join("\n").as_bytes()]);
+        if let Some(cached) = fs_cache::get_counted(self.cache_dir.as_deref(), &cache_key) {
+            fs::write(&target_path, cached)?;
+            return Ok(());
+        }
         // fresh name resolution per module; provider state must not leak
         // between the modules of a bundle
-        self.names_provider = FullyQualifiedNameProvider::new("", &std::path::PathBuf::new());
+        self.names_provider = FullyQualifiedNameProvider::new("", &PathBuf::new());
         self.preserved_classes.clear();
         self.preserved_class_names.clear();
-        let parsed = parse_module(&module_source).unwrap();
+        let entry = load_module(&source_path)?;
+        let parsed = entry.parsed.clone();
         let module = parsed.syntax();
         let new_body = self.visit_body(&module.body);
-        generate_source(&new_body, parsed, &module_source)
+        let new_source = generate_source(&new_body, &parsed, &entry.source);
+        fs::write(&target_path, &new_source)?;
+        fs_cache::put(self.cache_dir.as_deref(), &cache_key, new_source.as_bytes());
+        Ok(())
     }
 }
 

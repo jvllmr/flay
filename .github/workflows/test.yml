@@ -75,9 +75,11 @@ jobs:
           output-file-path: benchmark.json
           fail-on-alert: true
           github-token: ${{ secrets.GITHUB_TOKEN }}
-          comment-on-alert: true
+          # only upload results to the pages branch and comment on PRs from
+          # main; every run still gets a job summary via summary-always
+          comment-on-alert: ${{ github.ref == 'refs/heads/main' }}
           summary-always: true
-          auto-push: true
+          auto-push: ${{ github.ref == 'refs/heads/main' }}
           gh-pages-branch: pages
   test:
     permissions:

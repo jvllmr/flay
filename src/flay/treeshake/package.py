@@ -2,12 +2,11 @@ from __future__ import annotations
 
 import logging
 import os
-from collections import defaultdict
 from pathlib import Path
 
 import typing_extensions as te
 
-from flay._flay_rs import NodesRemover, ReferencesCounter
+from flay._flay_rs import ReferencesCounter
 from flay.common.events import NOOP_EVENT_HANDLER, Event, EventHandler
 from flay.common.exc import FlayTreeshakeError
 from flay.ecosystem.import_aliases import get_default_import_aliases
@@ -69,6 +68,7 @@ def treeshake_package(
     import_aliases: dict[str, str] | None = None,
     preserve_symbols: set[str] | None = None,
     safe_decorators: set[str] | None = None,
+    cache_dir: Path | None = None,
     event_handler: EventHandler[TreeshakePackageEvent] = NOOP_EVENT_HANDLER,
 ) -> int:
     source_files: set[str] = set()
@@ -99,7 +99,6 @@ def treeshake_package(
         source_files, key=lambda x: 1 if x.endswith("__init__.py") else 0
     )
     event_handler.on_event(TreeshakePackageTotalModulesEvent(count=len(file_modules)))
-    references_counts: dict[str, int] = defaultdict(int)
 
     new_references_count = 1
 
@@ -110,48 +109,54 @@ def treeshake_package(
     preserve_symbols = get_default_preserve_symbols().union(preserve_symbols or [])
     enrich_preserve_symbols_from_import_aliases(preserve_symbols, aliases)
 
-    for symbol in preserve_symbols:
-        references_counts[symbol] = 1
-    new_references_count += len(preserve_symbols)
-
     s_decs = get_default_safe_decorators()
     if safe_decorators:
         s_decs = s_decs.union(safe_decorators)
 
+    # references_counts stays in rust the whole time; only the small
+    # new_references_count scalar is read back per iteration
     references_counter = ReferencesCounter(
-        references_counts,
+        preserve_symbols,
         import_aliases=aliases,
         safe_decorators=s_decs,
+        cache_dir=cache_dir,
     )
-    treeshake_iteration = 1
-    # count references until no new references get added
-    while new_references_count:
-        log.debug(
-            "Treeshake reference counter iteration %s",
-            treeshake_iteration,
-        )
-        event_handler.on_event(
-            TreeshakePackageReferencesIterationEvent(iteration=treeshake_iteration)
-        )
-        treeshake_iteration += 1
-        references_counter.reset_counter()
+    modules = [
+        (known_module_specs[file_path], Path(file_path)) for file_path in file_modules
+    ]
+    # the counted references are a function of every input file, so a change
+    # in any single file (a leaf included) busts the persistent cache entry
+    if not references_counter.load_cached_counts(modules):
+        treeshake_iteration = 1
+        # count references until no new references get added
+        while new_references_count:
+            log.debug(
+                "Treeshake reference counter iteration %s",
+                treeshake_iteration,
+            )
+            event_handler.on_event(
+                TreeshakePackageReferencesIterationEvent(iteration=treeshake_iteration)
+            )
+            treeshake_iteration += 1
+            references_counter.reset_counter()
+            _process_modules(
+                references_counter=references_counter,
+                file_modules=file_modules,
+                known_module_specs=known_module_specs,
+            )
+            new_references_count = references_counter.new_references_count
         _process_modules(
             references_counter=references_counter,
             file_modules=file_modules,
             known_module_specs=known_module_specs,
         )
-        new_references_count = references_counter.new_references_count
-    _process_modules(
-        references_counter=references_counter,
-        file_modules=file_modules,
-        known_module_specs=known_module_specs,
+        references_counter.store_counts_cache(modules)
+
+    # remove nodes without references; the counted references are moved into
+    # the nodes remover inside rust and never transferred to python
+    nodes_remover = references_counter.into_nodes_remover(
+        set(known_module_specs.values()), cache_dir
     )
-    references_counts |= references_counter.references_counts
-
-    log.debug("Counted references: %s", references_counts)
-
-    # remove nodes without references
-    nodes_remover = NodesRemover(references_counts, set(known_module_specs.values()))
     for file_path in file_modules:
         module_spec = known_module_specs[file_path]
 

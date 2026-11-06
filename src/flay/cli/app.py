@@ -69,6 +69,15 @@ class FlayMainSettings(FlayBaseSettings):
             description="Should type annotations be removed from the bundled modules?",
         ),
     ] = True
+    cache_dir: t.Annotated[
+        str,
+        CliOption(),
+        Field(
+            alias="cache-dir",
+            validation_alias=AliasChoices("cache-dir", "cache_dir"),
+            description="Directory for the persistent cache. Defaults to the FLAY_CACHE_DIR env var or the platformdirs user cache dir",
+        ),
+    ] = ""
     resources: t.Annotated[
         dict[str, str],
         CliOption(),
@@ -109,6 +118,7 @@ class FlayMainSettings(FlayBaseSettings):
 @flay.command(name="bundle")
 @clonf_click
 def flay_main(settings: FlayMainSettings) -> None:
+    cache_dir = Path(settings.cache_dir) if settings.cache_dir else None
     console.print(f"Starting to bundle module {settings.module_spec}...")
     cli_bundle_package(
         module_spec=settings.module_spec,
@@ -117,6 +127,7 @@ def flay_main(settings: FlayMainSettings) -> None:
         resources=settings.resources,
         import_aliases=settings.import_aliases,
         remove_type_annotations=settings.remove_type_annotations,
+        cache_dir=cache_dir,
     )
     console.print(check, f"Finished bundling {settings.module_spec}")
     if settings.treeshake:
@@ -127,6 +138,7 @@ def flay_main(settings: FlayMainSettings) -> None:
             import_aliases=settings.import_aliases,
             preserve_symbols=set(settings.preserve_symbols),
             safe_decorators=set(settings.safe_decorators),
+            cache_dir=cache_dir,
         )
         console.print(
             check,

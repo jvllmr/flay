@@ -1,6 +1,5 @@
 use std::{
     collections::{HashMap, HashSet},
-    fs,
     path::PathBuf,
 };
 
@@ -12,9 +11,14 @@ use ruff_python_ast::{
 use thin_vec::ThinVec;
 
 use crate::common::ast::{
-    full_name::get_full_name_for_expr, get_import_from_absolute_module_spec, parse_python_source,
+    full_name::get_full_name_for_expr, get_import_from_absolute_module_spec,
     providers::fully_qualified_name_provider::FullyQualifiedNameProvider,
 };
+use crate::common::cache::load_module;
+use crate::common::fs_cache;
+use crate::constants::PYTHON_MINOR_VERSION;
+
+use super::nodes_remover::NodesRemover;
 
 pub trait ReferencesHolder {
     fn get_references_counts(&self) -> &HashMap<String, usize>;
@@ -92,24 +96,32 @@ pub trait ReferencesHolder {
 pub struct ReferencesCounter {
     names_provider: FullyQualifiedNameProvider,
     module_spec: String,
-    #[pyo3(get, set)]
+    // stays in rust; it is handed over to the nodes remover without crossing
+    // the python boundary
     references_counts: HashMap<String, usize>,
-    #[pyo3(get, set)]
+    #[pyo3(get)]
     new_references_count: usize,
     always_bump_context: bool,
     source_path: PathBuf,
     import_aliases: HashMap<String, String>,
     safe_decorators: HashSet<String>,
+    preserve_symbols: HashSet<String>,
+    cache_dir: Option<PathBuf>,
 }
 
 #[pymethods]
 impl ReferencesCounter {
     #[new]
     fn new(
-        references_counts: HashMap<String, usize>,
+        preserve_symbols: HashSet<String>,
         import_aliases: HashMap<String, String>,
         safe_decorators: HashSet<String>,
+        cache_dir: Option<PathBuf>,
     ) -> Self {
+        let mut references_counts: HashMap<String, usize> = HashMap::new();
+        for symbol in &preserve_symbols {
+            references_counts.insert(symbol.clone(), 1);
+        }
         ReferencesCounter {
             module_spec: String::new(),
             names_provider: FullyQualifiedNameProvider::new("", &PathBuf::from("")),
@@ -119,11 +131,71 @@ impl ReferencesCounter {
             source_path: PathBuf::new(),
             import_aliases: import_aliases,
             safe_decorators: safe_decorators,
+            preserve_symbols,
+            cache_dir,
         }
     }
 
     fn reset_counter(&mut self) {
         self.new_references_count = 0;
+    }
+
+    /// Move the counted references into a nodes remover without transferring
+    /// the counts to python
+    fn into_nodes_remover(
+        &mut self,
+        known_modules: HashSet<String>,
+        cache_dir: Option<PathBuf>,
+    ) -> NodesRemover {
+        log::debug!(
+            target: "flay.treeshake.package",
+            "Counted references: {:?}",
+            self.references_counts
+        );
+        NodesRemover::new(
+            std::mem::take(&mut self.references_counts),
+            known_modules,
+            cache_dir,
+        )
+    }
+
+    /// Load the final reference counts from the persistent cache when nothing
+    /// they depend on changed. Returns true on a hit.
+    fn load_cached_counts(&mut self, modules: Vec<(String, PathBuf)>) -> bool {
+        let Some(key) = counts_cache_key(
+            &modules,
+            &self.import_aliases,
+            &self.preserve_symbols,
+            &self.safe_decorators,
+        ) else {
+            return false;
+        };
+        let Some(blob) = fs_cache::get_counted(self.cache_dir.as_deref(), &key) else {
+            return false;
+        };
+        match fs_cache::parse_str_map(&blob) {
+            Some(counts) => {
+                self.references_counts = counts;
+                true
+            }
+            None => false,
+        }
+    }
+
+    /// Store the final reference counts in the persistent cache
+    fn store_counts_cache(&self, modules: Vec<(String, PathBuf)>) {
+        if let Some(key) = counts_cache_key(
+            &modules,
+            &self.import_aliases,
+            &self.preserve_symbols,
+            &self.safe_decorators,
+        ) {
+            fs_cache::put(
+                self.cache_dir.as_deref(),
+                &key,
+                &fs_cache::serialize_str_map(&self.references_counts),
+            );
+        }
     }
 
     fn visit_module(
@@ -137,8 +209,8 @@ impl ReferencesCounter {
         self.names_provider =
             FullyQualifiedNameProvider::new(&self.module_spec, self.get_source_path());
 
-        let file_content = fs::read_to_string(&self.source_path)?;
-        let module = parse_python_source(&file_content).unwrap().expect_module();
+        let entry = load_module(&self.source_path)?;
+        let module = entry.parsed.syntax();
         self.names_provider.seed_module_names(&module.body);
         for stmt in &module.body {
             self.visit_stmt(stmt);
@@ -501,9 +573,11 @@ impl Visitor<'_> for ReferencesCounter {
                     self.maybe_increase_stmt(&stmt);
                     self.always_bump_context = true;
                 } else if self.is_global_scope() && self.module_spec_has_references() {
+                    // keep the bump context for the body walk below: the nodes
+                    // remover keeps whole if blocks, so definitions inside
+                    // them (e.g. classes with base classes) must stay referenced
                     self.always_bump_context = true;
                     self.visit_expr(&if_block.test);
-                    self.always_bump_context = false;
                 }
             }
             Stmt::Import(stmt_import) => {
@@ -652,4 +726,44 @@ impl Visitor<'_> for ReferencesCounter {
             self.always_bump_context = false;
         }
     }
+}
+
+/// Aggregate cache key covering every input of the reference counting
+/// fixpoint: the ordered (file name, module spec, content hash) of each
+/// visited module plus all configuration. The reference counter results are
+/// not a pure function of a single module (they depend on the global counts),
+/// so a change in any one file — a leaf included — changes its content hash
+/// and busts the whole key, which then propagates to every module above it.
+fn counts_cache_key(
+    modules: &[(String, PathBuf)],
+    import_aliases: &HashMap<String, String>,
+    preserve_symbols: &HashSet<String>,
+    safe_decorators: &HashSet<String>,
+) -> Option<String> {
+    let mut sorted_aliases: Vec<String> = import_aliases
+        .iter()
+        .map(|(k, v)| format!("{k}={v}"))
+        .collect();
+    sorted_aliases.sort_unstable();
+    let mut sorted_preserve: Vec<&str> = preserve_symbols.iter().map(|s| s.as_str()).collect();
+    sorted_preserve.sort_unstable();
+    let mut sorted_safe: Vec<&str> = safe_decorators.iter().map(|s| s.as_str()).collect();
+    sorted_safe.sort_unstable();
+
+    let mut parts: Vec<Vec<u8>> = vec![
+        PYTHON_MINOR_VERSION.to_string().into_bytes(),
+        sorted_aliases.join("\n").into_bytes(),
+        sorted_preserve.join("\n").into_bytes(),
+        sorted_safe.join("\n").into_bytes(),
+    ];
+    for (module_spec, path) in modules {
+        let file_name = path.file_name()?.to_str()?.as_bytes().to_vec();
+        let content = std::fs::read(path).ok()?;
+        let content_hash = fs_cache::hash_parts(&[&content]);
+        parts.push(file_name);
+        parts.push(module_spec.clone().into_bytes());
+        parts.push(content_hash.into_bytes());
+    }
+    let part_refs: Vec<&[u8]> = parts.iter().map(|p| p.as_slice()).collect();
+    Some(fs_cache::hash_parts(&part_refs))
 }
