@@ -106,6 +106,7 @@ pub struct ReferencesCounter {
     import_aliases: HashMap<String, String>,
     safe_decorators: HashSet<String>,
     preserve_symbols: HashSet<String>,
+    cache_dir: Option<PathBuf>,
 }
 
 #[pymethods]
@@ -115,6 +116,7 @@ impl ReferencesCounter {
         preserve_symbols: HashSet<String>,
         import_aliases: HashMap<String, String>,
         safe_decorators: HashSet<String>,
+        cache_dir: Option<PathBuf>,
     ) -> Self {
         let mut references_counts: HashMap<String, usize> = HashMap::new();
         for symbol in &preserve_symbols {
@@ -130,6 +132,7 @@ impl ReferencesCounter {
             import_aliases: import_aliases,
             safe_decorators: safe_decorators,
             preserve_symbols,
+            cache_dir,
         }
     }
 
@@ -139,13 +142,21 @@ impl ReferencesCounter {
 
     /// Move the counted references into a nodes remover without transferring
     /// the counts to python
-    fn into_nodes_remover(&mut self, known_modules: HashSet<String>) -> NodesRemover {
+    fn into_nodes_remover(
+        &mut self,
+        known_modules: HashSet<String>,
+        cache_dir: Option<PathBuf>,
+    ) -> NodesRemover {
         log::debug!(
             target: "flay.treeshake.package",
             "Counted references: {:?}",
             self.references_counts
         );
-        NodesRemover::new(std::mem::take(&mut self.references_counts), known_modules)
+        NodesRemover::new(
+            std::mem::take(&mut self.references_counts),
+            known_modules,
+            cache_dir,
+        )
     }
 
     /// Load the final reference counts from the persistent cache when nothing
@@ -159,7 +170,7 @@ impl ReferencesCounter {
         ) else {
             return false;
         };
-        let Some(blob) = fs_cache::get_counted(&key) else {
+        let Some(blob) = fs_cache::get_counted(self.cache_dir.as_deref(), &key) else {
             return false;
         };
         match fs_cache::parse_str_map(&blob) {
@@ -179,7 +190,11 @@ impl ReferencesCounter {
             &self.preserve_symbols,
             &self.safe_decorators,
         ) {
-            fs_cache::put(&key, &fs_cache::serialize_str_map(&self.references_counts));
+            fs_cache::put(
+                self.cache_dir.as_deref(),
+                &key,
+                &fs_cache::serialize_str_map(&self.references_counts),
+            );
         }
     }
 

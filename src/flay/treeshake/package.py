@@ -68,6 +68,7 @@ def treeshake_package(
     import_aliases: dict[str, str] | None = None,
     preserve_symbols: set[str] | None = None,
     safe_decorators: set[str] | None = None,
+    cache_dir: Path | None = None,
     event_handler: EventHandler[TreeshakePackageEvent] = NOOP_EVENT_HANDLER,
 ) -> int:
     source_files: set[str] = set()
@@ -118,6 +119,7 @@ def treeshake_package(
         preserve_symbols,
         import_aliases=aliases,
         safe_decorators=s_decs,
+        cache_dir=cache_dir,
     )
     modules = [
         (known_module_specs[file_path], Path(file_path)) for file_path in file_modules
@@ -153,7 +155,7 @@ def treeshake_package(
     # remove nodes without references; the counted references are moved into
     # the nodes remover inside rust and never transferred to python
     nodes_remover = references_counter.into_nodes_remover(
-        set(known_module_specs.values())
+        set(known_module_specs.values()), cache_dir
     )
     for file_path in file_modules:
         module_spec = known_module_specs[file_path]

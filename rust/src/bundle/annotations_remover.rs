@@ -19,6 +19,7 @@ use crate::common::fs_cache;
 #[pyclass]
 pub struct AnnotationsRemover {
     annotation_ecosystem_names: HashSet<String>,
+    cache_dir: Option<PathBuf>,
     names_provider: FullyQualifiedNameProvider,
     preserved_classes: Vec<bool>,
     /// names of classes whose annotations are preserved, so subclasses of
@@ -29,10 +30,11 @@ pub struct AnnotationsRemover {
 #[pymethods]
 impl AnnotationsRemover {
     #[new]
-    fn new(annotation_ecosystem_names: HashSet<String>) -> Self {
+    fn new(annotation_ecosystem_names: HashSet<String>, cache_dir: Option<PathBuf>) -> Self {
         AnnotationsRemover {
             annotation_ecosystem_names,
-            names_provider: FullyQualifiedNameProvider::new("", &std::path::PathBuf::new()),
+            cache_dir,
+            names_provider: FullyQualifiedNameProvider::new("", &PathBuf::new()),
             preserved_classes: Vec::new(),
             preserved_class_names: HashSet::new(),
         }
@@ -55,7 +57,7 @@ impl AnnotationsRemover {
             .collect();
         ecosystems.sort_unstable();
         let cache_key = fs_cache::hash_parts(&[&raw_source, ecosystems.join("\n").as_bytes()]);
-        if let Some(cached) = fs_cache::get_counted(&cache_key) {
+        if let Some(cached) = fs_cache::get_counted(self.cache_dir.as_deref(), &cache_key) {
             fs::write(&target_path, cached)?;
             return Ok(());
         }
@@ -70,7 +72,7 @@ impl AnnotationsRemover {
         let new_body = self.visit_body(&module.body);
         let new_source = generate_source(&new_body, &parsed, &entry.source);
         fs::write(&target_path, &new_source)?;
-        fs_cache::put(&cache_key, new_source.as_bytes());
+        fs_cache::put(self.cache_dir.as_deref(), &cache_key, new_source.as_bytes());
         Ok(())
     }
 }

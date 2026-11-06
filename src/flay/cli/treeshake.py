@@ -1,18 +1,27 @@
 from __future__ import annotations
+
+import typing as t
+from pathlib import Path
+
+import typing_extensions as te
+from rich.progress import (
+    BarColumn,
+    MofNCompleteColumn,
+    Progress,
+    SpinnerColumn,
+    TextColumn,
+)
+
+from flay.common.events import EventHandler
+from flay.common.rich import check, console
 from flay.treeshake.package import (
     TreeshakePackageEvent,
-    treeshake_package,
     TreeshakePackageFoundModuleEvent,
     TreeshakePackageNodesRemovalEvent,
     TreeshakePackageReferencesIterationEvent,
     TreeshakePackageTotalModulesEvent,
+    treeshake_package,
 )
-from rich.progress import Progress
-import typing as t
-import typing_extensions as te
-from flay.common.rich import console, check
-from rich.progress import TextColumn, BarColumn, SpinnerColumn, MofNCompleteColumn
-from flay.common.events import EventHandler
 
 
 class TreeshakePackageCliIO(EventHandler[TreeshakePackageEvent]):
@@ -81,7 +90,7 @@ class TreeshakePackageCliIO(EventHandler[TreeshakePackageEvent]):
         self.progress.start()
         return self
 
-    def __exit__(self, *args: t.Any, **kw: t.Any) -> None:
+    def __exit__(self, *args: object, **kw: t.Any) -> None:
         self.end_progress()
 
 
@@ -90,6 +99,7 @@ def cli_treeshake_package(
     import_aliases: dict[str, str],
     preserve_symbols: set[str],
     safe_decorators: set[str],
+    cache_dir: Path | None = None,
 ) -> int:
     with TreeshakePackageCliIO() as io:
         return treeshake_package(
@@ -97,6 +107,7 @@ def cli_treeshake_package(
             import_aliases=import_aliases,
             preserve_symbols=preserve_symbols,
             safe_decorators=safe_decorators,
+            cache_dir=cache_dir,
             event_handler=io,
         )
 

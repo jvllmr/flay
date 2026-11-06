@@ -28,11 +28,13 @@ pub struct NodesRemover {
     /// hash of the (already known-module-adjusted) reference counts and the
     /// known modules; part of every per-file persistent cache key
     cache_key_prefix: String,
+    cache_dir: Option<PathBuf>,
 }
 impl NodesRemover {
     pub(crate) fn new(
         mut references_counts: HashMap<String, usize>,
         known_modules: HashSet<String>,
+        cache_dir: Option<PathBuf>,
     ) -> Self {
         // known modules whose members are references should also be count as referenced
         let mut new_keys: Vec<String> = Vec::new();
@@ -62,6 +64,7 @@ impl NodesRemover {
             module_spec: String::new(),
             statements_removed: 0,
             cache_key_prefix: format!("{counts_hash}{known_hash}"),
+            cache_dir,
         }
     }
 }
@@ -90,7 +93,7 @@ impl NodesRemover {
             file_name.as_bytes(),
             self.cache_key_prefix.as_bytes(),
         ]);
-        if let Some(blob) = fs_cache::get_counted(&cache_key) {
+        if let Some(blob) = fs_cache::get_counted(self.cache_dir.as_deref(), &cache_key) {
             if let Some((new_source, new_body_len, removed_delta)) = parse_removal_payload(&blob) {
                 self.statements_removed += removed_delta;
                 return apply_removal(&self.source_path, &new_source, new_body_len);
@@ -107,6 +110,7 @@ impl NodesRemover {
         let new_source = generate_source(&new_body, &parsed, &entry.source);
         let removed_delta = self.statements_removed - statements_before;
         fs_cache::put(
+            self.cache_dir.as_deref(),
             &cache_key,
             &removal_payload(&new_source, new_body.len(), removed_delta),
         );

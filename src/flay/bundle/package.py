@@ -63,6 +63,7 @@ def bundle_package(
     resources: dict[str, str] | None = None,
     import_aliases: dict[str, str] | None = None,
     remove_type_annotations: bool = True,
+    cache_dir: Path | None = None,
     event_handler: EventHandler[BundlePackageEvent] = NOOP_EVENT_HANDLER,
 ) -> None:
     resources = resources or {}
@@ -70,7 +71,9 @@ def bundle_package(
     if import_aliases:
         aliases.update(import_aliases)
     collector = FileCollector(package=module_spec, import_aliases=aliases)
-    annotations_remover = AnnotationsRemover(get_default_annotation_ecosystems())
+    annotations_remover = AnnotationsRemover(
+        get_default_annotation_ecosystems(), cache_dir
+    )
 
     for path in find_all_files_in_module_spec(module_spec):
         if path.match("*.py"):

@@ -12,10 +12,17 @@ from flay.treeshake.package import treeshake_package
 PACKAGES_PATH = Path() / "tests" / "test_bundle" / "packages"
 
 
-def _bundle(module_spec: str, pre_bundle_path: Path, destination_path: Path) -> None:
+def _bundle(
+    module_spec: str,
+    pre_bundle_path: Path,
+    destination_path: Path,
+    cache_dir: Path | None = None,
+) -> None:
     sys.path = [str(pre_bundle_path), *sys.path]
     try:
-        bundle_package(module_spec, destination_path, bundle_metadata=False)
+        bundle_package(
+            module_spec, destination_path, bundle_metadata=False, cache_dir=cache_dir
+        )
     finally:
         sys.path = sys.path[1:]
 
@@ -177,6 +184,29 @@ def test_fs_cache_leaf_body_change_only_busts_that_file(tmp_path: Path) -> None:
     # unchanged __init__.py is still served from the per-file cache (1 hit)
     assert misses_after - misses_before == 2
     assert hits_after - hits_before == 1
+
+
+def test_bundle_package_cache_dir_option(tmp_path: Path) -> None:
+    pre_bundle_path = _setup_package(tmp_path, "hello_world", "cache_dir_opt")
+    cache_dir = tmp_path / "custom_cache"
+    env_cache_dir = tmp_path / "flay-cache"  # set by the autouse fixture
+
+    _bundle("cache_dir_opt", pre_bundle_path, tmp_path / "bundled", cache_dir=cache_dir)
+
+    assert cache_dir.is_dir() and any(cache_dir.iterdir())
+    # the explicit cache_dir wins over the FLAY_CACHE_DIR env var
+    assert not env_cache_dir.exists()
+
+
+def test_treeshake_package_cache_dir_option(tmp_path: Path) -> None:
+    _make_leaf_package(tmp_path)
+    cache_dir = tmp_path / "custom_cache"
+    env_cache_dir = tmp_path / "flay-cache"  # set by the autouse fixture
+
+    treeshake_package(str(tmp_path), cache_dir=cache_dir)
+
+    assert cache_dir.is_dir() and any(cache_dir.iterdir())
+    assert not env_cache_dir.exists()
 
 
 def test_fs_cache_leaf_symbol_change_busts_counts(tmp_path: Path) -> None:

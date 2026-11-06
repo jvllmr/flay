@@ -1,7 +1,7 @@
 use std::cell::{Cell, RefCell};
 use std::collections::HashMap;
 use std::fs;
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 
 use pyo3::prelude::*;
 use pyo3::types::PyModule;
@@ -16,9 +16,13 @@ thread_local! {
     static STATS: Cell<(u64, u64)> = const { Cell::new((0, 0)) };
 }
 
-/// Directory of the persistent, content-addressed cache. FLAY_CACHE_DIR wins
-/// (used by tests); otherwise the platformdirs user cache dir of flay.
-pub fn cache_dir() -> PathBuf {
+/// Directory of the persistent, content-addressed cache. An explicitly passed
+/// dir wins, then the FLAY_CACHE_DIR env var, otherwise the platformdirs user
+/// cache dir of flay.
+pub fn resolve_cache_dir(custom: Option<&Path>) -> PathBuf {
+    if let Some(dir) = custom {
+        return dir.to_path_buf();
+    }
     if let Ok(dir) = std::env::var("FLAY_CACHE_DIR") {
         return PathBuf::from(dir);
     }
@@ -56,8 +60,8 @@ pub fn hash_parts(parts: &[&[u8]]) -> String {
         .collect()
 }
 
-pub fn get_counted(key: &str) -> Option<Vec<u8>> {
-    let blob = fs::read(cache_dir().join(key)).ok();
+pub fn get_counted(dir: Option<&Path>, key: &str) -> Option<Vec<u8>> {
+    let blob = fs::read(resolve_cache_dir(dir).join(key)).ok();
     STATS.with(|s| {
         let (hits, misses) = s.get();
         if blob.is_some() {
@@ -69,13 +73,13 @@ pub fn get_counted(key: &str) -> Option<Vec<u8>> {
     blob
 }
 
-pub fn put(key: &str, payload: &[u8]) {
-    let dir = cache_dir();
-    if fs::create_dir_all(&dir).is_err() {
+pub fn put(dir: Option<&Path>, key: &str, payload: &[u8]) {
+    let base = resolve_cache_dir(dir);
+    if fs::create_dir_all(&base).is_err() {
         return;
     }
-    let final_path = dir.join(key);
-    let tmp_path = dir.join(format!("{key}.{}.tmp", std::process::id()));
+    let final_path = base.join(key);
+    let tmp_path = base.join(format!("{key}.{}.tmp", std::process::id()));
     if fs::write(&tmp_path, payload).is_ok() {
         let _ = fs::rename(&tmp_path, final_path);
     }
