@@ -13,7 +13,7 @@ class FlayError(Exception):
         self.rust_exc = rust_exc
         super().__init__(*args)
 
-    def __str__(self) -> str:
+    def __str__(self) -> str:  # pragma: no cover
         if self.rust_exc:
             return f"{self.msg}: {self.rust_exc}"
         else:

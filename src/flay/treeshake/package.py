@@ -57,7 +57,7 @@ def _process_modules(
             references_counter.visit_module(
                 module_spec=module_spec, source_path=Path(file_path)
             )
-        except BaseException as exc:  # noqa: BLE001
+        except BaseException as exc:  # pragma: no cover  # noqa: BLE001
             raise FlayTreeshakeError(
                 f"An error occurred when counting references in {module_spec} located at {file_path}",
                 exc,
