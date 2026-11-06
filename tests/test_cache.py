@@ -41,7 +41,9 @@ def test_module_cache_populated_and_cleared(tmp_path: Path) -> None:
 
 
 def test_bundle_with_warm_cache_matches_cold_cache(tmp_path: Path) -> None:
-    pre_bundle_path = _setup_package(tmp_path, "hello_world", "cache_warm")
+    # transitive_init_file has a subpackage, so the bundle contains a
+    # directory; the bundle root also contains the generated .gitignore
+    pre_bundle_path = _setup_package(tmp_path, "transitive_init_file", "cache_warm")
 
     clear_module_cache()
     _bundle("cache_warm", pre_bundle_path, tmp_path / "cold")
@@ -52,12 +54,12 @@ def test_bundle_with_warm_cache_matches_cold_cache(tmp_path: Path) -> None:
     _bundle("cache_warm", pre_bundle_path, tmp_path / "warm")
     assert module_cache_len() == cold_cache_len
 
-    cold_dir = tmp_path / "cold" / "cache_warm"
-    warm_dir = tmp_path / "warm" / "cache_warm"
-    for cold_file in sorted(cold_dir.rglob("*")):
+    cold_root = tmp_path / "cold"
+    warm_root = tmp_path / "warm"
+    for cold_file in sorted(cold_root.rglob("*")):
         if not cold_file.is_file():
             continue
-        warm_file = warm_dir / cold_file.relative_to(cold_dir)
+        warm_file = warm_root / cold_file.relative_to(cold_root)
         assert warm_file.exists(), cold_file
         if cold_file.suffix == ".py":
             assert ast.dump(ast.parse(warm_file.read_text())) == ast.dump(
