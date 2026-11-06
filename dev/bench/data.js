@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1794006035494,
+  "lastUpdate": 1794007809709,
   "repoUrl": "https://github.com/jvllmr/flay",
   "entries": {
     "Benchmark": [
@@ -140,6 +140,44 @@ window.BENCHMARK_DATA = {
             "unit": "iter/sec",
             "range": "stddev: 0.04340209413172951",
             "extra": "mean: 1.2950412674000034 sec\nrounds: 5"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "jan@vllmr.dev",
+            "name": "Jan Vollmer",
+            "username": "jvllmr"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "aac67205bc9c0d4fa52e2c8b3f9a88723292d28d",
+          "message": "perf: cache module traversals, keep file data off the python boundary (#373)\n\nCo-authored-by: Mistral Vibe <vibe@mistral.ai>",
+          "timestamp": "2026-11-06T23:28:48Z",
+          "tree_id": "1f2f873f5601999c5cea9584cc26c559c54dd74e",
+          "url": "https://github.com/jvllmr/flay/commit/aac67205bc9c0d4fa52e2c8b3f9a88723292d28d"
+        },
+        "date": 1794007809239,
+        "tool": "pytest",
+        "benches": [
+          {
+            "name": "tests/test_integration.py::test_integration_pre_commit",
+            "value": 5.297707805163391,
+            "unit": "iter/sec",
+            "range": "stddev: 0.001929189763327271",
+            "extra": "mean: 188.7608823999983 msec\nrounds: 5"
+          },
+          {
+            "name": "tests/test_integration.py::test_integration_fastapi",
+            "value": 0.767768849932967,
+            "unit": "iter/sec",
+            "range": "stddev: 0.004435580538464765",
+            "extra": "mean: 1.3024753479999986 sec\nrounds: 5"
           }
         ]
       }
