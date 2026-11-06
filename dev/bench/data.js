@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1793995004428,
+  "lastUpdate": 1794006035494,
   "repoUrl": "https://github.com/jvllmr/flay",
   "entries": {
     "Benchmark": [
@@ -106,6 +106,40 @@ window.BENCHMARK_DATA = {
             "unit": "iter/sec",
             "range": "stddev: 0.3215057984620612",
             "extra": "mean: 18.0918718184 sec\nrounds: 5"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "name": "jvllmr",
+            "username": "jvllmr"
+          },
+          "committer": {
+            "name": "jvllmr",
+            "username": "jvllmr"
+          },
+          "id": "37c68a828a3c7f1efd9c9727148a5d05020212f8",
+          "message": "perf: cache module traversals, keep file data off the python boundary",
+          "timestamp": "2026-11-06T19:53:29Z",
+          "url": "https://github.com/jvllmr/flay/pull/373/commits/37c68a828a3c7f1efd9c9727148a5d05020212f8"
+        },
+        "date": 1794006034846,
+        "tool": "pytest",
+        "benches": [
+          {
+            "name": "tests/test_integration.py::test_integration_pre_commit",
+            "value": 5.809216821848001,
+            "unit": "iter/sec",
+            "range": "stddev: 0.0018350016978363444",
+            "extra": "mean: 172.1402438000041 msec\nrounds: 5"
+          },
+          {
+            "name": "tests/test_integration.py::test_integration_fastapi",
+            "value": 0.7721761654805451,
+            "unit": "iter/sec",
+            "range": "stddev: 0.04340209413172951",
+            "extra": "mean: 1.2950412674000034 sec\nrounds: 5"
           }
         ]
       }
