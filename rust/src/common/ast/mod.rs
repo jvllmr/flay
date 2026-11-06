@@ -7,23 +7,17 @@ use pyo3::{
     PyResult,
     exceptions::{PyImportError, PyValueError},
 };
-use ruff_python_ast::{AtomicNodeIndex, Mod, ModModule, Stmt, StmtImportFrom, StmtPass};
+use ruff_python_ast::{AtomicNodeIndex, ModModule, Stmt, StmtImportFrom, StmtPass};
 use ruff_python_codegen::{Generator, Stylist};
-use ruff_python_parser::{Mode, ParseError, ParseOptions, Parsed, parse};
+use ruff_python_parser::Parsed;
 use ruff_text_size::TextRange;
 use thin_vec::ThinVec;
 
 use crate::common::module_spec::get_parent_package;
 
-pub fn parse_python_source(python_source: &str) -> Result<Mod, ParseError> {
-    Ok(parse(python_source, ParseOptions::from(Mode::Module))?
-        .syntax()
-        .to_owned())
-}
-
 pub fn generate_source(
     body: &ThinVec<Stmt>,
-    parsed: Parsed<ModModule>,
+    parsed: &Parsed<ModModule>,
     original_source: &str,
 ) -> String {
     let stylist = Stylist::from_tokens(parsed.tokens(), original_source);
