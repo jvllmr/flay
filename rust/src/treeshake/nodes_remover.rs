@@ -5,7 +5,8 @@ use std::{
 };
 
 use pyo3::{pyclass, pymethods};
-use ruff_python_ast::{Alias, Stmt, StmtImport, StmtImportFrom};
+use ruff_python_ast::{Alias, CmpOp, Expr, Stmt, StmtImport, StmtImportFrom};
+use thin_vec::ThinVec;
 
 use crate::common::ast::{
     generate_source, get_import_from_absolute_module_spec,
@@ -93,17 +94,22 @@ impl NodesRemover {
             file_name.as_bytes(),
             self.cache_key_prefix.as_bytes(),
         ]);
-        if let Some(blob) = fs_cache::get_counted(self.cache_dir.as_deref(), &cache_key) {
-            if let Some((new_source, new_body_len, removed_delta)) = parse_removal_payload(&blob) {
-                self.statements_removed += removed_delta;
-                return apply_removal(&self.source_path, &new_source, new_body_len);
-            }
+        if let Some(blob) = fs_cache::get_counted(self.cache_dir.as_deref(), &cache_key)
+            && let Some((new_source, new_body_len, removed_delta)) = parse_removal_payload(&blob)
+        {
+            self.statements_removed += removed_delta;
+            return apply_removal(&self.source_path, &new_source, new_body_len);
         }
         self.names_provider =
             FullyQualifiedNameProvider::new(&self.module_spec, self.get_source_path());
         let parsed = entry.parsed.clone();
         let module = parsed.syntax();
         self.names_provider.seed_module_names(&module.body);
+        // register top-level imports so constant folding can resolve names
+        // like typing.TYPE_CHECKING or sys.platform
+        for stmt in &module.body {
+            self.names_provider.visit_stmt(stmt);
+        }
         let statements_before = self.statements_removed;
         let new_body = self.visit_body(&module.body);
 
@@ -186,7 +192,144 @@ impl NodesRemover {
     }
 }
 
+impl NodesRemover {
+    /// Fold a constant if-test to its runtime value. Handles literals,
+    /// typing.TYPE_CHECKING (always False at runtime) and sys.platform
+    /// comparisons, which are folded against the platform flay runs on.
+    fn fold_const_test(&self, expr: &Expr) -> Option<bool> {
+        match expr {
+            Expr::BooleanLiteral(lit) => Some(lit.value),
+            Expr::NoneLiteral(_) => Some(false),
+            Expr::NumberLiteral(_) => None,
+            Expr::StringLiteral(lit) => Some(!lit.value.is_empty()),
+            Expr::UnaryOp(unary) if unary.op.is_not() => {
+                self.fold_const_test(&unary.operand).map(|b| !b)
+            }
+            Expr::Name(_) | Expr::Attribute(_) => {
+                let fqns = self.names_provider.get_expr_fully_qualified_name(expr);
+                if fqns.iter().any(|fqn| {
+                    fqn == "typing.TYPE_CHECKING" || fqn == "typing_extensions.TYPE_CHECKING"
+                }) {
+                    return Some(false);
+                }
+                if fqns.iter().any(|fqn| fqn == "sys.platform") {
+                    return Some(true); // folded by callers comparing against it
+                }
+                None
+            }
+            Expr::Compare(compare) => {
+                if compare.ops.len() != 1 || compare.operands.len() != 2 {
+                    return None;
+                }
+                let platform = host_sys_platform();
+                let left_is_platform = matches!(&compare.operands[0], Expr::Name(_) | Expr::Attribute(_)
+                    if self.names_provider.get_expr_fully_qualified_name(&compare.operands[0]).iter().any(|f| f == "sys.platform"));
+                let right_is_platform = matches!(&compare.operands[1], Expr::Name(_) | Expr::Attribute(_)
+                    if self.names_provider.get_expr_fully_qualified_name(&compare.operands[1]).iter().any(|f| f == "sys.platform"));
+                let literal = if left_is_platform {
+                    compare.operands[1].as_string_literal_expr()
+                } else if right_is_platform {
+                    compare.operands[0].as_string_literal_expr()
+                } else {
+                    None
+                };
+                let literal = literal?;
+                let value = literal.value.to_str();
+                let result = match compare.ops[0] {
+                    CmpOp::Eq => value == platform,
+                    CmpOp::NotEq => value != platform,
+                    _ => return None,
+                };
+                Some(if left_is_platform { result } else { !result })
+            }
+            Expr::Call(call) => {
+                // sys.platform.startswith("...") / endswith("...")
+                let Expr::Attribute(attr) = &*call.func else {
+                    return None;
+                };
+                if !self
+                    .names_provider
+                    .get_expr_fully_qualified_name(&attr.value)
+                    .iter()
+                    .any(|fqn| fqn == "sys.platform")
+                {
+                    return None;
+                }
+                let method = attr.attr.as_str();
+                if method != "startswith" && method != "endswith" {
+                    return None;
+                }
+                if call.arguments.args.len() != 1 {
+                    return None;
+                }
+                let prefix = call.arguments.args[0].as_string_literal_expr()?;
+                let platform = host_sys_platform();
+                Some(if method == "startswith" {
+                    platform.starts_with(prefix.value.to_str())
+                } else {
+                    platform.ends_with(prefix.value.to_str())
+                })
+            }
+            _ => None,
+        }
+    }
+}
+
+fn host_sys_platform() -> &'static str {
+    match std::env::consts::OS {
+        "macos" => "darwin",
+        "windows" => "win32",
+        other => other,
+    }
+}
+
 impl Transformer for NodesRemover {
+    fn visit_body(&mut self, body: &[Stmt]) -> ThinVec<Stmt> {
+        let mut new_body: ThinVec<Stmt> = ThinVec::new();
+        for stmt in body {
+            // fold whole constant if/elif/else chains and splice the reachable
+            // branch; non-constant chains are handled by visit_stmt as before
+            if let Stmt::If(if_stmt) = stmt {
+                let mut tests: Vec<Option<bool>> = vec![self.fold_const_test(&if_stmt.test)];
+                let mut has_else = false;
+                for clause in &if_stmt.elif_else_clauses {
+                    match &clause.test {
+                        Some(test) => tests.push(self.fold_const_test(test)),
+                        None => has_else = true,
+                    }
+                }
+                if tests.iter().all(|t| t.is_some()) {
+                    self.statements_removed += 1;
+                    if tests[0] == Some(true) {
+                        new_body.extend(self.visit_body(&if_stmt.body));
+                        continue;
+                    }
+                    for clause in &if_stmt.elif_else_clauses {
+                        match &clause.test {
+                            Some(test) => {
+                                if self.fold_const_test(test) == Some(true) {
+                                    new_body.extend(self.visit_body(&clause.body));
+                                    break;
+                                }
+                            }
+                            None => {
+                                if has_else {
+                                    new_body.extend(self.visit_body(&clause.body));
+                                }
+                                break;
+                            }
+                        }
+                    }
+                    continue;
+                }
+            }
+            if let Some(new_stmt) = self.visit_stmt(stmt.to_owned()) {
+                new_body.push(new_stmt);
+            }
+        }
+        new_body
+    }
+
     fn visit_stmt(&mut self, stmt: ruff_python_ast::Stmt) -> Option<Stmt> {
         let cannot_remove_stmt = match stmt {
             Stmt::ClassDef(_)
