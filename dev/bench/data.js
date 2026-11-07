@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1794010954675,
+  "lastUpdate": 1794079592502,
   "repoUrl": "https://github.com/jvllmr/flay",
   "entries": {
     "Benchmark": [
@@ -216,6 +216,44 @@ window.BENCHMARK_DATA = {
             "unit": "iter/sec",
             "range": "stddev: 0.028696202806974918",
             "extra": "mean: 1.4908893182000014 sec\nrounds: 5"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "jan@vllmr.dev",
+            "name": "Jan Vollmer",
+            "username": "jvllmr"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "ace741c202a12cd44b1c583fc988543375396978",
+          "message": "feat(treeshake): fold constant if/elif/else chains (#375)\n\nCo-authored-by: Mistral Vibe <vibe@mistral.ai>",
+          "timestamp": "2026-11-07T19:24:50Z",
+          "tree_id": "43d412881f55467f1a4eba2986ad021bcb06c054",
+          "url": "https://github.com/jvllmr/flay/commit/ace741c202a12cd44b1c583fc988543375396978"
+        },
+        "date": 1794079591557,
+        "tool": "pytest",
+        "benches": [
+          {
+            "name": "tests/test_integration.py::test_integration_pre_commit",
+            "value": 6.609580809994842,
+            "unit": "iter/sec",
+            "range": "stddev: 0.0028797184920077443",
+            "extra": "mean: 151.29552519999834 msec\nrounds: 5"
+          },
+          {
+            "name": "tests/test_integration.py::test_integration_fastapi",
+            "value": 0.7168672025459208,
+            "unit": "iter/sec",
+            "range": "stddev: 0.4973020363921582",
+            "extra": "mean: 1.3949585033999967 sec\nrounds: 5"
           }
         ]
       }
