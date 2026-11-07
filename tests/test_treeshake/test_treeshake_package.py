@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import logging
 import os
+import sys
 import typing as t
 from pathlib import Path
 
@@ -441,10 +442,14 @@ def test_treeshake_package_constant_conditions(
     # constant if-chains are folded: dead branches and TYPE_CHECKING blocks gone
     assert "TYPE_CHECKING" not in content
     assert "type_checking_only" not in content
-    assert "windows" not in content
     assert "never" not in content
+    # the sys.platform branch is folded against the host platform
+    if sys.platform == "win32":
+        assert 'PLATFORM = "windows"' in content
+    else:
+        assert "windows" not in content
+        assert 'PLATFORM = "linux"' in content
     # reachable branches are spliced in
-    assert 'PLATFORM = "linux"' in content
     assert 'RESULT = "always"' in content
     # non-constant ifs are kept whole
     assert "if flag:" in content
