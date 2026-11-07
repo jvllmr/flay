@@ -432,6 +432,25 @@ def test_treeshake_package_preserve_symbols(
     assert not (result_path / "useless.py").exists()
 
 
+def test_treeshake_package_constant_conditions(
+    run_treeshake_package: RunTreeshakePackageT,
+) -> None:
+    result_path = run_treeshake_package(TEST_PACKAGES_DIR / "constant_conditions")
+    content = (result_path / "__init__.py").read_text()
+
+    # constant if-chains are folded: dead branches and TYPE_CHECKING blocks gone
+    assert "TYPE_CHECKING" not in content
+    assert "type_checking_only" not in content
+    assert "windows" not in content
+    assert "never" not in content
+    # reachable branches are spliced in
+    assert 'PLATFORM = "linux"' in content
+    assert 'RESULT = "always"' in content
+    # non-constant ifs are kept whole
+    assert "if flag:" in content
+    assert "def main()" in content
+
+
 def test_treeshake_package_keep_future_imports(
     run_treeshake_package: RunTreeshakePackageT,
 ) -> None:
