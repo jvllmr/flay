@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1794007809709,
+  "lastUpdate": 1794010954675,
   "repoUrl": "https://github.com/jvllmr/flay",
   "entries": {
     "Benchmark": [
@@ -178,6 +178,44 @@ window.BENCHMARK_DATA = {
             "unit": "iter/sec",
             "range": "stddev: 0.004435580538464765",
             "extra": "mean: 1.3024753479999986 sec\nrounds: 5"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "jan@vllmr.dev",
+            "name": "Jan Vollmer",
+            "username": "jvllmr"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "e5cf5705a62d9af999b6598a96b1088e3dfdbab5",
+          "message": "test(integration): cover bundling flay, clonf and pydantic end to end (#374)\n\nCo-authored-by: Mistral Vibe <vibe@mistral.ai>",
+          "timestamp": "2026-11-07T00:20:42Z",
+          "tree_id": "8df3807cc14052ac5b3fcdfaa965d55d95262fca",
+          "url": "https://github.com/jvllmr/flay/commit/e5cf5705a62d9af999b6598a96b1088e3dfdbab5"
+        },
+        "date": 1794010953754,
+        "tool": "pytest",
+        "benches": [
+          {
+            "name": "tests/test_integration.py::test_integration_pre_commit",
+            "value": 5.106779595130869,
+            "unit": "iter/sec",
+            "range": "stddev: 0.0022863301591297775",
+            "extra": "mean: 195.81812399999876 msec\nrounds: 5"
+          },
+          {
+            "name": "tests/test_integration.py::test_integration_fastapi",
+            "value": 0.6707406028016434,
+            "unit": "iter/sec",
+            "range": "stddev: 0.028696202806974918",
+            "extra": "mean: 1.4908893182000014 sec\nrounds: 5"
           }
         ]
       }
