@@ -1,6 +1,7 @@
 import contextlib
 import os
 import shutil
+import subprocess
 import sys
 import typing as t
 from pathlib import Path
@@ -27,6 +28,18 @@ def _bundle_and_treeshake(
     target_path.mkdir(parents=True, exist_ok=True)
     bundle_package(package_name, target_path, bundle_metadata=True)
     treeshake_package(str(target_path), preserve_symbols=preserve_symbols)
+
+
+def _run_in_bundle(target_path: Path, code: str) -> subprocess.CompletedProcess[str]:
+    """Run python code in a subprocess with the bundle taking import precedence"""
+    env = {**os.environ, "PYTHONPATH": str(target_path.absolute())}
+    return subprocess.run(
+        [sys.executable, "-c", code],
+        env=env,
+        capture_output=True,
+        text=True,
+        check=False,
+    )
 
 
 @contextlib.contextmanager
@@ -106,3 +119,77 @@ async def test_integration_fastapi(benchmark: BenchmarkFixture, tmp_path: Path) 
             response = await client.get("http://testserver/items/5")
         assert response.status_code == 200
         assert response.json() == {"name": "test", "price": 1.5}
+
+
+def test_integration_bundle_pydantic(tmp_path: Path) -> None:
+    """
+    Bundle pydantic and use RootModel from the bundle: class field annotations
+    of ecosystem classes must survive bundling and treeshaking
+    """
+    target_path = tmp_path / "bundle"
+    _bundle_and_treeshake("pydantic", target_path)
+    proc = _run_in_bundle(
+        target_path,
+        "import pydantic\n"
+        "class M(pydantic.RootModel[int]):\n"
+        "    pass\n"
+        "assert M(5).root == 5\n",
+    )
+    assert proc.returncode == 0, proc.stderr
+
+
+def test_integration_bundle_clonf(tmp_path: Path) -> None:
+    """
+    Bundle an app using clonf (pulling clonf into the bundle) and run it:
+    Annotated metadata (e.g. CliOption()) is evaluated at runtime and its
+    usage must be tracked via the Annotated fields, and clonf_click reads
+    function annotations at runtime
+    """
+    app_dir = tmp_path / "src"
+    app = app_dir / "clonf_app"
+    app.mkdir(parents=True)
+    (app / "__init__.py").write_text(
+        "import typing as t\n"
+        "import click\n"
+        "from clonf import clonf_click, CliOption\n"
+        "from pydantic import BaseModel\n"
+        "class Settings(BaseModel):\n"
+        "    name: t.Annotated[str, CliOption()] = 'x'\n"
+        "@click.command()\n"
+        "@clonf_click\n"
+        "def cmd(settings: Settings) -> None:\n"
+        "    click.echo(settings.name)\n"
+    )
+    target_path = tmp_path / "bundle"
+    sys.path.insert(0, str(app_dir))
+    try:
+        _bundle_and_treeshake("clonf_app", target_path)
+    finally:
+        sys.path.remove(str(app_dir))
+    proc = _run_in_bundle(
+        target_path,
+        "from clonf_app import cmd\n"
+        "cmd.main(['--name', 'bundled'], standalone_mode=False)\n",
+    )
+    assert proc.returncode == 0, proc.stderr
+    assert proc.stdout.strip() == "bundled", proc.stdout
+
+
+def test_integration_bundle_flay(tmp_path: Path) -> None:
+    """
+    Bundle flay itself and run the bundled cli: clonf_click reads function
+    annotations at runtime, so they must survive bundling and treeshaking
+    """
+    target_path = tmp_path / "bundle"
+    _bundle_and_treeshake("flay", target_path)
+    proc = _run_in_bundle(
+        target_path,
+        "from click.testing import CliRunner\n"
+        "from flay.cli.app import flay\n"
+        "r = CliRunner().invoke(flay, ['bundle', '--help'])\n"
+        "assert r.exit_code == 0, r.output\n"
+        "assert '--cache-dir' in r.output\n"
+        "r2 = CliRunner().invoke(flay, [])\n"
+        "assert r2.exit_code == 2 and 'Usage' in r2.output, (r2.exit_code, r2.output)\n",
+    )
+    assert proc.returncode == 0, proc.stderr

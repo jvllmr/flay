@@ -70,10 +70,15 @@ def bundle_package(
     aliases = get_default_import_aliases()
     if import_aliases:
         aliases.update(import_aliases)
+    # ecosystem entries are public names (e.g. pydantic.BaseModel), but modules
+    # inside the ecosystem import the internal path (pydantic.main.BaseModel);
+    # resolve both so their classes keep their annotations
+    annotation_ecosystems = get_default_annotation_ecosystems()
+    for public_name, internal_name in aliases.items():
+        if public_name in annotation_ecosystems:
+            annotation_ecosystems.add(internal_name)
     collector = FileCollector(package=module_spec, import_aliases=aliases)
-    annotations_remover = AnnotationsRemover(
-        get_default_annotation_ecosystems(), cache_dir
-    )
+    annotations_remover = AnnotationsRemover(annotation_ecosystems, cache_dir)
 
     for path in find_all_files_in_module_spec(module_spec):
         if path.match("*.py"):
@@ -109,6 +114,17 @@ def bundle_package(
                 # act as if an empty __init__.py exists
                 files[new_init_key] = False
 
+    if remove_type_annotations:
+        # collect annotation-preserving classes of all modules first, so
+        # subclassing them propagates regardless of processing order
+        annotations_remover.precompute_preserved_classes(
+            [
+                (found_module, found_path)
+                for (found_module, found_path), file_exists in files.items()
+                if file_exists and found_path.match("*.py")
+            ]
+        )
+
     for (found_module, found_path), file_exists in files.items():
         event_handler.on_event(
             BundlePackageProcessModuleEvent(module_spec=found_module)
@@ -125,7 +141,9 @@ def bundle_package(
         if not target_dir.exists():
             target_dir.mkdir(parents=True)
         if found_path.match("*.py") and file_exists and remove_type_annotations:
-            annotations_remover.remove_annotations_in_file(found_path, target_file)
+            annotations_remover.remove_annotations_in_file(
+                found_path, target_file, found_module
+            )
             log.debug(
                 "Written new source of %s to %s",
                 found_path,
