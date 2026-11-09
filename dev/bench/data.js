@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1794192501895,
+  "lastUpdate": 1794202383536,
   "repoUrl": "https://github.com/jvllmr/flay",
   "entries": {
     "Benchmark": [
@@ -292,6 +292,44 @@ window.BENCHMARK_DATA = {
             "unit": "iter/sec",
             "range": "stddev: 0.08773511324208114",
             "extra": "mean: 1.5521400631999966 sec\nrounds: 5"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "29139614+renovate[bot]@users.noreply.github.com",
+            "name": "renovate[bot]",
+            "username": "renovate[bot]"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "c3f688ed1453cd563834499924425f537186311b",
+          "message": "chore(deps): update all pre-commit dependencies (#377)\n\nCo-authored-by: renovate[bot] <29139614+renovate[bot]@users.noreply.github.com>",
+          "timestamp": "2026-11-09T05:31:33Z",
+          "tree_id": "e1258aecd8d4199db7f822e7167275324b2027cc",
+          "url": "https://github.com/jvllmr/flay/commit/c3f688ed1453cd563834499924425f537186311b"
+        },
+        "date": 1794202382730,
+        "tool": "pytest",
+        "benches": [
+          {
+            "name": "tests/test_integration.py::test_integration_pre_commit",
+            "value": 6.502797673932668,
+            "unit": "iter/sec",
+            "range": "stddev: 0.0024198484561155057",
+            "extra": "mean: 153.77996519999897 msec\nrounds: 5"
+          },
+          {
+            "name": "tests/test_integration.py::test_integration_fastapi",
+            "value": 0.865603741973119,
+            "unit": "iter/sec",
+            "range": "stddev: 0.04500659606145239",
+            "extra": "mean: 1.1552630280000045 sec\nrounds: 5"
           }
         ]
       }
