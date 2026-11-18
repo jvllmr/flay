@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1794809371091,
+  "lastUpdate": 1795017431370,
   "repoUrl": "https://github.com/jvllmr/flay",
   "entries": {
     "Benchmark": [
@@ -406,6 +406,44 @@ window.BENCHMARK_DATA = {
             "unit": "iter/sec",
             "range": "stddev: 0.08660509031502947",
             "extra": "mean: 1.133061158800001 sec\nrounds: 5"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "29139614+renovate[bot]@users.noreply.github.com",
+            "name": "renovate[bot]",
+            "username": "renovate[bot]"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "c2e01021ebea3aac8bcfa3f018fa3c3b1074a92c",
+          "message": "chore(deps): update pre-commit hook astral-sh/uv-pre-commit to v0.13.9 (#380)\n\nCo-authored-by: renovate[bot] <29139614+renovate[bot]@users.noreply.github.com>",
+          "timestamp": "2026-11-18T15:50:15Z",
+          "tree_id": "7f602b0483bda3318de87bde285ac1d6f60fe144",
+          "url": "https://github.com/jvllmr/flay/commit/c2e01021ebea3aac8bcfa3f018fa3c3b1074a92c"
+        },
+        "date": 1795017429704,
+        "tool": "pytest",
+        "benches": [
+          {
+            "name": "tests/test_integration.py::test_integration_pre_commit",
+            "value": 4.925409407836792,
+            "unit": "iter/sec",
+            "range": "stddev: 0.0021699434201761115",
+            "extra": "mean: 203.0288077999984 msec\nrounds: 5"
+          },
+          {
+            "name": "tests/test_integration.py::test_integration_fastapi",
+            "value": 0.6758542045731083,
+            "unit": "iter/sec",
+            "range": "stddev: 0.02696839947407087",
+            "extra": "mean: 1.4796090536000037 sec\nrounds: 5"
           }
         ]
       }
