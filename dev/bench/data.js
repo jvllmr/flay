@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1795017431370,
+  "lastUpdate": 1795039496805,
   "repoUrl": "https://github.com/jvllmr/flay",
   "entries": {
     "Benchmark": [
@@ -444,6 +444,44 @@ window.BENCHMARK_DATA = {
             "unit": "iter/sec",
             "range": "stddev: 0.02696839947407087",
             "extra": "mean: 1.4796090536000037 sec\nrounds: 5"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "29139614+renovate[bot]@users.noreply.github.com",
+            "name": "renovate[bot]",
+            "username": "renovate[bot]"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "7b61aa006687787ea809dd4697c3ee58b80efbb5",
+          "message": "chore(deps): lock file maintenance (#386)\n\nCo-authored-by: renovate[bot] <29139614+renovate[bot]@users.noreply.github.com>",
+          "timestamp": "2026-11-18T22:03:13Z",
+          "tree_id": "62c68d691d3288cbc9bdcba21b302854e5cd417c",
+          "url": "https://github.com/jvllmr/flay/commit/7b61aa006687787ea809dd4697c3ee58b80efbb5"
+        },
+        "date": 1795039496343,
+        "tool": "pytest",
+        "benches": [
+          {
+            "name": "tests/test_integration.py::test_integration_pre_commit",
+            "value": 5.6976940033016525,
+            "unit": "iter/sec",
+            "range": "stddev: 0.03912315970246511",
+            "extra": "mean: 175.50960079999527 msec\nrounds: 5"
+          },
+          {
+            "name": "tests/test_integration.py::test_integration_fastapi",
+            "value": 0.8131396972742841,
+            "unit": "iter/sec",
+            "range": "stddev: 0.06958745371354264",
+            "extra": "mean: 1.2298009841999942 sec\nrounds: 5"
           }
         ]
       }
