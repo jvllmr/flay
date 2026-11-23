@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1795400234636,
+  "lastUpdate": 1795419987806,
   "repoUrl": "https://github.com/jvllmr/flay",
   "entries": {
     "Benchmark": [
@@ -558,6 +558,44 @@ window.BENCHMARK_DATA = {
             "unit": "iter/sec",
             "range": "stddev: 0.02235584475436981",
             "extra": "mean: 1.4623768228000074 sec\nrounds: 5"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "29139614+renovate[bot]@users.noreply.github.com",
+            "name": "renovate[bot]",
+            "username": "renovate[bot]"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "be1e60a917159981f8f19a53726643866f6b75f9",
+          "message": "chore(deps): update all rust non-major dependencies to 0.0.23 (#388)\n\nCo-authored-by: renovate[bot] <29139614+renovate[bot]@users.noreply.github.com>",
+          "timestamp": "2026-11-23T07:41:48Z",
+          "tree_id": "aff7f90e1421f621394e9f0ce3c8fc3702580b80",
+          "url": "https://github.com/jvllmr/flay/commit/be1e60a917159981f8f19a53726643866f6b75f9"
+        },
+        "date": 1795419987178,
+        "tool": "pytest",
+        "benches": [
+          {
+            "name": "tests/test_integration.py::test_integration_pre_commit",
+            "value": 3.95707549065737,
+            "unit": "iter/sec",
+            "range": "stddev: 0.0682215108309681",
+            "extra": "mean: 252.71188339999924 msec\nrounds: 5"
+          },
+          {
+            "name": "tests/test_integration.py::test_integration_fastapi",
+            "value": 0.8565696951806723,
+            "unit": "iter/sec",
+            "range": "stddev: 0.05690778475754927",
+            "extra": "mean: 1.1674473258000035 sec\nrounds: 5"
           }
         ]
       }
