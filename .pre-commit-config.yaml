@@ -10,7 +10,7 @@ repos:
     hooks:
       - id: uv-lock
   - repo: https://github.com/woodruffw/zizmor-pre-commit
-    rev: v1.32.0
+    rev: v1.33.0
     hooks:
       - id: zizmor
   - repo: https://github.com/AndrejOrsula/pre-commit-cargo
@@ -19,7 +19,7 @@ repos:
       - id: cargo-fmt
       - id: cargo-fix
   - repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: "v0.17.5"
+    rev: "v0.17.6"
     hooks:
       - id: ruff
         args:
