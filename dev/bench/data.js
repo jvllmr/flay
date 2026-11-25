@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1795622610583,
+  "lastUpdate": 1795623527395,
   "repoUrl": "https://github.com/jvllmr/flay",
   "entries": {
     "Benchmark": [
@@ -710,6 +710,44 @@ window.BENCHMARK_DATA = {
             "unit": "iter/sec",
             "range": "stddev: 0.05434093593415899",
             "extra": "mean: 1.1994961117999992 sec\nrounds: 5"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "29139614+renovate[bot]@users.noreply.github.com",
+            "name": "renovate[bot]",
+            "username": "renovate[bot]"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "dfb1fa2f331cc26eab478e2b42f8c175b932b857",
+          "message": "chore(deps): update github artifact actions (major) (#384)\n\nCo-authored-by: renovate[bot] <29139614+renovate[bot]@users.noreply.github.com>",
+          "timestamp": "2026-11-25T16:17:07Z",
+          "tree_id": "9c257940479c228aea24441dfad0a83a5e15636b",
+          "url": "https://github.com/jvllmr/flay/commit/dfb1fa2f331cc26eab478e2b42f8c175b932b857"
+        },
+        "date": 1795623526649,
+        "tool": "pytest",
+        "benches": [
+          {
+            "name": "tests/test_integration.py::test_integration_pre_commit",
+            "value": 6.072454375965198,
+            "unit": "iter/sec",
+            "range": "stddev: 0.010618480937186692",
+            "extra": "mean: 164.67805899999917 msec\nrounds: 5"
+          },
+          {
+            "name": "tests/test_integration.py::test_integration_fastapi",
+            "value": 0.7643423567758019,
+            "unit": "iter/sec",
+            "range": "stddev: 0.040734192936953115",
+            "extra": "mean: 1.3083142536000025 sec\nrounds: 5"
           }
         ]
       }
