@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1795621683401,
+  "lastUpdate": 1795622610583,
   "repoUrl": "https://github.com/jvllmr/flay",
   "entries": {
     "Benchmark": [
@@ -672,6 +672,44 @@ window.BENCHMARK_DATA = {
             "unit": "iter/sec",
             "range": "stddev: 0.023642504197611876",
             "extra": "mean: 1.1302336394000008 sec\nrounds: 5"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "29139614+renovate[bot]@users.noreply.github.com",
+            "name": "renovate[bot]",
+            "username": "renovate[bot]"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "f5280b8f4e0664b3fcd81c5a0fe85e7b81bd2dbc",
+          "message": "chore(deps): update docker/metadata-action action to v6 (#382)\n\nCo-authored-by: renovate[bot] <29139614+renovate[bot]@users.noreply.github.com>",
+          "timestamp": "2026-11-25T16:01:43Z",
+          "tree_id": "8a03418f9d91afe1251a45f3d9d0b9200c3d9f12",
+          "url": "https://github.com/jvllmr/flay/commit/f5280b8f4e0664b3fcd81c5a0fe85e7b81bd2dbc"
+        },
+        "date": 1795622609639,
+        "tool": "pytest",
+        "benches": [
+          {
+            "name": "tests/test_integration.py::test_integration_pre_commit",
+            "value": 6.442052855227025,
+            "unit": "iter/sec",
+            "range": "stddev: 0.010182112778860958",
+            "extra": "mean: 155.23002099999985 msec\nrounds: 5"
+          },
+          {
+            "name": "tests/test_integration.py::test_integration_fastapi",
+            "value": 0.8336834026909604,
+            "unit": "iter/sec",
+            "range": "stddev: 0.05434093593415899",
+            "extra": "mean: 1.1994961117999992 sec\nrounds: 5"
           }
         ]
       }
