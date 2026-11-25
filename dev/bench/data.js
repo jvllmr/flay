@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1795419987806,
+  "lastUpdate": 1795620565534,
   "repoUrl": "https://github.com/jvllmr/flay",
   "entries": {
     "Benchmark": [
@@ -596,6 +596,44 @@ window.BENCHMARK_DATA = {
             "unit": "iter/sec",
             "range": "stddev: 0.05690778475754927",
             "extra": "mean: 1.1674473258000035 sec\nrounds: 5"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "29139614+renovate[bot]@users.noreply.github.com",
+            "name": "renovate[bot]",
+            "username": "renovate[bot]"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "68ca74bedb89c5379212b50d018dd355139dc771",
+          "message": "chore(deps): update mshick/add-pr-comment action to v3 (#385)\n\nCo-authored-by: renovate[bot] <29139614+renovate[bot]@users.noreply.github.com>",
+          "timestamp": "2026-11-25T16:27:51+01:00",
+          "tree_id": "d53a2bd4b01915fa16c5bc3e12b571d068d84836",
+          "url": "https://github.com/jvllmr/flay/commit/68ca74bedb89c5379212b50d018dd355139dc771"
+        },
+        "date": 1795620564758,
+        "tool": "pytest",
+        "benches": [
+          {
+            "name": "tests/test_integration.py::test_integration_pre_commit",
+            "value": 6.866712260262779,
+            "unit": "iter/sec",
+            "range": "stddev: 0.007931485057460618",
+            "extra": "mean: 145.630100999999 msec\nrounds: 5"
+          },
+          {
+            "name": "tests/test_integration.py::test_integration_fastapi",
+            "value": 0.795251926487574,
+            "unit": "iter/sec",
+            "range": "stddev: 0.17129453982046983",
+            "extra": "mean: 1.257463159399998 sec\nrounds: 5"
           }
         ]
       }
