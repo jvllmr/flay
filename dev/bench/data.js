@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1795620565534,
+  "lastUpdate": 1795621683401,
   "repoUrl": "https://github.com/jvllmr/flay",
   "entries": {
     "Benchmark": [
@@ -634,6 +634,44 @@ window.BENCHMARK_DATA = {
             "unit": "iter/sec",
             "range": "stddev: 0.17129453982046983",
             "extra": "mean: 1.257463159399998 sec\nrounds: 5"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "29139614+renovate[bot]@users.noreply.github.com",
+            "name": "renovate[bot]",
+            "username": "renovate[bot]"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "6e9bd14db63df5777b3dc59442923e0e2f062a5d",
+          "message": "chore(deps): update docker/setup-buildx-action action to v4 (#383)\n\nCo-authored-by: renovate[bot] <29139614+renovate[bot]@users.noreply.github.com>",
+          "timestamp": "2026-11-25T15:46:05Z",
+          "tree_id": "f371b7351ad1ef8f2517a323dc26059be042115f",
+          "url": "https://github.com/jvllmr/flay/commit/6e9bd14db63df5777b3dc59442923e0e2f062a5d"
+        },
+        "date": 1795621682544,
+        "tool": "pytest",
+        "benches": [
+          {
+            "name": "tests/test_integration.py::test_integration_pre_commit",
+            "value": 6.190794330679985,
+            "unit": "iter/sec",
+            "range": "stddev: 0.01000604156589896",
+            "extra": "mean: 161.53016020000166 msec\nrounds: 5"
+          },
+          {
+            "name": "tests/test_integration.py::test_integration_fastapi",
+            "value": 0.8847728161151379,
+            "unit": "iter/sec",
+            "range": "stddev: 0.023642504197611876",
+            "extra": "mean: 1.1302336394000008 sec\nrounds: 5"
           }
         ]
       }
